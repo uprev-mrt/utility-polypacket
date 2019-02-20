@@ -31,6 +31,7 @@ class fieldDesc:
 class packetDesc:
     def __init__(self, name):
         self.name = name
+        self.desc =""
         self.fields = {}
 
 class protocolDesc:
@@ -99,11 +100,14 @@ def parseXML(xmlfile):
     #get all packet types
     for packet in root.findall('./Packets/Packet'):
         name = packet.attrib['name']
-
+        desc =""
         newPacket = packetDesc(name)
 
         if(name in protocol.packets):
             print 'ERROR Duplicate Packet Name!: ' + name
+
+        if('desc' in packet.attrib):
+            desc = packet.attrib['desc']
 
         #get all fields declared for packet
         for pfield in packet:
@@ -124,7 +128,7 @@ def parseXML(xmlfile):
                 fieldCopy.desc = pfield.attrib['desc']
 
             newPacket.fields[pfname] = fieldCopy
-
+            newPacket.desc = desc
 
         protocol.packets[name] = newPacket
 
@@ -213,14 +217,51 @@ def createSourceC(protocol):
         output.write('\n')
     output.write('}\n\n')
 
-    text_file = open("Output.c", "w")
-    text_file.write(output.getvalue())
-    text_file.close()
+#    text_file = open("Output.c", "w")
+#    text_file.write(output.getvalue())
+#    text_file.close()
 
     print output.getvalue()
 
 
+def createDoc(protocol):
+    output = StringIO.StringIO()
+    output.write('# ' + protocol.name + '\n\n')
+    output.write('## Packet Types:\n\n')
 
+    for packet in protocol.packets.values():
+        output.write('\n------\n')
+        output.write('### ' + packet.name + '\n')
+        output.write(packet.desc + '\n\n')
+
+        output.write('|***Field***|')
+        for pfield in packet.fields.values():
+            output.write(pfield.name + '|')
+
+        output.write('\n|---|')
+        for pfield in packet.fields.values():
+            output.write('---|')
+
+        output.write('\n|***Type***|')
+        for pfield in packet.fields.values():
+            output.write(pfield.type)
+            if(pfield.isArray):
+                if(pfield.isVarLen):
+                    output.write('[n*]')
+                else:
+                    output.write('['+str(pfield.arrayLen)+']')
+            output.write('|')
+
+        output.write('\n\n')
+        for pfield in packet.fields.values():
+            output.write('***'+ pfield.name+'*** : ' + pfield.desc +'<br/>\n')
+        #output.write('\n')
+
+
+
+    text_file = open("Output.md", "w")
+    text_file.write(output.getvalue())
+    text_file.close()
 
 
 
@@ -233,6 +274,7 @@ def main():
     protocol = parseXML(xmlFile)
     createHeaderC(protocol)
     createSourceC(protocol)
+    createDoc(protocol)
 
 if __name__ == "__main__":
     main()

@@ -20,7 +20,7 @@
   </Fields>
   <!--Declare all Packet Types-->
   <Packets>
-    <Packet name="Data">
+    <Packet name="Data" desc="Data messages can be used to get data, set data, or respond to a get data message depending on the cmd field">
       <Field name="src" req="true"/>
       <Field name="dst" req="true"/>
       <Field name="cmd" req="true" />
@@ -29,7 +29,7 @@
       <Field name="sensorName"/>
     </Packet>
 
-    <Packet name="blockReq" >
+    <Packet name="blockReq" desc="This packet is used to request a block of data from the host during Ota updates" >
       <Field name="src" req="true"/>
       <Field name="dst" req="true"/>
       <!-- Adding a description here will overwrite the description in documentation for this packet type -->
@@ -37,7 +37,7 @@
       <Field name="blockSize" req="true" desc="Size of block being requested "/>
     </Packet>
 
-    <Packet name="blockResp" >
+    <Packet name="blockResp" responseto="blockreq" desc="This packet sends a block of ota data to the node as a response to a block request" >
       <Field name="src" req="true"/>
       <Field name="dst" req="true"/>
       <Field name="blockOffset" req="true"/>
