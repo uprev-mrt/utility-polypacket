@@ -17,7 +17,6 @@ enum eFieldFormat {
 typedef struct{
   const char* mName;            //friendly name of field
   uin32_t mHash;          //unique identifier of field
-  bool mRequired;         //indicates if field is required/optional
   eFieldFormat mFormat;   //format used for printing and jsonifying field
   uint8_t mObjSize;       //size of object in field
   uint16_t mLen;          //number of objects in field (max)
@@ -37,10 +36,9 @@ typedef struct{
   *@param name friendly name for field
   *@param objSize size of single element in field
   *@param len number of elements in field
-  *@param req is field required in every packet
   *@return ptr to new field descriptor
   */
-field_desc_t* new_field_desc(const char* name, int objSize, uint32_t len, bool req);
+field_desc_t* new_field_desc(const char* name, int objSize, uint32_t len);
 
 /**
   *@brief Creates a new field

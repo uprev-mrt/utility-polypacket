@@ -7,13 +7,12 @@
 
 #include "var_field.h"
 
-field_desc_t* new_field_desc(const char* name, int objSize, uint32_t len, bool req, eFieldFormat format)
+field_desc_t* new_field_desc(const char* name, int objSize, uint32_t len, eFieldFormat format)
 {
   static int id=0;
   field_desc_t* new_desc = (field_desc_t*) malloc(sizeof(field_desc_t));
   new_desc->mName = name;
   new_desc->mHash = id++; //TODO use actual hashing
-  new_desc->mRequired = req;
   new_desc->mFormat = format;
   new_desc->mObjSize = objSize;
   new_desc->mLen = len;
