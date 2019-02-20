@@ -108,15 +108,32 @@ var_packet_t* new_packet(packet_desc_t* desc)
     init_field(&packet->mFields[i], desc);
   }
 
-
+  packet->mData = NULL;
+  packet->mLen =0;
 
 
 }
 
+void packet_destroy(var_packet_t* packet)
+{
+  for(int i=0; i < packet->mDesc->mFieldCount; i++)
+  {
+    destroy_field(packet->mFields[i]);
+  }
+  free(packet->mFields);
+  free(packet->mData);
+  free(packet);
+}
 
 void packet_reset(var_packet_t* packet)
 {
-
+  for(int i=0; i < packet->mDesc->mFieldCount; i++)
+  {
+    destroy_field(packet->mFields[i]);
+  }
+  free(packet->mFields);
+  free(packet->mData);
+  packet->mDesc = NULL;
 }
 
 
