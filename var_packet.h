@@ -12,10 +12,11 @@ enum ePacketStatus {
   PACKET_VALID,
   PACKET_INCOMPLETE,
   PACKET_BAD_CHECKSUM,
-  PACKET_PARSING_ERROR
+  PACKET_PARSING_ERROR,
+  INVALID_PACKET_TYPE
 };
 
-//[ 1 byte payloadId] [ 2 byte payload len ] [n byte variable data ] [2 byte checksum] [2 byte token]
+//[ 1 byte payloadId] [ 2 byte payload len ]  [2 byte token] [ mManifestSize bytes manifest] [n byte variable data ] [2 byte checksum]
 
 /**
   *@brief Variable Packet Descriptor
@@ -26,20 +27,28 @@ typedef struct{
   field_desc_t** mFields;   //Array of field descriptors
   int mMaxFields;           //max fields
   int mFieldCount;          //number of field descriptors
+  uin8_t mManifestSize;     //size in bytes of manifest
 }packet_desc_t;
 
+
+typedef struct{
+  uint8_t mPayloadId; //id of payload type
+  uint16_t mDataLen;  //expected len of packet data (not including header and footer)
+  uint16_t mToken;    //token for packet (used for acknowledgement/ echo cancellation in mesh nets)
+}var_packet_hdr_t;
+
+typedef struct{
+  uint16_t mCheckSum; //checksum of packet data
+}var_packet_ftr_t;
 
 /**
   *@brief Variable packet
   */
 typedef struct{
-  uint8_t* mData;         //ptr to raw data of message
-  int mLen;               //length of raw message data
-  packet_desc_t* mDesc;   //prt to packet descriptor
-  var_field_t* mFields;   //array of fields contained in packet
-  uint16_t mCheckSum;      //checksum for packet
-  int mFieldCount;          //number of field descriptors
-  uint32_t mToken;        //token for packet (used for acknowledgement/ echo cancellation in mesh nets)
+  var_packet_hdr_t mHdr;
+  packet_desc_t* mDesc;     //prt to packet descriptor
+  var_field_t* mFields;     //array of fields contained in packet
+  var_packet_ftr_t mFooter; //packet footer
 }var_packet_t;
 
 
