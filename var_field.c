@@ -90,3 +90,28 @@ int var_field_get_buf(var_field_t* field, void* var)
   memcpy(val,(void*)field->mBuffer, field->mSize);
   return field->mSize;
 }
+
+int var_field_parse(var_field_t* field, uint8_t * data)
+{
+  uint8_t cursor=0;
+  uint8_t newSize;
+
+  //if its is a variable len field, we may need to reallocate the memory
+  if(field->mDesc->mVarLen)
+  {
+    newSize = data[cursor++];
+    if(field->mSize != newSize)
+    {
+      field->mSize = newSize;
+      free(field->mBuffer);
+      field->mBuffer = (uin8_t*)malloc(field->mSize);
+    }
+
+    memcpy((void*)field->mBuffer, (void*)&data[cursor], field->mSize );
+
+    return cursor + field->mSize;
+  }
+
+
+
+}

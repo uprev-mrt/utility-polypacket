@@ -51,7 +51,7 @@ var_field_t* new_field(field_desc_t* desc);
 
 /**
   *@brief initialize existing field from descriptor
-  *@param field ptr to field 
+  *@param field ptr to field
   *@param desc ptr to field descriptor
   */
 void init_field(var_field_t* field, field_desc_t* desc);
@@ -102,3 +102,11 @@ void var_field_get_idx(var_field_t* field, uint32_t idx, void* val );
   *@param val ptr to copy value to
   */
 int var_field_get_buf(var_field_t* field, void* var);
+
+/**
+  *@brief parses field value from raw data
+  *@param field ptr to field being set
+  *@pre data ptr to data buffer
+  *@return len of parsed data
+  */
+int var_field_parse(var_field_t* field, uint8_t * data);

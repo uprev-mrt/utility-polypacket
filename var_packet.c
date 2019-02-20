@@ -7,7 +7,9 @@
 
 #include "var_packet.h"
 
-#define DYNAMIC_GROWTH_SIZE 16
+
+#define PACKET_METADATA_SIZE (sizeof(var_packet_hdr_t) + sizeof(var_packet_ftr_t))
+#define DYNAMIC_GROWTH_SIZE 8
 
 /**
   *@brief Parsing dictionary. used to index packet descriptors and parse messages
@@ -88,6 +90,8 @@ void packet_desc_add_field(packet_desc_t* desc, field_desc_t* fieldDesc)
 
   //add field desc to packet_desc
   desc->mFields[desc->mFieldCount++] = fieldDesc;
+
+  desc->mManifestSize = (desc->mFieldCount +8)/8;
 }
 
 
@@ -108,9 +112,6 @@ var_packet_t* new_packet(packet_desc_t* desc)
     init_field(&packet->mFields[i], desc);
   }
 
-  packet->mData = NULL;
-  packet->mLen =0;
-
 
 }
 
@@ -121,7 +122,6 @@ void packet_destroy(var_packet_t* packet)
     destroy_field(packet->mFields[i]);
   }
   free(packet->mFields);
-  free(packet->mData);
   free(packet);
 }
 
@@ -132,7 +132,7 @@ void packet_reset(var_packet_t* packet)
     destroy_field(packet->mFields[i]);
   }
   free(packet->mFields);
-  free(packet->mData);
+
   packet->mDesc = NULL;
 }
 
@@ -140,7 +140,7 @@ void packet_reset(var_packet_t* packet)
 
 var_field_t* packet_field(var_packet_t* packet, field_desc_t* fieldDesc)
 {
-  for(int i=0; i < packet->mFieldCount; i++)
+  for(int i=0; i < packet->mDesc->mFieldCount; i++)
   {
     if(packet->mFields[i]->mDesc == fieldDesc)
     {
@@ -149,9 +149,129 @@ var_field_t* packet_field(var_packet_t* packet, field_desc_t* fieldDesc)
   }
 }
 
+
 ePacketStatus packet_parse(var_packet_t* packet, uint8_t* data, int len )
 {
 
+  packet_desc_t* pDesc = NULL;   //packet descriptor for packet type
+  uint32_t cursor=0;            //cursor in data
+  int expectedLen;              //expected length from header info
+
+  int bitOffset =0;           //bitOffset used when checking manifest
+  uint8_t manifestByte;        //current byte in manifest being scanned
+
+  uint16_t checkSumComp =0;        //computated checksum
+
+  //packet must be at least as long as the meta data required for each packet
+  if(len < PACKET_METADATA_SIZE)
+    return PACKET_INCOMPLETE;
+
+  //reset packet
+  packet_reset(packet);
+
+  //copy over header information
+  memcpy((void*)packet->mHdr, (void*)data, sizeof(var_packet_hdr_t));
+  cursor += sizeof(var_packet_hdr_t);
+
+  //get expected size of packet from header
+  expectedLen = packet->mHdr.mDataLen + PACKET_METADATA_SIZE
+
+  //if sizes do not match, there is an error
+  if(len < expectedLen)
+  {
+    return PACKET_INCOMPLETE;
+  }
+  else if(len > expectedLen)
+  {
+      return PACKET_PARSING_ERROR;
+  }
 
 
+  //find matching packetID in master parsing dictionary
+  for(int i=0; i < MPD.mEntryCount; i ++)
+  {
+    //find matching payload id
+    if(MPS.mEntries[i]->mPayloadId == packet->mHdr.mPayloadId)
+    {
+      pDesc = MPS.mEntries[i];
+      break;
+    }
+  }
+
+  //if no matching payload is found return invalid packet type
+  if(pDesc == NULL)
+  {
+    return INVALID_PACKET_TYPE;
+  }
+
+  //Parse packet data using descriptor
+  packet->mFields = (var_field_t*) malloc(sizeof(var_packet_t*) * pDesc->mFieldCount );
+
+
+  //initialize fields and check if they are present in manifest
+  //Manifests are dynamicly sized by field count in the packet descriptor
+  for(int i=0; i < pDesc->mFieldCount; i++)
+  {
+    if(bitOffset == 0)
+    {
+      manifestByte = data[cursor++];
+    }
+    //initialize field from descriptor
+    init_field(&packet->mFields[i], pDesc);
+
+    //check bit in manifest to see if it is present in this packet
+    if((manifestByte >> bitOffset )  & 0x01)
+    {
+      packet->mFields[i].mPresent = true;
+    }
+    //advance bit offset
+    bitOffset++;
+
+    //If we finish a byte in manifest, keep going to the next byte
+    if(bitOffset == 8)
+    {
+      bitOffset = 0;
+    }
+  }
+
+  //Parse data fields from message data
+  for(int i=0; i < pDesc->mFieldCount; i++)
+  {
+    //if field is variable len, the first byte is the length
+    if(pDesc->mFields[i]->mVarLen)
+    {
+      packet->mFields[i].mSize = data[cursor++];
+    }
+
+    //parse out field and move cursor
+    cursor += var_field_parse(&packet->mFields[i], data[cursor]);
+
+    //make sure we dont go out of bounds
+    if(cursor >= len)
+    {
+      return PACKET_PARSING_ERROR;
+    }
+  }
+
+  //we should just have the footer left after this
+  if(cursor != (len - sizeof(packet->mFooter))
+  {
+    return PACKET_PARSING_ERROR;
+  }
+
+  memcpy((void*)&packet->mFooter.mChecksum, (void*)&data[cursor], sizeof(packet->mFooter.mCheckSum) );
+  cursor += sizeof(packet->mFooter.mCheckSum);
+
+  // validate checksum
+  for(int i=0; i < packet->mhdr.mDataLen; i++)
+  {
+    checkSumComp += data[sizeof(var_packet_hdr_t) +i];
+  }
+
+  if(packet->mFoot.mCheckSum != checkSumComp)
+  {
+    return PACKET_BAD_CHECKSUM;
+  }
+
+  return PACKET_VALID;
 }
