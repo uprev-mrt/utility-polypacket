@@ -12,8 +12,28 @@ import re
 import StringIO
 import copy
 import datetime
+import zlib
 
 now = datetime.datetime.now()
+
+sizeDict = {
+    "uint8" : 1,
+    "int8" : 1,
+    "char" : 1,
+    "uint16" : 2,
+    "int16" : 2,
+    "uint32" : 4,
+    "int32" : 4,
+    "int" : 4,
+    "float": 4,
+    "double": 8
+}
+
+def crc(fileName):
+    prev = 0
+    for eachLine in open(fileName,"rb"):
+        prev = zlib.crc32(eachLine, prev)
+    return "%X"%(prev & 0xFFFFFFFF)
 
 
 class fieldDesc:
@@ -25,6 +45,7 @@ class fieldDesc:
         self.isVarLen = False
         self.format = 'default'
         self.arrayLen = 1
+        self.size = 1
         self.isRequired = False
         self.desc = ""
 
@@ -32,14 +53,38 @@ class packetDesc:
     def __init__(self, name):
         self.name = name
         self.desc =""
-        self.fields = {}
+        self.fields = []
+        self.fieldCount=0
+        self.respondsTo = {}
+        self.requests = {}
+
+    def addField(self, field):
+        field.id = self.fieldCount
+        self.fields.append(field)
+        self.fieldCount+=1
 
 class protocolDesc:
     def __init__(self, name):
         self.name = name
-        self.fields = {}
-        self.packets = {}
+        self.desc = ""
+        self.hash = ""
+        self.fields = []
+        self.fieldIdx = {}
+        self.fieldId =0
+        self.packets = []
+        self.packetIdx ={}
+        self.packetId =0
 
+    def addField(self,field):
+        field.id = self.fieldId
+        self.fields.append(field)
+        self.fieldIdx[field.name] = self.fieldId
+        self.fieldId+=1
+
+    def addPacket(self,packet):
+        self.packets.append(packet)
+        self.packetIdx[packet.name] = self.packetId
+        self.packetId+=1
 
 def parseXML(xmlfile):
 
@@ -52,8 +97,9 @@ def parseXML(xmlfile):
     # create empty list for Fields
     protocol = protocolDesc(root.attrib['name'])
 
-    # iterate field items
-    count = 0;
+    if('desc' in root.attrib):
+        protocol.desc = root.attrib['desc']
+
 
     #parse out fields
     for field in root.findall('./Fields/Field'):
@@ -74,9 +120,15 @@ def parseXML(xmlfile):
                 arrayLen = int(m.group(1))
             strType = strType[0:m.start()]
 
+
         newField = fieldDesc(name, strType)
-        fieldDesc.id = count
-        count+=1
+
+        strType = strType.replace('_t','')
+
+        if not (strType in sizeDict):
+            print "Unsupported type: " + strType
+
+        newField.size = sizeDict[strType]
 
         if(array):
             newField.isArray = True
@@ -84,6 +136,13 @@ def parseXML(xmlfile):
                 newField.arrayLen = arrayLen
             else:
                 newField.isVarLen = True
+                if('max-len' in field.attrib):
+                    newField.arrayLen = int(field.attrib['max-len'])
+                else:
+                    newField.arrayLen = 255
+
+            newField.size = newField.arrayLen
+
 
         if('format' in field.attrib):
             newField.format = field.attrib['format']
@@ -91,10 +150,13 @@ def parseXML(xmlfile):
         if('desc' in field.attrib):
             newField.desc = field.attrib['desc']
 
+        if('max-len' in field.attrib):
+            newField.arrayLen = field.attrib['max-len']
+
         if(name in protocol.fields):
             print 'ERROR Duplicate Field Name!: ' + name
 
-        protocol.fields[name] = newField
+        protocol.addField(newField)
 
 
     #get all packet types
@@ -103,21 +165,26 @@ def parseXML(xmlfile):
         desc =""
         newPacket = packetDesc(name)
 
-        if(name in protocol.packets):
+        if(name in protocol.packetIdx):
             print 'ERROR Duplicate Packet Name!: ' + name
 
         if('desc' in packet.attrib):
             desc = packet.attrib['desc']
+
+        if('response' in packet.attrib):
+            newPacket.requests[packet.attrib['response']] = 0
 
         #get all fields declared for packet
         for pfield in packet:
 
             pfname = pfield.attrib['name']
             strReq =""
-            if not (pfname in protocol.fields):
+            if not (pfname in protocol.fieldIdx):
                 print 'ERROR Field not declared: ' + pfname
 
-            fieldCopy = copy.deepcopy(protocol.fields[pfname])
+            #get id of field and make a copy
+            idx = protocol.fieldIdx[pfname]
+            fieldCopy = copy.deepcopy(protocol.fields[idx])
 
             if('req' in pfield.attrib):
                 strReq = pfield.attrib['req']
@@ -127,13 +194,17 @@ def parseXML(xmlfile):
             if('desc' in pfield.attrib):
                 fieldCopy.desc = pfield.attrib['desc']
 
-            newPacket.fields[pfname] = fieldCopy
+            newPacket.addField(fieldCopy)
             newPacket.desc = desc
 
-        protocol.packets[name] = newPacket
+        protocol.addPacket(newPacket)
 
 
-
+    for packet in protocol.packets:
+        print str(packet.requests)
+        for request in packet.requests:
+            idx = protocol.packetIdx[request]
+            protocol.packets[idx].respondsTo[packet.name] = 0
 
     # return news items list
     return protocol
@@ -154,12 +225,12 @@ def createHeaderC(protocol):
     output.write('#include \"var_packet.h\"\n\n\n')
 
     output.write('//Declare extern field descriptors\n')
-    for field in protocol.fields.values():
+    for field in protocol.fields:
         output.write('extern field_desc_t* VF_' + field.name.upper()+ ';\n')
 
     output.write('\n\n')
     output.write('//Declare extern packet descriptors\n')
-    for packet in protocol.packets.values():
+    for packet in protocol.packets:
         output.write('extern packet_desc_t* VP_' + packet.name.upper()+ ';\n')
 
     output.write('\n\n')
@@ -182,13 +253,13 @@ def createSourceC(protocol):
     output.write('#include \"'+ protocol.name + '.h\"\n\n')
 
     output.write('//Declare extern field descriptors\n')
-    for field in protocol.fields.values():
+    for field in protocol.fields:
         print field
         output.write('field_desc_t* VF_' + field.name.upper()+ ';\n')
 
     output.write('\n\n')
     output.write('//Declare extern packet descriptors\n')
-    for packet in protocol.packets.values():
+    for packet in protocol.packets:
         output.write('packet_desc_t* VP_' + packet.name.upper()+ ';\n')
     output.write('\n\n\n')
 
@@ -196,7 +267,7 @@ def createSourceC(protocol):
     output.write('void protocol_init()\n{\n\n')
     output.write('//Set up Field descriptors\n')
     #fields
-    for field in protocol.fields.values():
+    for field in protocol.fields:
         output.write('\tVF_' + field.name.upper()+ '= new_field_desc( \"'+field.name+'\" , sizeof('+ field.type +') , '+str(field.arrayLen)+');\n')
 
         if(field.isVarLen):
@@ -208,10 +279,10 @@ def createSourceC(protocol):
 
     output.write('\n\n\n')
     output.write('//Set up packet descriptors\n')
-    for packet in protocol.packets.values():
+    for packet in protocol.packets:
         output.write('\tVP_' + packet.name.upper()+ '= new_packet_desc(\"'+ packet.name+'\") ;\n')
 
-        for pfield in packet.fields.values():
+        for pfield in packet.fields:
             output.write('\t\tpacket_desc_add_field( VP_'+ packet.name.upper() +', VF_'+ pfield.name.upper()+', '+ str(pfield.isRequired).lower()+');\n')
             #packet_desc_add_field(packet_desc_t* desc, field_desc_t* fieldDesc);
         output.write('\n')
@@ -221,41 +292,96 @@ def createSourceC(protocol):
 #    text_file.write(output.getvalue())
 #    text_file.close()
 
-    print output.getvalue()
+    #print output.getvalue()
 
 
 def createDoc(protocol):
     output = StringIO.StringIO()
-    output.write('# ' + protocol.name + '\n\n')
+    output.write('# ' + protocol.name + '\n')
+    output.write('* Generated: '+now.strftime("%m/%d/%y")+'<br/>\n')
+    output.write('* CRC: '+protocol.hash+'\n\n')
+    output.write('> ' + protocol.desc + '\n\n')
     output.write('## Packet Types:\n\n')
 
-    for packet in protocol.packets.values():
-        output.write('\n------\n')
+
+    for packet in protocol.packets:
         output.write('### ' + packet.name + '\n')
         output.write(packet.desc + '\n\n')
+        requestCount = len(packet.requests)
+        respondsToCount = len(packet.respondsTo)
+        if(requestCount > 0):
+            output.write('* *Requests: ')
+            first = True
+            for req in packet.requests:
+                if(first):
+                    first = False
+                else:
+                    output.write(', ')
+                output.write(req)
+            output.write('*\n\n')
 
-        output.write('|***Field***|')
-        for pfield in packet.fields.values():
-            output.write(pfield.name + '|')
+        if(respondsToCount > 0):
+            output.write('* Responds To: ')
+            first = True
+            for resp in packet.respondsTo:
+                if(first):
+                    first = False
+                else:
+                    output.write(', ')
+                output.write(resp)
+            output.write('*\n\n')
+
+
+        count =0
+        output.write('|***Byte***|')
+        for pfield in packet.fields:
+            if(pfield.size > 4):
+                output.write(str(count)+'| . . . . . . . |'+str(count+pfield.size -1))
+                count+=pfield.size
+            else:
+                for x in range(pfield.size):
+                    output.write(str(count) + '|')
+                    count+=1
 
         output.write('\n|---|')
-        for pfield in packet.fields.values():
-            output.write('---|')
+        for pfield in packet.fields:
+            span = pfield.size
+            if(span > 4):
+                span = 4
+            for x in range(span):
+                output.write('---|')
 
-        output.write('\n|***Type***|')
-        for pfield in packet.fields.values():
+        output.write('\n|***Field***')
+        for pfield in packet.fields:
+            span = pfield.size
+            if(span > 4):
+                span = 4
+            output.write('<td colspan=\''+str(span)+'\'>')
+            if(pfield.isRequired):
+                output.write('***'+pfield.name+'***')
+            else:
+                output.write(pfield.name)
+
+
+        output.write('\n|***Type***')
+        for pfield in packet.fields:
+            span = pfield.size
+            if(span > 4):
+                span = 4
+            output.write('<td colspan=\''+str(span)+'\'>')
             output.write(pfield.type)
             if(pfield.isArray):
                 if(pfield.isVarLen):
-                    output.write('[n*]')
+                    output.write('[0-'+ str(pfield.size)+' ]')
                 else:
-                    output.write('['+str(pfield.arrayLen)+']')
-            output.write('|')
+                    output.write('['+str(pfield.size)+']')
 
         output.write('\n\n')
-        for pfield in packet.fields.values():
-            output.write('***'+ pfield.name+'*** : ' + pfield.desc +'<br/>\n')
-        #output.write('\n')
+
+        for pfield in packet.fields:
+            output.write('>***'+ pfield.name+'*** : ' + pfield.desc +'<br/>\n')
+        output.write('\n------\n')
+
 
 
 
@@ -271,7 +397,9 @@ def main():
         print arg
 
     xmlFile = sys.argv[1]
+    fileCrc = crc(xmlFile)
     protocol = parseXML(xmlFile)
+    protocol.hash = fileCrc
     createHeaderC(protocol)
     createSourceC(protocol)
     createDoc(protocol)
