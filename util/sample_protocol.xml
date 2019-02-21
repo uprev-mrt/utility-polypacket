@@ -25,7 +25,6 @@
     <Packet name="SetData" desc="Message to set data in node" response="RespData">
       <Field name="src" req="true"/>
       <Field name="dst" req="true"/>
-      <Field name="cmd" req="true" />
       <Field name="sensorA"/>
       <Field name="sensorB"/>
       <Field name="sensorName"/>
@@ -34,7 +33,6 @@
     <Packet name="GetData" desc="Message to get data from node" response="RespData">
       <Field name="src" req="true"/>
       <Field name="dst" req="true"/>
-      <Field name="cmd" req="true" />
       <Field name="sensorA"/>
       <Field name="sensorB"/>
       <Field name="sensorName"/>
@@ -43,7 +41,6 @@
     <Packet name="RespData" desc="Response to get/set messages" >
       <Field name="src" req="true"/>
       <Field name="dst" req="true"/>
-      <Field name="cmd" req="true" />
       <Field name="sensorA"/>
       <Field name="sensorB"/>
       <Field name="sensorName"/>

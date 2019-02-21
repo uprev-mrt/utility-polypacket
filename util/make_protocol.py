@@ -29,6 +29,18 @@ sizeDict = {
     "double": 8
 }
 
+
+metaDoc = "### Header\n" +\
+          "Every Packet has a standard Header before the data, and a 2 byte checksum after the data.\n\n" +\
+          "|***Byte***|0|1|2|3|4|\n" +\
+          "|---|---|---|---|---|---|\n" +\
+          "|***Field***<td colspan=\'1\'>***Id***<td colspan=\'2\'>***Len***<td colspan=\'2\'>***Token***\n" +\
+          "|***Type***<td colspan=\'1\'>uint8<td colspan=\'2\'>uint16<td colspan=\'2\'>uint16\n\n" +\
+          ">***Id*** : The ID used to identify the type of packet, packet Ids are assigned and managed automatically<br/>\n" +\
+          ">***Len*** : This is the len of the packet data, this does not include the header and checksum<br/>\n" +\
+          ">***Token*** : A unique randomly generated token. Each packet is tokenized to provide functions like ack/retry and preventing duplicates <br/>\n" +\
+          "----\n"
+
 def crc(fileName):
     prev = 0
     for eachLine in open(fileName,"rb"):
@@ -300,8 +312,11 @@ def createDoc(protocol):
     output.write('# ' + protocol.name + '\n')
     output.write('* Generated: '+now.strftime("%m/%d/%y")+'<br/>\n')
     output.write('* CRC: '+protocol.hash+'\n\n')
-    output.write('> ' + protocol.desc + '\n\n')
-    output.write('## Packet Types:\n\n')
+    output.write('##### ' + protocol.desc + '\n\n')
+    output.write('----\n')
+    output.write(metaDoc +'')
+    output.write('# Packet Types:\n\n')
+
 
 
     for packet in protocol.packets:
@@ -321,7 +336,7 @@ def createDoc(protocol):
             output.write('*\n\n')
 
         if(respondsToCount > 0):
-            output.write('* Responds To: ')
+            output.write('* *Responds To: ')
             first = True
             for resp in packet.respondsTo:
                 if(first):
@@ -398,6 +413,7 @@ def main():
 
     xmlFile = sys.argv[1]
     fileCrc = crc(xmlFile)
+
     protocol = parseXML(xmlFile)
     protocol.hash = fileCrc
     createHeaderC(protocol)
