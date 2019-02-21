@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+  <head>
+   <style>
+    body {
+      background-color: white;
+    }
+    h1  {
+      color: #044a63;
+    }
+
+    .pTable{
+      font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+      border-collapse: collapse;
+      border: 1px solid #ddd;
+      width: 80%;
+      padding: 8px;
+
+    }
+    .pTable tr:nth-child(even){background-color: #f2f2f2;}
+    .pTable tr:hover {background-color: #ddd;}
+
+    .pTable th {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  text-align: left;
+  background-color: #044a63;
+  color: white;
+}
+   </style>
+  </head>
+<body>
+  <h1> SampleProtocol</h1>
+  * Generated: 02/21/19<br/>
+  * CRC: 3F1D13C5
+
+  <h3> This is a sample protocol made up to demonstrate features of the PolyPacket code generation tool. The idea   is to have a tool that can automatically create parseable/serializable messaging for embedded systems.</h3>
+
+
+  <table class="pTable">
+  	<tr>		<th>Byte</th>		<th>0</th>
+  		<th>1</th>
+  		<th>2</th>
+  		<th>3</th>
+  		<th>4</th>
+  		<th>5</th>
+  		<th>6</th>
+  		<th>7</th>
+  		<th>8</th>
+  		<th>9</th>
+  		<th>10</th>
+  		<th colspan="2"> . . . . . . . </th>
+		<th>25</th>
+  	</tr>
+  	<tr>
+  		<th>Byte</th>		<td colspan='2'>src</td>
+  		<td colspan='2'>dst</td>
+  		<td colspan='2'>sensorA</td>
+  		<td colspan='4'>sensorB</td>
+  		<td colspan='4'>sensorName</td>
+  	</tr>
+  	<tr>
+  		<th>Type</th><td colspan='2'>uint16_t</td>
+  <td colspan='2'>uint16_t</td>
+  <td colspan='2'>int16</td>
+  <td colspan='4'>int</td>
+  <td colspan='4'>char[0-16 ]</td>
+  </table>
+
+  >***src*** : Source address of message<br/>
+  >***dst*** : Desitination address of message<br/>
+  >***sensorA*** : Value of Sensor A<br/>
+  >***sensorB*** : Value of Sensor B<br/>
+  >***sensorName*** : Name of sensor<br/>
+
+  ------
+  <h3> GetData</h3>
+  Message to get data from node
+
+  * *Requests: RespData*
+
+  <table class="pTable">
+  	<tr>		<th>Byte</th>		<th>0</th>
+  		<th>1</th>
+  		<th>2</th>
+  		<th>3</th>
+  		<th>4</th>
+  		<th>5</th>
+  		<th>6</th>
+  		<th>7</th>
+  		<th>8</th>
+  		<th>9</th>
+  		<th>10</th>
+  		<th colspan="2"> . . . . . . . </th>
+		<th>25</th>
+  	</tr>
+  	<tr>
+  		<th>Byte</th>		<td colspan='2'>src</td>
+  		<td colspan='2'>dst</td>
+  		<td colspan='2'>sensorA</td>
+  		<td colspan='4'>sensorB</td>
+  		<td colspan='4'>sensorName</td>
+  	</tr>
+  	<tr>
+  		<th>Type</th><td colspan='2'>uint16_t</td>
+  <td colspan='2'>uint16_t</td>
+  <td colspan='2'>int16</td>
+  <td colspan='4'>int</td>
+  <td colspan='4'>char[0-16 ]</td>
+  </table>
+
+  >***src*** : Source address of message<br/>
+  >***dst*** : Desitination address of message<br/>
+  >***sensorA*** : Value of Sensor A<br/>
+  >***sensorB*** : Value of Sensor B<br/>
+  >***sensorName*** : Name of sensor<br/>
+
+  ------
+  <h3> RespData</h3>
+  Response to get/set messages
+
+  * *Responds To: GetData, SetData*
+
+  <table class="pTable">
+  	<tr>		<th>Byte</th>		<th>0</th>
+  		<th>1</th>
+  		<th>2</th>
+  		<th>3</th>
+  		<th>4</th>
+  		<th>5</th>
+  		<th>6</th>
+  		<th>7</th>
+  		<th>8</th>
+  		<th>9</th>
+  		<th>10</th>
+  		<th colspan="2"> . . . . . . . </th>
+		<th>25</th>
+  	</tr>
+  	<tr>
+  		<th>Byte</th>		<td colspan='2'>src</td>
+  		<td colspan='2'>dst</td>
+  		<td colspan='2'>sensorA</td>
+  		<td colspan='4'>sensorB</td>
+  		<td colspan='4'>sensorName</td>
+  	</tr>
+  	<tr>
+  		<th>Type</th><td colspan='2'>uint16_t</td>
+  <td colspan='2'>uint16_t</td>
+  <td colspan='2'>int16</td>
+  <td colspan='4'>int</td>
+  <td colspan='4'>char[0-16 ]</td>
+  </table>
+
+  >***src*** : Source address of message<br/>
+  >***dst*** : Desitination address of message<br/>
+  >***sensorA*** : Value of Sensor A<br/>
+  >***sensorB*** : Value of Sensor B<br/>
+  >***sensorName*** : Name of sensor<br/>
+
+  ------
+  <h3> blockReq</h3>
+  This packet is used to request a block of data from the host during Ota updates
+
+  * *Requests: blockResp*
+
+  <table class="pTable">
+  	<tr>		<th>Byte</th>		<th>0</th>
+  		<th>1</th>
+  		<th>2</th>
+  		<th>3</th>
+  		<th>4</th>
+  		<th>5</th>
+  		<th>6</th>
+  		<th>7</th>
+  		<th>8</th>
+  		<th>9</th>
+  		<th>10</th>
+  		<th>11</th>
+  	</tr>
+  	<tr>
+  		<th>Byte</th>		<td colspan='2'>src</td>
+  		<td colspan='2'>dst</td>
+  		<td colspan='4'>blockOffset</td>
+  		<td colspan='4'>blockSize</td>
+  	</tr>
+  	<tr>
+  		<th>Type</th><td colspan='2'>uint16_t</td>
+  <td colspan='2'>uint16_t</td>
+  <td colspan='4'>uint32_t</td>
+  <td colspan='4'>uint32_t</td>
+  </table>
+
+  >***src*** : Source address of message<br/>
+  >***dst*** : Desitination address of message<br/>
+  >***blockOffset*** : Offset of block being requested<br/>
+  >***blockSize*** : Size of block being requested <br/>
+
+  ------
+  <h3> blockResp</h3>
+  This packet sends a block of ota data to the node as a response to a block request
+
+  * *Responds To: blockReq*
+
+  <table class="pTable">
+  	<tr>		<th>Byte</th>		<th>0</th>
+  		<th>1</th>
+  		<th>2</th>
+  		<th>3</th>
+  		<th>4</th>
+  		<th>5</th>
+  		<th>6</th>
+  		<th>7</th>
+  		<th>8</th>
+  		<th>9</th>
+  		<th>10</th>
+  		<th>11</th>
+  		<th>12</th>
+  		<th colspan="2"> . . . . . . . </th>
+		<th>75</th>
+  	</tr>
+  	<tr>
+  		<th>Byte</th>		<td colspan='2'>src</td>
+  		<td colspan='2'>dst</td>
+  		<td colspan='4'>blockOffset</td>
+  		<td colspan='4'>blockSize</td>
+  		<td colspan='4'>blockData</td>
+  	</tr>
+  	<tr>
+  		<th>Type</th><td colspan='2'>uint16_t</td>
+  <td colspan='2'>uint16_t</td>
+  <td colspan='4'>uint32_t</td>
+  <td colspan='4'>uint32_t</td>
+  <td colspan='4'>uint8_t[64]</td>
+  </table>
+
+</body>
+</html>

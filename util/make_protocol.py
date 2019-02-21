@@ -404,6 +404,100 @@ def createDoc(protocol):
     text_file.write(output.getvalue())
     text_file.close()
 
+def createDocHtml(protocol):
+    output = StringIO.StringIO()
+    output.write('<h1> ' + protocol.name + '</h1>\n')
+    output.write('* Generated: '+now.strftime("%m/%d/%y")+'<br/>\n')
+    output.write('* CRC: '+protocol.hash+'\n\n')
+    output.write('<h3> ' + protocol.desc + '</h3>\n\n')
+    output.write('<hr>\n')
+    output.write(metaDoc +'')
+    output.write('<h2> Packet Types: </h2>\n\n')
+
+
+
+    for packet in protocol.packets:
+        output.write('<h3> ' + packet.name + '</h3>\n')
+        output.write(packet.desc + '\n\n')
+        requestCount = len(packet.requests)
+        respondsToCount = len(packet.respondsTo)
+        if(requestCount > 0):
+            output.write('* *Requests: ')
+            first = True
+            for req in packet.requests:
+                if(first):
+                    first = False
+                else:
+                    output.write(', ')
+                output.write(req)
+            output.write('*\n\n')
+
+        if(respondsToCount > 0):
+            output.write('* *Responds To: ')
+            first = True
+            for resp in packet.respondsTo:
+                if(first):
+                    first = False
+                else:
+                    output.write(', ')
+                output.write(resp)
+            output.write('*\n\n')
+
+
+        count =0
+        output.write("<table class=\"pTable\">\n\t<tr>")
+        output.write('\t\t<th>Byte</th>')
+        for pfield in packet.fields:
+            if(pfield.size > 4):
+                output.write('\t\t<th>' + str(count)+'</th>\n\t\t<th colspan=\"2\"> . . . . . . . </th>\r\t\t<th>'+str(count+pfield.size -1) + '</th>\n')
+                count+=pfield.size
+            else:
+                for x in range(pfield.size):
+                    output.write('\t\t<th>'+str(count) + '</th>\n')
+                    count+=1
+
+        output.write('\t</tr>\n\t<tr>\n')
+
+        output.write('\t\t<th>Byte</th>')
+        for pfield in packet.fields:
+            span = pfield.size
+            if(span > 4):
+                span = 4
+            output.write('\t\t<td colspan=\''+str(span)+'\'>')
+            if(pfield.isRequired):
+                output.write(pfield.name)
+            else:
+                output.write(pfield.name)
+            output.write('</td>\n')
+
+        output.write('\t</tr>\n\t<tr>\n')
+        output.write('\t\t<th>Type</th>')
+        for pfield in packet.fields:
+            span = pfield.size
+            if(span > 4):
+                span = 4
+            output.write('<td colspan=\''+str(span)+'\'>')
+            output.write(pfield.type)
+            if(pfield.isArray):
+                if(pfield.isVarLen):
+                    output.write('[0-'+ str(pfield.size)+' ]')
+                else:
+                    output.write('['+str(pfield.size)+']')
+            output.write('</td>\n')
+
+
+        output.write('</table>\n\n')
+
+        for pfield in packet.fields:
+            output.write('>***'+ pfield.name+'*** : ' + pfield.desc +'<br/>\n')
+        output.write('\n------\n')
+
+
+
+
+    text_file = open("Output.html", "w")
+    text_file.write(output.getvalue())
+    text_file.close()
 
 
 def main():
@@ -419,6 +513,7 @@ def main():
     createHeaderC(protocol)
     createSourceC(protocol)
     createDoc(protocol)
+    createDocHtml(protocol)
 
 if __name__ == "__main__":
     main()
