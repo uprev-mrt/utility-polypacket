@@ -7,39 +7,43 @@
 
 #include "poly_field.h"
 
-field_desc_t* new_field_desc(const char* name, int objSize, uint32_t len, eFieldFormat format)
+poly_field_desc_t* new_poly_field_desc(const char* name, int objSize, uint32_t len, eFieldFormat format)
 {
-  static int id=0;
-  field_desc_t* new_desc = (field_desc_t*) malloc(sizeof(field_desc_t));
+  poly_field_desc_t* new_desc = (poly_field_desc_t*) malloc(sizeof(poly_field_desc_t));
   new_desc->mName = name;
-  new_desc->mHash = id++; //TODO use actual hashing
   new_desc->mFormat = format;
   new_desc->mObjSize = objSize;
   new_desc->mLen = len;
-  new_desc->mVarSize = false;
+  new_desc->mVarLen = false;
+  new_desc->mNullTerm = false;
 
   return new_desc;
 }
 
-void poly_field_init(poly_field_t* field, poly_field_desc_t* desc, void* data)
+void poly_field_init(poly_field_t* field, poly_field_desc_t* desc)
 {
-  field->mSize = desc->mObjSize * desc->mLen
-  field->mData = data
+  field->mSize = desc->mObjSize * desc->mLen;
   field->mDesc = desc;
   field->mPresent = false;
-
-  return field;
 }
 
-void poly_field_parse(poly_field_t* field, uint8_t* data)
+void poly_field_bind(poly_field_t* field, uint8_t* data)
+{
+  field->mData = data;
+}
+
+int poly_field_parse(poly_field_t* field, uint8_t* data)
 {
   int idx =0;
 
   //if field is variable length, the first byte is the length
-  if(field->mVarLen)
+  if(field->mDesc->mVarLen)
   {
     field->mSize = data[idx++];
   }
 
   memcpy(field->mData, &data[idx], field->mSize);
+  idx+= field->mSize;
+
+  return idx;
 }

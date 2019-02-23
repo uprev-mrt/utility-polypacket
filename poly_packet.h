@@ -5,16 +5,19 @@
   *@date 02/19/2019
   */
 
+#pragma once
 #include "poly_field.h"
 
 
-enum ePacketStatus {
+typedef enum PacketStatus {
   PACKET_VALID = -400,
   PACKET_INCOMPLETE,
   PACKET_BAD_CHECKSUM,
   PACKET_PARSING_ERROR,
   INVALID_PACKET_TYPE
-};
+}ePacketStatus;
+
+#define PACKET_METADATA_SIZE (sizeof(poly_packet_hdr_t) + sizeof(poly_packet_ftr_t))
 
 //[ 1 byte payloadId] [ 2 byte payload len ]  [2 byte token] [ mManifestSize bytes manifest] [n byte variable data ] [2 byte checksum]
 
@@ -22,12 +25,14 @@ enum ePacketStatus {
   *@brief Variable Packet Descriptor
   */
 typedef struct{
-  uint8_t mTypeId;       //unique id for packet type
-  const char* mName;        //friendly name for packet type
-  poly_field_desc_t** mFields;   //Array of field descriptors
-  int mMaxFields;           //max fields
-  int mFieldCount;          //number of field descriptors
-  uin8_t mManifestSize;     //size in bytes of manifest
+  uint8_t mTypeId;              //unique id for packet type
+  const char* mName;            //friendly name for packet type
+  poly_field_desc_t** mFields;  //Array of field descriptors
+  bool* mRequirementMap;        //map of which fields are required
+  int mMaxFields;               //max fields
+  int mFieldCount;              //number of field descriptors
+  uint8_t mOptionalFieldCount;  //number of fields that are optional (used to calc manifest size)
+  uint8_t mManifestSize;        //size in bytes of manifest
 }poly_packet_desc_t;
 
 
@@ -47,8 +52,10 @@ typedef struct{
 typedef struct{
   poly_packet_hdr_t mHdr;
   poly_packet_desc_t* mDesc;     //prt to packet descriptor
-  poly_field_t* mFields;     //array of fields contained in packet
-  poly_packet_ftr_t mFooter; //packet footer
+  poly_field_t* mFields;        //array of fields contained in packet
+  poly_packet_ftr_t mFooter;    //packet footer
+  bool mAllocated;             //indicates if packet has allocated its own memory
+  bool mBound;                //indicates if packet has been bound to struct/memory
 }poly_packet_t;
 
 
@@ -64,8 +71,31 @@ poly_packet_desc_t* new_poly_packet_desc(const char* name , int maxFields);
   *@brief adds field descriptor to packet descriptor
   *@param poly_packet_desc ptr to packet descriptor
   *@param poly_field_desc ptr to field descriptor to be added
+  *@param required indicates if field is a required in packet
   */
-void poly_packet_desc_add_field(poly_packet_desc_t* desc, poly_field_desc_t* fieldDesc);
+void poly_packet_desc_add_field(poly_packet_desc_t* desc, poly_field_desc_t* fieldDesc, bool required);
+
+
+/**
+  *@brief creates a new poly_packet_t in memory and allocates memory for fields
+  *@param desc ptr to packet descriptor
+  *@return ptr to newly created poly_packet_t
+  */
+poly_packet_t* new_poly_packet(poly_packet_desc_t* desc);
+
+/**
+  *@brief frees memory from packet
+  *@param packet ptr to packet being freed
+  */
+void poly_packet_destroy(poly_packet_t* packet);
+
+/**
+  *@brief gets ptr to field from descriptor
+  *@param packet ptr to packet
+  *@param desc ptr to field descriptor
+  *@return ptr to field
+  */
+poly_field_t* poly_packet_get_field(poly_packet_t* packet, poly_field_desc_t* desc);
 
 
 /**
@@ -75,7 +105,7 @@ void poly_packet_desc_add_field(poly_packet_desc_t* desc, poly_field_desc_t* fie
   *@return type id of packet
   *@return PACKET_INCOMPLETE if len is to short to identify
   */
-int poly_packet_id(uin8_t* data, int len);
+int poly_packet_id(uint8_t* data, int len);
 
 /**
   *@brief parses a packet from raw data buffer
@@ -89,4 +119,4 @@ int poly_packet_id(uin8_t* data, int len);
   *@return PACKET_BAD_CHECKSUM if the checksum is incorrect (likely bit error)
   *@return PACKET_PARSING_ERROR if len is longer than it should be (likely missed a delimiter)
   */
-ePacketStatus poly_packet_parse(poly_packet_t* packet, poly_packet_desc_t* dec, uin8_t* data, int len);
+ePacketStatus poly_packet_parse(poly_packet_t* packet, poly_packet_desc_t* dec, uint8_t* data, int len);

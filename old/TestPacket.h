@@ -6,7 +6,10 @@
   */
 
 #pragma once
-#include "PolyPacket.h"
+#include "poly_packet.h"
+#include "poly_field.h"
+#include "poly_packet.c"
+#include "poly_field.c"
 using namespace std;
 
 namespace Utilities{
