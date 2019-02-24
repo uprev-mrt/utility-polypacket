@@ -131,4 +131,4 @@ int poly_packet_pack(poly_packet_t* packet, uint8_t* data);
   *@param buf buffer to print to
   *@retun len of string
   */
-int poly_packet_print_json(poly_packet_t* packet, char* buf);
+int poly_packet_print_json(poly_packet_t* packet, char* buf, bool printMeta);

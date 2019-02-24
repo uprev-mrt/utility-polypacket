@@ -240,7 +240,7 @@ int poly_packet_print_json(poly_packet_t* packet, char* buf, bool printMeta)
   int idx =0;
   poly_field_t* field;
 
-  sprintf(&buf[idx],"{");
+  idx+= sprintf(&buf[idx],"{");
 
   if(printMeta)
   {
@@ -259,10 +259,12 @@ int poly_packet_print_json(poly_packet_t* packet, char* buf, bool printMeta)
 
     if(field->mPresent)
     {
-      idx+= sprintf(&buf[idx],"\"%s\" : ", field->mDesc->mName );
-
-
+      idx+= poly_field_print_json(field, &buf[idx]);
     }
+    printf(" SOFAR: %s\n",buf);
   }
 
+  idx+= sprintf(&buf[idx],"}");
+
+  return idx;
 }

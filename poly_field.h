@@ -88,7 +88,7 @@ void poly_field_bind(poly_field_t* field, uint8_t* data);
   *@param printMeta show meta data in json
   *@returns size of parsed data
   */
-int poly_field_parse(poly_field_t* field, uint8_t* data, bool printMeta);
+int poly_field_parse(poly_field_t* field, uint8_t* data);
 
 /**
   *@brief prints out field in json format
