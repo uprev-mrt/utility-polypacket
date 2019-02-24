@@ -120,11 +120,11 @@ ePacketStatus poly_packet_parse(poly_packet_t* packet, poly_packet_desc_t* desc,
   }
 
   //copy over header information
-  memcpy((void*)&packet->mHdr, (void*)data, sizeof(poly_packet_hdr_t));
+  memcpy((void*)&packet->mHeader, (void*)data, sizeof(poly_packet_hdr_t));
   idx += sizeof(poly_packet_hdr_t);
 
   //get expected size of packet from header
-  expectedLen = packet->mHdr.mDataLen + PACKET_METADATA_SIZE;
+  expectedLen = packet->mHeader.mDataLen + PACKET_METADATA_SIZE;
 
   //if sizes do not match, there is an error
   if(len < expectedLen)
@@ -182,25 +182,54 @@ ePacketStatus poly_packet_parse(poly_packet_t* packet, poly_packet_desc_t* desc,
     }
   }
 
-  //we should just have the footer left after this
-  if(idx != (len - sizeof(packet->mFooter)))
-  {
-    return PACKET_PARSING_ERROR;
-  }
-
-  memcpy((void*)&packet->mFooter, (void*)&data[idx], sizeof(packet->mFooter) );
-  idx += sizeof(packet->mFooter.mCheckSum);
-
   // validate checksum
-  for(int i=0; i < packet->mHdr.mDataLen; i++)
+  for(int i=0; i < packet->mHeader.mDataLen; i++)
   {
     checkSumComp += data[sizeof(poly_packet_hdr_t) +i];
   }
 
-  if(packet->mFooter.mCheckSum != checkSumComp)
+  if(packet->mHeader.mCheckSum != checkSumComp)
   {
     return PACKET_BAD_CHECKSUM;
   }
 
   return PACKET_VALID;
+}
+
+int poly_packet_pack(poly_packet_t* packet, uint8_t* data)
+{
+  int idx=0;
+  poly_field_t* field;
+  packet->mHeader.mCheckSum =0;
+  //Skip header for now, this will be written in after we get length and checksum
+  idx+=sizeof(poly_packet_hdr_t);
+
+  //copy fields
+  for(int i=0; i < packet->mDesc->mFieldCount; i++)
+  {
+    field = &packet->mFields[i];
+    if(field->mPresent)
+    {
+      //if its a variable length field, put int length first (max 255)
+      if(field->mDesc->mVarLen)
+      {
+        data[idx++] = field->mSize;
+      }
+
+      memcpy(&data[idx], field->mData, field->mSize);
+      idx+= field->mSize;
+    }
+
+  }
+
+  //fill out header
+  packet->mHeader.mDataLen = idx - sizeof(poly_packet_hdr_t);
+
+  //get checksum
+  for(int i =0; i < idx; i++)
+  {
+    packet->mHeader.mCheckSum +=  data[i + sizeof(poly_packet_hdr_t)];
+  }
+
+  memcpy((void*)&data[0], (void*)&packet->mHeader, sizeof(poly_packet_hdr_t));
 }

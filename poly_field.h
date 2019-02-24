@@ -33,7 +33,7 @@ typedef struct{
 typedef struct{
   uint8_t* mData;       //buffer where field data is stored
   poly_field_desc_t* mDesc;    //pointer to descriptor
-  uint16_t mSize;         //actual size (used for variable len fields)
+  uint8_t mSize;         //actual size (used for variable len fields)
   bool mPresent;          //indicated field is present in packet
 }poly_field_t;
 

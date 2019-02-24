@@ -17,7 +17,7 @@ typedef enum PacketStatus {
   INVALID_PACKET_TYPE
 }ePacketStatus;
 
-#define PACKET_METADATA_SIZE (sizeof(poly_packet_hdr_t) + sizeof(poly_packet_ftr_t))
+#define PACKET_METADATA_SIZE (sizeof(poly_packet_hdr_t))
 
 //[ 1 byte payloadId] [ 2 byte payload len ]  [2 byte token] [ mManifestSize bytes manifest] [n byte variable data ] [2 byte checksum]
 
@@ -40,20 +40,16 @@ typedef struct{
   uint8_t mTypeId; //id of payload type
   uint16_t mDataLen;  //expected len of packet data (not including header and footer)
   uint16_t mToken;    //token for packet (used for acknowledgement/ echo cancellation in mesh nets)
-}poly_packet_hdr_t;
-
-typedef struct{
   uint16_t mCheckSum; //checksum of packet data
-}poly_packet_ftr_t;
+}poly_packet_hdr_t;
 
 /**
   *@brief Variable packet
   */
 typedef struct{
-  poly_packet_hdr_t mHdr;
+  poly_packet_hdr_t mHeader;
   poly_packet_desc_t* mDesc;     //prt to packet descriptor
   poly_field_t* mFields;        //array of fields contained in packet
-  poly_packet_ftr_t mFooter;    //packet footer
   bool mAllocated;             //indicates if packet has allocated its own memory
   bool mBound;                //indicates if packet has been bound to struct/memory
 }poly_packet_t;
@@ -120,3 +116,11 @@ int poly_packet_id(uint8_t* data, int len);
   *@return PACKET_PARSING_ERROR if len is longer than it should be (likely missed a delimiter)
   */
 ePacketStatus poly_packet_parse(poly_packet_t* packet, poly_packet_desc_t* dec, uint8_t* data, int len);
+
+/**
+  *@brief packs data into byte array
+  *@param packet ptr to packet
+  *@pre data ptr to memory to store packed data
+  *@return length of packed data
+  */
+int poly_packet_pack(poly_packet_t* packet, uint8_t* data);
