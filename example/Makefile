@@ -8,7 +8,7 @@ default: poly
 
 poly: $(obj)
 	$(CC) $(cflags) -o $@ $^  $(inc)
-
+	
 .PHONY: clean
 clean:
 	rm -f $(obj) myprog

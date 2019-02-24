@@ -124,3 +124,11 @@ ePacketStatus poly_packet_parse(poly_packet_t* packet, poly_packet_desc_t* dec, 
   *@return length of packed data
   */
 int poly_packet_pack(poly_packet_t* packet, uint8_t* data);
+
+/**
+  *@brief prints json representation of packet to a buffer
+  *@param packet ptr to packet
+  *@param buf buffer to print to
+  *@retun len of string
+  */
+int poly_packet_print_json(poly_packet_t* packet, char* buf);

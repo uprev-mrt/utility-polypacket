@@ -10,9 +10,9 @@ void poly_test_init()
 {
   PP_TestPacket = new_poly_packet_desc("PacketTest", 3);
 
-  PF_TestString = new_poly_field_desc("testString", sizeof(char), 16,FORMAT_ASCII);
-  PF_TestInt = new_poly_field_desc("testint", sizeof(int), 1,FORMAT_DEC);
-  PF_TestUint16 = new_poly_field_desc("testUint16", sizeof(uint16_t), 1,FORMAT_HEX);
+  PF_TestString = new_poly_field_desc("testString", TYPE_STRING, 16,FORMAT_ASCII);
+  PF_TestInt = new_poly_field_desc("testint", TYPE_INT, 1,FORMAT_DEC);
+  PF_TestUint16 = new_poly_field_desc("testUint16", TYPE_UINT16, 1,FORMAT_HEX);
 
   poly_packet_desc_add_field(PP_TestPacket, PF_TestString, true);
   poly_packet_desc_add_field(PP_TestPacket, PF_TestInt, true);
@@ -30,6 +30,8 @@ test_struct_t* new_test_struct()
   poly_packet_get_field(newStruct->mPacket, PF_TestUint16)->mData = (uint8_t*) &newStruct->testUint16;
 
   newStruct->mPacket->mBound = true;
+
+  return newStruct;
 }
 
 void destroy_test_struct(test_struct_t* t)

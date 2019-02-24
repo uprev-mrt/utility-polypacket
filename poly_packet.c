@@ -201,6 +201,7 @@ int poly_packet_pack(poly_packet_t* packet, uint8_t* data)
   int idx=0;
   poly_field_t* field;
   packet->mHeader.mCheckSum =0;
+
   //Skip header for now, this will be written in after we get length and checksum
   idx+=sizeof(poly_packet_hdr_t);
 
@@ -232,4 +233,36 @@ int poly_packet_pack(poly_packet_t* packet, uint8_t* data)
   }
 
   memcpy((void*)&data[0], (void*)&packet->mHeader, sizeof(poly_packet_hdr_t));
+}
+
+int poly_packet_print_json(poly_packet_t* packet, char* buf, bool printMeta)
+{
+  int idx =0;
+  poly_field_t* field;
+
+  sprintf(&buf[idx],"{");
+
+  if(printMeta)
+  {
+    idx += sprintf(&buf[idx]," \"typeId\" : \"%02X\" ,", packet->mHeader.mTypeId);
+    idx += sprintf(&buf[idx]," \"token\" : \"%04X\" ,", packet->mHeader.mToken);
+    idx += sprintf(&buf[idx]," \"checksum\" : \"%04X\" ,", packet->mHeader.mCheckSum);
+    idx += sprintf(&buf[idx]," \"len\" : \"%d\" , ", packet->mHeader.mDataLen);
+  }
+
+  for(int i=0; i < packet->mDesc->mFieldCount; i++)
+  {
+    if(i > 0)
+      idx+= sprintf(&buf[idx]," , ");
+
+    field = &packet->mFields[i];
+
+    if(field->mPresent)
+    {
+      idx+= sprintf(&buf[idx],"\"%s\" : ", field->mDesc->mName );
+
+
+    }
+  }
+
 }

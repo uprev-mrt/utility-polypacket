@@ -12,8 +12,25 @@
 #include <string.h>
 #include <stdio.h>
 
+typedef enum FieldType {
+  TYPE_UINT8,
+  TYPE_UINT16,
+  TYPE_UINT32,
+  TYPE_UINT64,
+  TYPE_INT8,
+  TYPE_INT16,
+  TYPE_INT32,
+  TYPE_INT,
+  TYPE_INT64,
+  TYPE_FLOAT,
+  TYPE_DOUBLE,
+  TYPE_STRING,
+  TYPE_CHAR
+}eFieldType;
+
 typedef enum FieldFormat {
-  FORMAT_DEC =0,
+  FORMAT_DEFAULT,
+  FORMAT_DEC,
   FORMAT_HEX,
   FORMAT_ASCII
 }eFieldFormat;
@@ -25,6 +42,7 @@ typedef struct{
   const char* mName;            //friendly name of field
   eFieldFormat mFormat;   //format used for printing and jsonifying field
   uint8_t mObjSize;       //size of object in field
+  eFieldType mDataType;
   uint16_t mLen;          //number of objects in field (max)
   bool mVarLen;           //indicates if field is of variable length
   bool mNullTerm;         //indicates field is null terminated
@@ -41,12 +59,12 @@ typedef struct{
 /**
   *@brief Creates a new field descriptor
   *@param name friendly name for field
-  *@param objSize size of single element in field
+  *@param type type of data
   *@param len number of elements in field
   *@param format format type for stringifying
   *@return ptr to new field descriptor
   */
-poly_field_desc_t* new_poly_field_desc(const char* name, int objSize, uint32_t len, eFieldFormat format);
+poly_field_desc_t* new_poly_field_desc(const char* name, eFieldType type, uint32_t len, eFieldFormat format);
 
 /**
   *@brief initializes a new field
@@ -67,6 +85,24 @@ void poly_field_bind(poly_field_t* field, uint8_t* data);
   *@brief Parses raw data for a field
   *@param field ptr to field being parsed
   *@param data ptr to raw data to be parsed
+  *@param printMeta show meta data in json
   *@returns size of parsed data
   */
-int poly_field_parse(poly_field_t* field, uint8_t* data);
+int poly_field_parse(poly_field_t* field, uint8_t* data, bool printMeta);
+
+/**
+  *@brief prints out field in json format
+  *@param field ptr to field
+  *@param buf buffer to print to
+  *@return return number of characters written
+  */
+int poly_field_print_json(poly_field_t* field, char* buf);
+
+/**
+  *@brief prints out an element in the field data
+  *@param field ptr to field
+  *@param ind idx index of element to print
+  *@param buf buffer to print to
+  *@return return number of characters written
+  */
+int poly_field_print_val(poly_field_t* field, int element, char* buf);
