@@ -55,6 +55,10 @@ typedef struct{
   bool mPresent;          //indicated field is present in packet
 }poly_field_t;
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 /**
   *@brief Creates a new field descriptor
@@ -106,3 +110,7 @@ int poly_field_print_json(poly_field_t* field, char* buf);
   *@return return number of characters written
   */
 int poly_field_print_val(poly_field_t* field, int element, char* buf);
+
+#ifdef __cplusplus
+}
+#endif

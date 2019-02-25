@@ -58,8 +58,6 @@ poly_field_desc_t* new_poly_field_desc(const char* name, eFieldType type, uint32
       break;
   }
 
-  printf("Field Desc %s size: %d\n", new_desc->mName, new_desc->mObjSize);
-
   if(format != FORMAT_DEFAULT)
   {
     new_desc->mFormat = format;
@@ -102,31 +100,26 @@ int poly_field_print_json(poly_field_t* field, char* buf)
   int idx =0;
 
   idx+= sprintf(&buf[idx],"\"%s\" : ", field->mDesc->mName);
-  printf("\"%s\" : \n", field->mDesc->mName);
 
 
   //for ascii format we just print the char string
   if(field->mDesc->mFormat == FORMAT_ASCII)
   {
-    printf("ASCII \n");
     idx+= sprintf(&buf[idx],"\"%s\"", field->mData);
   }
   //for other formats we have to specialize the printing
   else
   {
-    printf(" VAL %d  %d \n",field->mSize , field->mDesc->mObjSize);
     elementCount = field->mSize / field->mDesc->mObjSize;
 
     //If field contains a single element, print out json
     if(elementCount == 1)
     {
-      printf("SINGLE VAL \n");
       idx+= poly_field_print_val(field, 0, &buf[idx]);
     }
     //If field is an array, print as JSON array
     else
     {
-      printf("ARRAY VAL \n");
       idx+= sprintf(&buf[idx],"[ ");
 
       for(int i=0; i < elementCount; i++)

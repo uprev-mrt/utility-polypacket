@@ -15,6 +15,7 @@ import datetime
 import zlib
 
 now = datetime.datetime.now()
+path ="./"
 
 sizeDict = {
     "uint8" : 1,
@@ -31,14 +32,15 @@ sizeDict = {
 
 
 metaDoc = "### Header\n" +\
-          "Every Packet has a standard Header before the data, and a 2 byte checksum after the data.\n\n" +\
-          "|***Byte***|0|1|2|3|4|\n" +\
-          "|---|---|---|---|---|---|\n" +\
-          "|***Field***<td colspan=\'1\'>***Id***<td colspan=\'2\'>***Len***<td colspan=\'2\'>***Token***\n" +\
-          "|***Type***<td colspan=\'1\'>uint8<td colspan=\'2\'>uint16<td colspan=\'2\'>uint16\n\n" +\
+          "Every Packet has a standard Header before the data\n\n" +\
+          "|***Byte***|0|1|2|3|4|5|6|\n" +\
+          "|---|---|---|---|---|---|---|---|\n" +\
+          "|***Field***<td colspan=\'1\'>***Id***<td colspan=\'2\'>***Len***<td colspan=\'2\'>***Token***<td colspan=\'2\'>***Checksum***\n" +\
+          "|***Type***<td colspan=\'1\'>uint8<td colspan=\'2\'>uint16<td colspan=\'2\'>uint16<td colspan=\'2\'>uint16\n\n" +\
           ">***Id*** : The ID used to identify the type of packet, packet Ids are assigned and managed automatically<br/>\n" +\
           ">***Len*** : This is the len of the packet data, this does not include the header and checksum<br/>\n" +\
           ">***Token*** : A unique randomly generated token. Each packet is tokenized to provide functions like ack/retry and preventing duplicates <br/>\n" +\
+          ">***Checksum*** : A calculated checksum of the data in the packet\n" +\
           "----\n"
 
 def crc(fileName):
@@ -74,6 +76,136 @@ class packetDesc:
         field.id = self.fieldCount
         self.fields.append(field)
         self.fieldCount+=1
+
+    def getDocMd(self):
+        output = StringIO.StringIO()
+        output.write('### ' + self.name + '\n')
+        output.write(self.desc + '\n\n')
+        requestCount = len(self.requests)
+        respondsToCount = len(self.respondsTo)
+
+        #write response packets
+        if(requestCount > 0):
+            output.write('* *Requests: ')
+            first = True
+            for req in self.requests:
+                if(first):
+                    first = False
+                else:
+                    output.write(', ')
+                output.write(req)
+            output.write('*\n\n')
+
+        #write request packets
+        if(respondsToCount > 0):
+            output.write('* *Responds To: ')
+            first = True
+            for resp in self.respondsTo:
+                if(first):
+                    first = False
+                else:
+                    output.write(', ')
+                output.write(resp)
+            output.write('*\n\n')
+
+        rowBytes = StringIO.StringIO()
+        rowBorder = StringIO.StringIO()
+        rowFields = StringIO.StringIO()
+        rowTypes = StringIO.StringIO()
+
+        rowBytes.write('|***Byte***|')
+        rowBorder.write('|---|')
+        rowFields.write('|***Field***')
+        rowTypes.write('***Type***')
+
+        count =0
+
+        for pfield in self.fields:
+
+            #write bytes
+            if(pfield.size > 4):
+                rowBytes.write(str(count)+'| . . . . . . . |'+str(count+pfield.size -1))
+                count+=pfield.size
+            else:
+                for x in range(pfield.size):
+                    rowBytes.write(str(count) + '|')
+                    count+=1
+
+            #write border
+            span = pfield.size
+            if(span > 4):
+                span = 4
+            for x in range(span):
+                rowBorder.write('---|')
+
+            #write fields
+            span = pfield.size
+            if(span > 4):
+                span = 4
+            rowFields.write('<td colspan=\''+str(span)+'\'>')
+            if(pfield.isRequired):
+                rowFields.write('***'+pfield.name+'***')
+            else:
+                rowFields.write(pfield.name)
+
+            #write types
+            span = pfield.size
+            if(span > 4):
+                span = 4
+            rowTypes.write('<td colspan=\''+str(span)+'\'>')
+            rowTypes.write(pfield.type)
+            if(pfield.isArray):
+                if(pfield.isVarLen):
+                    rowTypes.write('[0-'+ str(pfield.size)+' ]')
+                else:
+                    rowTypes.write('['+str(pfield.size)+']')
+
+        #combine rows for table
+        output.write(rowBytes.getvalue() + "\n");
+        output.write(rowBorder.getvalue() + "\n");
+        output.write(rowFields.getvalue() + "\n");
+        output.write(rowTypes.getvalue() + "\n");
+
+        output.write('\n\n')
+
+        #write field description table
+        for pfield in self.fields:
+            output.write('>***'+ pfield.name+'*** : ' + pfield.desc +'<br/>\n')
+        output.write('\n------\n')
+
+        return output.getvalue();
+
+    def getStructName(self):
+        return self.name.lower() + "_struct_t"
+
+    def getStruct(self):
+        output = StringIO.StringIO()
+        output.write("//Struct for "+ self.name+" Packet\n")
+        output.write("//"+ self.desc+" Packet\n")
+        output.write("typedef struct{\n")
+        for field in self.fields:
+            output.write("  "+field.type+" m"+field.name)
+            if(field.arrayLen > 1):
+                output.write("["+str(field.arrayLen)+"]")
+
+            if(field.desc != ""):
+                output.write(";\t//"+field.desc +"\n")
+            else:
+                output.write(";\n")
+
+
+        output.write("} " + self.name.lower() + "_struct_t;\n\n")
+        output.write(self.name.lower() + "_struct_t* new_"+self.name.lower() +"();\n\n")
+
+        return output.getvalue()
+
+    def getStructConstructor(self):
+        output = StringIO.StringIO()
+        output.write(self.name.lower() + "_struct_t* new_"+self.name.lower() +"()\n{\n")
+
+
+
+
 
 class protocolDesc:
     def __init__(self, name):
@@ -213,7 +345,6 @@ def parseXML(xmlfile):
 
 
     for packet in protocol.packets:
-        print str(packet.requests)
         for request in packet.requests:
             idx = protocol.packetIdx[request]
             protocol.packets[idx].respondsTo[packet.name] = 0
@@ -222,6 +353,7 @@ def parseXML(xmlfile):
     return protocol
 
 def createHeaderC(protocol):
+    global path
     output = StringIO.StringIO()
     output.write('/**\n')
     output.write('  *@file '+protocol.name +'.h\n')
@@ -229,25 +361,39 @@ def createHeaderC(protocol):
     output.write('  *@author make_protocol.py\n')
     output.write('  *@date '+now.strftime("%m/%d/%y")+'\n')
     output.write('  */\n\n')
-    output.write('***********************************************************\n')
+    output.write('/***********************************************************\n')
     output.write('        THIS FILE IS AUTOGENERATED. DO NOT MODIFY\n')
-    output.write('***********************************************************\n')
+    output.write('***********************************************************/\n')
 
     output.write('#include \"var_field.h\"\n')
     output.write('#include \"var_packet.h\"\n\n\n')
 
-    output.write('//Declare extern field descriptors\n')
-    for field in protocol.fields:
-        output.write('extern field_desc_t* VF_' + field.name.upper()+ ';\n')
-
-    output.write('\n\n')
+    #write packet descriptors
     output.write('//Declare extern packet descriptors\n')
     for packet in protocol.packets:
         output.write('extern packet_desc_t* VP_' + packet.name.upper()+ ';\n')
 
     output.write('\n\n')
-    output.write('void protocol_init();\n')
-    print output.getvalue()
+
+    #write field descriptors
+    output.write('//Declare extern field descriptors\n')
+    for field in protocol.fields:
+        output.write('extern field_desc_t* VF_' + field.name.upper()+ ';\n')
+
+    output.write('\n\n')
+
+    #write structs for each packet
+    output.write('//Structs for packet types')
+    for packet in protocol.packets:
+        output.write(packet.getStruct())
+
+    output.write('\n\n')
+
+    output.write('void '+protocol.name+'protocol_init();\n')
+
+    text_file = open(path + protocol.name+"_proto.h", "w")
+    text_file.write(output.getvalue())
+    text_file.close()
 
 
 
@@ -266,7 +412,6 @@ def createSourceC(protocol):
 
     output.write('//Declare extern field descriptors\n')
     for field in protocol.fields:
-        print field
         output.write('field_desc_t* VF_' + field.name.upper()+ ';\n')
 
     output.write('\n\n')
@@ -308,6 +453,7 @@ def createSourceC(protocol):
 
 
 def createDoc(protocol):
+    global path
     output = StringIO.StringIO()
     output.write('# ' + protocol.name + '\n')
     output.write('* Generated: '+now.strftime("%m/%d/%y")+'<br/>\n')
@@ -320,99 +466,32 @@ def createDoc(protocol):
 
 
     for packet in protocol.packets:
-        output.write('### ' + packet.name + '\n')
-        output.write(packet.desc + '\n\n')
-        requestCount = len(packet.requests)
-        respondsToCount = len(packet.respondsTo)
-        if(requestCount > 0):
-            output.write('* *Requests: ')
-            first = True
-            for req in packet.requests:
-                if(first):
-                    first = False
-                else:
-                    output.write(', ')
-                output.write(req)
-            output.write('*\n\n')
-
-        if(respondsToCount > 0):
-            output.write('* *Responds To: ')
-            first = True
-            for resp in packet.respondsTo:
-                if(first):
-                    first = False
-                else:
-                    output.write(', ')
-                output.write(resp)
-            output.write('*\n\n')
-
-
-        count =0
-        output.write('|***Byte***|')
-        for pfield in packet.fields:
-            if(pfield.size > 4):
-                output.write(str(count)+'| . . . . . . . |'+str(count+pfield.size -1))
-                count+=pfield.size
-            else:
-                for x in range(pfield.size):
-                    output.write(str(count) + '|')
-                    count+=1
-
-        output.write('\n|---|')
-        for pfield in packet.fields:
-            span = pfield.size
-            if(span > 4):
-                span = 4
-            for x in range(span):
-                output.write('---|')
-
-        output.write('\n|***Field***')
-        for pfield in packet.fields:
-            span = pfield.size
-            if(span > 4):
-                span = 4
-            output.write('<td colspan=\''+str(span)+'\'>')
-            if(pfield.isRequired):
-                output.write('***'+pfield.name+'***')
-            else:
-                output.write(pfield.name)
-
-
-        output.write('\n|***Type***')
-        for pfield in packet.fields:
-            span = pfield.size
-            if(span > 4):
-                span = 4
-            output.write('<td colspan=\''+str(span)+'\'>')
-            output.write(pfield.type)
-            if(pfield.isArray):
-                if(pfield.isVarLen):
-                    output.write('[0-'+ str(pfield.size)+' ]')
-                else:
-                    output.write('['+str(pfield.size)+']')
-
-        output.write('\n\n')
-
-        for pfield in packet.fields:
-            output.write('>***'+ pfield.name+'*** : ' + pfield.desc +'<br/>\n')
-        output.write('\n------\n')
+        output.write(packet.getDocMd())
 
 
 
 
-    text_file = open("Output.md", "w")
+    text_file = open(path+protocol.name+"_doc.md", "w")
     text_file.write(output.getvalue())
     text_file.close()
 
 
 
 def main():
+
+    argCount = len(sys.argv)
+
     # print command line arguments
     for arg in sys.argv[1:]:
         print arg
 
+
+
     xmlFile = sys.argv[1]
     fileCrc = crc(xmlFile)
+
+    if(argCount >2):
+        path = sys.argv[2]
 
     protocol = parseXML(xmlFile)
     protocol.hash = fileCrc

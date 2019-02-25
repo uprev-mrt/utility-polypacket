@@ -261,7 +261,6 @@ int poly_packet_print_json(poly_packet_t* packet, char* buf, bool printMeta)
     {
       idx+= poly_field_print_json(field, &buf[idx]);
     }
-    printf(" SOFAR: %s\n",buf);
   }
 
   idx+= sprintf(&buf[idx],"}");
