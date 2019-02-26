@@ -1,6 +1,6 @@
 # SampleProtocol
-* Generated: 02/24/19<br/>
-* CRC: 3F1D13C5
+* Generated: 02/26/19<br/>
+* CRC: D06ABEBB
 
 ##### This is a sample protocol made up to demonstrate features of the PolyPacket code generation tool. The idea   is to have a tool that can automatically create parseable/serializable messaging for embedded systems.
 
@@ -25,10 +25,10 @@ Message to set data in node
 
 * *Requests: RespData*
 
-|***Byte***|0|1|2|3|4|5|6|7|8|9|10| . . . . . . . |25
+|***Byte***|0|1|2|3|4|5|6|7|8|9|10| . . . . . . . |41
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 |***Field***<td colspan='2'>***src***<td colspan='2'>***dst***<td colspan='2'>sensorA<td colspan='4'>sensorB<td colspan='4'>sensorName
-***Type***<td colspan='2'>uint16_t<td colspan='2'>uint16_t<td colspan='2'>int16<td colspan='4'>int<td colspan='4'>char[0-16 ]
+***Type***<td colspan='2'>uint16_t<td colspan='2'>uint16_t<td colspan='2'>int16<td colspan='4'>int<td colspan='4'>char[32]
 
 
 >***src*** : Source address of message<br/>
@@ -43,10 +43,10 @@ Message to get data from node
 
 * *Requests: RespData*
 
-|***Byte***|0|1|2|3|4|5|6|7|8|9|10| . . . . . . . |25
+|***Byte***|0|1|2|3|4|5|6|7|8|9|10| . . . . . . . |41
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 |***Field***<td colspan='2'>***src***<td colspan='2'>***dst***<td colspan='2'>sensorA<td colspan='4'>sensorB<td colspan='4'>sensorName
-***Type***<td colspan='2'>uint16_t<td colspan='2'>uint16_t<td colspan='2'>int16<td colspan='4'>int<td colspan='4'>char[0-16 ]
+***Type***<td colspan='2'>uint16_t<td colspan='2'>uint16_t<td colspan='2'>int16<td colspan='4'>int<td colspan='4'>char[32]
 
 
 >***src*** : Source address of message<br/>
@@ -61,10 +61,10 @@ Response to get/set messages
 
 * *Responds To: GetData, SetData*
 
-|***Byte***|0|1|2|3|4|5|6|7|8|9|10| . . . . . . . |25
+|***Byte***|0|1|2|3|4|5|6|7|8|9|10| . . . . . . . |41
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 |***Field***<td colspan='2'>***src***<td colspan='2'>***dst***<td colspan='2'>sensorA<td colspan='4'>sensorB<td colspan='4'>sensorName
-***Type***<td colspan='2'>uint16_t<td colspan='2'>uint16_t<td colspan='2'>int16<td colspan='4'>int<td colspan='4'>char[0-16 ]
+***Type***<td colspan='2'>uint16_t<td colspan='2'>uint16_t<td colspan='2'>int16<td colspan='4'>int<td colspan='4'>char[32]
 
 
 >***src*** : Source address of message<br/>
