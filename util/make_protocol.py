@@ -26,6 +26,8 @@ sizeDict = {
     "int16" : 2,
     "uint32" : 4,
     "int32" : 4,
+    "int64" : 8,
+    "uint64" : 8,
     "int" : 4,
     "float": 4,
     "double": 8
@@ -55,10 +57,11 @@ class fieldDesc:
     def __init__(self, name, type):
         self.cppType = type
         self.type = type
-
+        self.cType = type
         if(self.cppType == 'string'):
-            self.cppType = "std::string"
+            self.cppType = "string"
             self.type = 'char'
+
 
         self.id = 0
         self.name = name
@@ -262,7 +265,16 @@ class packetDesc:
         output = StringIO.StringIO()
         output.write("/**********************************************************\n" )
         output.write("              " +self.className+ "                       \n" )
-        output.write("**********************************************************/\n" )
+        output.write("**********************************************************/\n\n\n" )
+
+        output.write(self.className+"::"+self.className +"()\n:PolyPacket("+self.globalName+")\n{" )
+        output.write("  //Bind all fields\n" )
+
+        for field in self.fields:
+            output.write("  getField("+field.globalName+")->mData = ("+ field.cType+"*) &m"+field.name.capitalize()+";\n" )
+
+        output.write("  mPacket->mBound = true;\n}\n\n" )
+
         for field in self.fields:
             output.write( field.cppType +" "+ self.className+"::" +field.name.capitalize()+"("+ field.cppType+"  val)\n{\n" )
             output.write( "  hasField("+field.globalName+",true);\n" )
@@ -317,7 +329,7 @@ class protocolDesc:
         output.write('***********************************************************/\n')
 
         if(cpp):
-            output.write('#include <PolyField.h>\n')
+            output.write('#include <poly_field.h>\n')
             output.write('#include <PolyPacket.h>\n\n\n')
             output.write('using namespaceUtilities::PolyPacket; \n\n')
         else:
@@ -420,7 +432,7 @@ class protocolDesc:
         output.write("\n\n  //Field Descriptos\n")
 
         for field in self.fields:
-            output.write("  "+field.globalName+" = new_poly_field_desc(\""+ field.name+"\", TYPE_"+ field.cppType.upper()+" , "+ str(field.arrayLen)+ " , FORMAT_"+field.format+" );\n" )
+            output.write("  "+field.globalName+" = new_poly_field_desc(\""+ field.name+"\", TYPE_"+ field.cppType.upper()+" , "+ str(field.arrayLen)+ " , FORMAT_"+field.format.upper()+" );\n" )
 
         for packet in self.packets:
             output.write("\n\n  //Setting fields Descriptors for "+ packet.className+"\n")
@@ -660,10 +672,10 @@ def main():
 
     protocol = parseXML(xmlFile)
     protocol.hash = fileCrc
-    protocol.generateHeaderC(path+"/c_header.h")
-    protocol.generateHeaderCPP(path+"/cpp_header.h")
-    protocol.generateSourceCPP(path+"/cpp_source.cpp")
-    createSourceC(protocol)
+    #protocol.generateHeaderC(path+"/c_header.h")
+    protocol.generateHeaderCPP(path+"/" + protocol.fileName+".h")
+    protocol.generateSourceCPP(path+"/" + protocol.fileName+".cpp")
+    #createSourceC(protocol)
     createDoc(protocol)
 
 if __name__ == "__main__":

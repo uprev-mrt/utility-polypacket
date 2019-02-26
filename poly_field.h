@@ -28,6 +28,15 @@ typedef enum FieldType {
   TYPE_CHAR
 }eFieldType;
 
+#define TYPE_UINT8_T TYPE_UINT8
+#define TYPE_UINT16_T TYPE_UINT16
+#define TYPE_UINT32_T TYPE_UINT32
+#define TYPE_UINT64_T TYPE_UINT64
+#define TYPE_INT8_T TYPE_INT8
+#define TYPE_INT16_T TYPE_INT16
+#define TYPE_INT32_T TYPE_INT32
+#define TYPE_INT64_T TYPE_INT64
+
 typedef enum FieldFormat {
   FORMAT_DEFAULT,
   FORMAT_DEC,

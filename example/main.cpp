@@ -1,23 +1,21 @@
-#include "poly_test.h"
+#include "SampleProtocol_proto.h"
 #include <stdio.h>
 
 uint8_t buffer[1024];
 char printBuf[1024];
 
 
-
 int main()
 {
   printf("test\n");
-  poly_test_init();
+  SampleProtocol_protocol_init();
 
-  PolyTest obj;
 
-  obj.TestString("this is my test");
-  obj.TestInt(455);
-  obj.TestUint16(33);
+  SetdataPacket setDataPacket;
 
-  printf("%s\n", obj.toJSON().c_str());
+  setDataPacket.Src(16);
+
+  printf("%s\n", setDataPacket.toJSON().c_str());
 
   return 0;
 }

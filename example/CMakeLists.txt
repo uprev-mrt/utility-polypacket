@@ -9,7 +9,7 @@ add_definitions(-DUNIT_TESTING_ENABLED)
 
 add_library(
   PolyPacket
-  ../PolyPacket.cpp 
+  ../PolyPacket.cpp
   ../PolyPacket.h
   ../poly_packet.h
   ../poly_packet.c
@@ -19,7 +19,7 @@ add_library(
 add_executable(
   example
   main.cpp
-  poly_test.cpp
-  poly_test.h
+  SampleProtocol_proto.cpp
+  SampleProtocol_proto.h
   )
 target_link_libraries(example PolyPacket)
