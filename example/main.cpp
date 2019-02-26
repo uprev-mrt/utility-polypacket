@@ -15,8 +15,9 @@ int main()
 
   obj.TestString("this is my test");
   obj.TestInt(455);
+  obj.TestUint16(33);
 
-  printf("%s", obj.toJSON());
+  printf("%s\n", obj.toJSON().c_str());
 
   return 0;
 }

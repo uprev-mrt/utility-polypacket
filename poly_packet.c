@@ -239,6 +239,7 @@ int poly_packet_print_json(poly_packet_t* packet, char* buf, bool printMeta)
 {
   int idx =0;
   poly_field_t* field;
+  bool first = true;
 
   idx+= sprintf(&buf[idx],"{");
 
@@ -252,15 +253,18 @@ int poly_packet_print_json(poly_packet_t* packet, char* buf, bool printMeta)
 
   for(int i=0; i < packet->mDesc->mFieldCount; i++)
   {
-    if(i > 0)
-      idx+= sprintf(&buf[idx]," , ");
-
     field = &packet->mFields[i];
 
     if(field->mPresent)
     {
+      if(!first)
+        idx+= sprintf(&buf[idx]," , ");
+
       idx+= poly_field_print_json(field, &buf[idx]);
+
+      first = false;
     }
+
   }
 
   idx+= sprintf(&buf[idx],"}");

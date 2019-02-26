@@ -183,7 +183,7 @@ int poly_field_print_val(poly_field_t* field, int element, char* buf)
   }
   else if(field->mDesc->mFormat == FORMAT_HEX)
   {
-    idx+= sprintf(&buf[idx], "\"");
+    idx+= sprintf(&buf[idx], "\"x");
     for(int i=0; i < field->mDesc->mObjSize; i++)
     {
       idx+= sprintf(&buf[idx], "%02X", pData[i]);
