@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Protocol name="SampleProtocol"
+  desc="This is a sample protocol made up to demonstrate features of the PolyPacket code generation tool. The idea
+  is to have a tool that can automatically create parseable/serializable messaging for embedded systems.">
+  <!--First we declare all Field descriptors-->
+  <Fields>
+    <!--Common -->
+    <Field name="src" type="uint16_t" format="hex" desc="Source address of message" />
+    <Field name="dst" type="uint16_t" format="hex" desc="Desitination address of message"/>
+    <Field name="cmd" type="uint8_t" format="hex" />
+
+    <!-- SensorData -->
+    <Field name="sensorA" type="int16" format="dec" desc="Value of Sensor A"/>
+    <Field name="sensorB" type="int" format="dec" desc="Value of Sensor B" />
+    <Field name="sensorName" type="string[32]" format="ascii" desc="Name of sensor"/>
+
+    <!-- Ota Block data -->
+    <Field name="blockOffset" type="uint32_t" format="hex"  desc="Offset of block in memory"/>
+    <Field name="blockSize" type="uint32_t" format="dec" desc="size of memory block"/>
+    <Field name="blockData" type="uint8_t[64]" format="none" desc="actual data from memory"/>
+
+  </Fields>
+  <!--Declare all Packet Types-->
+  <Packets>
+    <Packet name="SetData" desc="Message to set data in node" response="RespData">
+      <Field name="src" req="true"/>
+      <Field name="dst" req="true"/>
+      <Field name="sensorA"/>
+      <Field name="sensorB"/>
+      <Field name="sensorName"/>
+    </Packet>
+
+    <Packet name="GetData" desc="Message to get data from node" response="RespData">
+      <Field name="src" req="true"/>
+      <Field name="dst" req="true"/>
+      <Field name="sensorA"/>
+      <Field name="sensorB"/>
+      <Field name="sensorName"/>
+    </Packet>
+
+    <Packet name="RespData" desc="Response to get/set messages" >
+      <Field name="src" req="true"/>
+      <Field name="dst" req="true"/>
+      <Field name="sensorA"/>
+      <Field name="sensorB"/>
+      <Field name="sensorName"/>
+    </Packet>
+
+    <Packet name="blockReq" desc="This packet is used to request a block of data from the host during Ota updates" response="blockResp" >
+      <Field name="src" req="true"/>
+      <Field name="dst" req="true"/>
+      <!-- Adding a description here will overwrite the description in documentation for this packet type -->
+      <Field name="blockOffset" req="true" desc="Offset of block being requested"/>
+      <Field name="blockSize" req="true" desc="Size of block being requested "/>
+    </Packet>
+
+    <Packet name="blockResp" desc="This packet sends a block of ota data to the node as a response to a block request" >
+      <Field name="src" req="true"/>
+      <Field name="dst" req="true"/>
+      <Field name="blockOffset" req="true"/>
+      <Field name="blockSize" req="true"/>
+      <Field name="blockData" req="true"/>
+    </Packet>
+
+  </Packets>
+</Protocol>
