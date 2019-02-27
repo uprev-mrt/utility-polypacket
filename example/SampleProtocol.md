@@ -1,5 +1,5 @@
 # SampleProtocol
-* Generated: 02/26/19<br/>
+* Generated: 02/27/19<br/>
 * CRC: 2674BA21
 
 ##### This is a sample protocol made up to demonstrate features of the PolyPacket code generation tool. The idea   is to have a tool that can automatically create parseable/serializable messaging for embedded systems.
@@ -25,10 +25,10 @@ Message to set data in node
 
 * *Requests: RespData*
 
-|***Byte***|0|1|2|3|4|5|6|7|8|9|10|
-|---|---|---|---|---|---|---|---|---|---|---|---|
-|***Field***<td colspan='2'>***src***<td colspan='2'>***dst***<td colspan='2'>sensorA<td colspan='4'>sensorB<td colspan='1'>sensorName
-***Type***<td colspan='2'>uint16<td colspan='2'>uint16<td colspan='2'>int16<td colspan='4'>int<td colspan='1'>string[1]
+|***Byte***|0|1|2|3|4|5|6|7|8|9|10| . . . . . . . |41
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+|***Field***<td colspan='2'>***src***<td colspan='2'>***dst***<td colspan='2'>sensorA<td colspan='4'>sensorB<td colspan='4'>sensorName
+|***Type***<td colspan='2'>uint16_t<td colspan='2'>uint16_t<td colspan='2'>int16_t<td colspan='4'>int<td colspan='4'>char[32]
 
 
 >***src*** : Source address of message<br/>
@@ -43,10 +43,10 @@ Message to get data from node
 
 * *Requests: RespData*
 
-|***Byte***|0|1|2|3|4|5|6|7|8|9|10|
-|---|---|---|---|---|---|---|---|---|---|---|---|
-|***Field***<td colspan='2'>***src***<td colspan='2'>***dst***<td colspan='2'>sensorA<td colspan='4'>sensorB<td colspan='1'>sensorName
-***Type***<td colspan='2'>uint16<td colspan='2'>uint16<td colspan='2'>int16<td colspan='4'>int<td colspan='1'>string[1]
+|***Byte***|0|1|2|3|4|5|6|7|8|9|10| . . . . . . . |41
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+|***Field***<td colspan='2'>***src***<td colspan='2'>***dst***<td colspan='2'>sensorA<td colspan='4'>sensorB<td colspan='4'>sensorName
+|***Type***<td colspan='2'>uint16_t<td colspan='2'>uint16_t<td colspan='2'>int16_t<td colspan='4'>int<td colspan='4'>char[32]
 
 
 >***src*** : Source address of message<br/>
@@ -61,10 +61,10 @@ Response to get/set messages
 
 * *Responds To: GetData, SetData*
 
-|***Byte***|0|1|2|3|4|5|6|7|8|9|10|
-|---|---|---|---|---|---|---|---|---|---|---|---|
-|***Field***<td colspan='2'>***src***<td colspan='2'>***dst***<td colspan='2'>sensorA<td colspan='4'>sensorB<td colspan='1'>sensorName
-***Type***<td colspan='2'>uint16<td colspan='2'>uint16<td colspan='2'>int16<td colspan='4'>int<td colspan='1'>string[1]
+|***Byte***|0|1|2|3|4|5|6|7|8|9|10| . . . . . . . |41
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+|***Field***<td colspan='2'>***src***<td colspan='2'>***dst***<td colspan='2'>sensorA<td colspan='4'>sensorB<td colspan='4'>sensorName
+|***Type***<td colspan='2'>uint16_t<td colspan='2'>uint16_t<td colspan='2'>int16_t<td colspan='4'>int<td colspan='4'>char[32]
 
 
 >***src*** : Source address of message<br/>
@@ -82,7 +82,7 @@ This packet is used to request a block of data from the host during Ota updates
 |***Byte***|0|1|2|3|4|5|6|7|8|9|10|11|
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 |***Field***<td colspan='2'>***src***<td colspan='2'>***dst***<td colspan='4'>***blockOffset***<td colspan='4'>***blockSize***
-***Type***<td colspan='2'>uint16<td colspan='2'>uint16<td colspan='4'>uint32<td colspan='4'>uint32
+|***Type***<td colspan='2'>uint16_t<td colspan='2'>uint16_t<td colspan='4'>uint32_t<td colspan='4'>uint32_t
 
 
 >***src*** : Source address of message<br/>
@@ -96,10 +96,10 @@ This packet sends a block of ota data to the node as a response to a block reque
 
 * *Responds To: blockReq*
 
-|***Byte***|0|1|2|3|4|5|6|7|8|9|10|11|12|
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-|***Field***<td colspan='2'>***src***<td colspan='2'>***dst***<td colspan='4'>***blockOffset***<td colspan='4'>***blockSize***<td colspan='1'>***blockData***
-***Type***<td colspan='2'>uint16<td colspan='2'>uint16<td colspan='4'>uint32<td colspan='4'>uint32<td colspan='1'>uint8[1]
+|***Byte***|0|1|2|3|4|5|6|7|8|9|10|11|12| . . . . . . . |75
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+|***Field***<td colspan='2'>***src***<td colspan='2'>***dst***<td colspan='4'>***blockOffset***<td colspan='4'>***blockSize***<td colspan='4'>***blockData***
+|***Type***<td colspan='2'>uint16_t<td colspan='2'>uint16_t<td colspan='4'>uint32_t<td colspan='4'>uint32_t<td colspan='4'>uint8_t[64]
 
 
 >***src*** : Source address of message<br/>

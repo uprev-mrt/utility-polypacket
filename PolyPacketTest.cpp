@@ -6,7 +6,7 @@
 #include "poly_packet.c"
 #include "poly_field.c"
 #include "PolyPacket.cpp"
-#include "example/SampleProtocol_proto.cpp"
+#include "example/SampleProtocol.cpp"
 
 #include <gtest/gtest.h>
 

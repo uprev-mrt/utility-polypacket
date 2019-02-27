@@ -86,7 +86,7 @@ class fieldDesc:
         if not (self.type in cNameDict):
             print "INVALID DATA TYPE!:  " + type
 
-        self.size = sizeDict[self.type]
+        self.size = sizeDict[self.type] * len
         self.cType = cNameDict[self.type]
         self.cppType = self.cType
 
@@ -168,7 +168,7 @@ class packetDesc:
         rowBytes.write('|***Byte***|')
         rowBorder.write('|---|')
         rowFields.write('|***Field***')
-        rowTypes.write('***Type***')
+        rowTypes.write('|***Type***')
 
         count =0
 
@@ -205,7 +205,7 @@ class packetDesc:
             if(span > 4):
                 span = 4
             rowTypes.write('<td colspan=\''+str(span)+'\'>')
-            rowTypes.write(pfield.type)
+            rowTypes.write(pfield.cType)
             if(pfield.isArray):
                 if(pfield.isVarLen):
                     rowTypes.write('[0-'+ str(pfield.size)+' ]')
@@ -342,7 +342,7 @@ class packetDesc:
 class protocolDesc:
     def __init__(self, name):
         self.name = name
-        self.fileName = name+"_proto"
+        self.fileName = name
         self.desc = ""
         self.hash = ""
         self.fields = []
@@ -652,7 +652,7 @@ def createSourceC(protocol):
     #print output.getvalue()
 
 
-def createDoc(protocol):
+def createDoc(protocol, filename):
     global path
     output = StringIO.StringIO()
     output.write('# ' + protocol.name + '\n')
@@ -671,7 +671,7 @@ def createDoc(protocol):
 
 
 
-    text_file = open(path+protocol.name+"_doc.md", "w")
+    text_file = open(filename, "w")
     text_file.write(output.getvalue())
     text_file.close()
 
@@ -699,7 +699,7 @@ def main():
     protocol.generateHeaderCPP(path+"/" + protocol.fileName+".h")
     protocol.generateSourceCPP(path+"/" + protocol.fileName+".cpp")
     #createSourceC(protocol)
-    createDoc(protocol)
+    createDoc(protocol,path+"/" + protocol.fileName+".md")
 
 if __name__ == "__main__":
     main()

@@ -1,8 +1,8 @@
 /**
-  *@file SampleProtocol_proto.h
+  *@file SampleProtocol.h
   *@brief generated protocol source code
   *@author make_protocol.py
-  *@date 02/26/19
+  *@date 02/27/19
   */
 
 /***********************************************************
