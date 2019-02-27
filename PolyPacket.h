@@ -21,6 +21,7 @@ public:
   PolyPacket(poly_packet_desc_t* descriptor);
 
   ~PolyPacket();
+  void copyFrom(poly_packet_t* packet);
 
   poly_field_t* getField(poly_field_desc_t* desc) const;
 

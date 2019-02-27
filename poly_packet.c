@@ -6,7 +6,7 @@
   */
 
 #include "poly_packet.h"
-
+#include <assert.h>
 
 
 
@@ -56,6 +56,21 @@ poly_packet_t* new_poly_packet(poly_packet_desc_t* desc)
   }
 
   return newPacket;
+}
+
+void poly_packet_copy( poly_packet_t* src, poly_packet_t* dst)
+{
+  //make sure they have memory allocated
+  assert(MEM_EXISTS(src));
+  assert(MEM_EXISTS(dst));
+  assert(src->mDesc == dst->mDesc);
+
+  memcpy(&dst->mHeader, &src->mHeader, sizeof(poly_packet_hdr_t));
+  for(int i=0; i < src->mDesc->mFieldCount; i ++)
+  {
+    //start by copying over data
+    poly_field_copy(&src->mFields[i], &dst->mFields[i]);
+  }
 }
 
 void poly_packet_destroy(poly_packet_t* packet)

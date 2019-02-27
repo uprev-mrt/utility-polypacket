@@ -23,6 +23,10 @@ void poly_test_init()
 PolyTest::PolyTest()
 :PolyPacket(PP_TestPacket)
 {
+  if(packet != NULL)
+  {
+    memcpy(&mPacket, &packet, sizeof(poly_packet_t))
+  }
   //bind all fields
   getField(PF_TestString)->mData = (uint8_t*) &mTestString;
   getField(PF_TestInt)->mData = (uint8_t*) &mTestInt;

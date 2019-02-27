@@ -33,6 +33,30 @@ sizeDict = {
     "double": 8
 }
 
+cNameDict = {
+    "uint8" : "uint8_t",
+     "int8" : "int8_t",
+     "char" : "char",
+     "string" : "char",
+     "uint16" : "uint16_t",
+     "int16" : "int16_t",
+     "uint32" : "uint32_t",
+     "int32" : "int32_t",
+     "int64" : "int64_t",
+     "uint64" : "uint64_t",
+     "int" : "int",
+     "float" : "float",
+     "double" : "double",
+ }
+
+formatDict = {
+    "hex" : "FORMAT_HEX",
+    "dec" : "FORMAT_DEC",
+    "default" : "FORMAT_DEFAULT",
+    "ascii" : "FORMAT_ASCII",
+    "none" : "FORMAT_NONE"
+}
+
 
 metaDoc = "### Header\n" +\
           "Every Packet has a standard Header before the data\n\n" +\
@@ -54,23 +78,37 @@ def crc(fileName):
 
 
 class fieldDesc:
-    def __init__(self, name, type):
-        self.cppType = type
-        self.type = type
-        self.cType = type
-        if(self.cppType == 'string'):
-            self.cppType = "string"
-            self.type = 'char'
+    def __init__(self, name, type, len):
 
+        self.type = type.lower().replace('_t','')
+
+        if not (self.type in cNameDict):
+            print "INVALID DATA TYPE!:  " + type
+
+        self.size = sizeDict[self.type]
+        self.cType = cNameDict[self.type]
+        self.cppType = self.cType
+
+        self.isString = False
+        self.isArray = False
+
+        self.arrayLen=len
+
+        if(self.arrayLen > 1):
+            self.isArray = True
+
+        if(self.type == 'string'):
+            self.cppType = "string"
+            self.isString = True
+        else:
+            if(self.isArray):
+                self.cppType = self.cppType +"*"
 
         self.id = 0
         self.name = name
         self.globalName = "PF_"+self.name
-        self.isArray = False
         self.isVarLen = False
-        self.format = 'default'
-        self.arrayLen = 1
-        self.size = 1
+        self.format = 'FORMAT_DEFAULT'
         self.isRequired = False
         self.desc = ""
 
@@ -221,8 +259,8 @@ class packetDesc:
         output.write("/**********************************************************\n" )
         output.write("              " +self.className+ "                       \n" )
         output.write("**********************************************************/\n" )
-        output.write("Class "+self.className +" : public "+ base+"\n{\npublic:\n" )
-        output.write("  "+self.className +"();\n\n" )
+        output.write("class "+self.className +" : public "+ base+"\n{\npublic:\n" )
+        output.write("  "+self.className +"(poly_packet_t* packet = NULL);\n\n" )
 
         #generate value getters
         output.write("\n  //Value Getters\n")
@@ -230,7 +268,11 @@ class packetDesc:
             if(field.cppType == 'string'):
                 output.write( "  " +field.cppType +" " +field.name.capitalize()+"() const {return std::string(m"+ field.name.capitalize()+");}\n" )
             else:
-                output.write( "  " +field.cppType +" " +field.name.capitalize()+"() const {return m"+ field.name.capitalize()+";}\n" )
+                if field.isArray:
+                    output.write( "  " +field.cppType +" " +field.name.capitalize()+"() {return m"+ field.name.capitalize()+";}\n" )
+                else:
+                    output.write( "  " +field.cppType +" " +field.name.capitalize()+"() const {return m"+ field.name.capitalize()+";}\n" )
+
 
         #generate value setters
         output.write("\n  //Value Setters\n")
@@ -249,7 +291,7 @@ class packetDesc:
 
         output.write("\nprivate:\n")
         for field in self.fields:
-            output.write("  "+field.type+" m"+field.name.capitalize())
+            output.write("  "+field.cType+" m"+field.name.capitalize())
             if(field.isArray):
                 output.write("["+str(field.arrayLen)+"]")
             if(field.desc != ""):
@@ -267,21 +309,26 @@ class packetDesc:
         output.write("              " +self.className+ "                       \n" )
         output.write("**********************************************************/\n\n\n" )
 
-        output.write(self.className+"::"+self.className +"()\n:PolyPacket("+self.globalName+")\n{" )
+        output.write(self.className+"::"+self.className +"(poly_packet_t* packet)\n:PolyPacket("+self.globalName+")\n{" )
         output.write("  //Bind all fields\n" )
 
         for field in self.fields:
-            output.write("  getField("+field.globalName+")->mData = ("+ field.cType+"*) &m"+field.name.capitalize()+";\n" )
+            output.write("  getField("+field.globalName+")->mData = (uint8_t*) &m"+field.name.capitalize()+";\n" )
 
-        output.write("  mPacket->mBound = true;\n}\n\n" )
+        output.write("  mPacket->mBound = true;\n  copyFrom(packet);\n}\n\n" )
 
+        #create setters
         for field in self.fields:
-            output.write( field.cppType +" "+ self.className+"::" +field.name.capitalize()+"("+ field.cppType+"  val)\n{\n" )
+            output.write( "void "+ self.className+"::" +field.name.capitalize()+"("+ field.cppType+"  val)\n{\n" )
+
             output.write( "  hasField("+field.globalName+",true);\n" )
             if(field.cppType == 'string'):
-                output.write( "  memcpy(m"+field.name.capitalize()+", val.c_str(), min((int)val.length(),"+field.arrayLen+");\n}\n" )
+                output.write( "  memcpy(m"+field.name.capitalize()+", val.c_str(), min((int)val.length(),"+str(field.arrayLen)+"));\n}\n" )
             else:
-                output.write( "  m"+field.name.capitalize()+" = val;\n}\n\n" )
+                if(field.isArray):
+                    output.write( "  memcpy(m"+field.name.capitalize()+", val, "+ str(field.arrayLen)+" * sizeof("+ field.cType+"));\n}\n" )
+                else:
+                    output.write( "  m"+field.name.capitalize()+" = val;\n}\n\n" )
 
         return output.getvalue()
 
@@ -329,9 +376,9 @@ class protocolDesc:
         output.write('***********************************************************/\n')
 
         if(cpp):
-            output.write('#include <poly_field.h>\n')
-            output.write('#include <PolyPacket.h>\n\n\n')
-            output.write('using namespaceUtilities::PolyPacket; \n\n')
+            output.write('#include "../poly_field.h"\n')
+            output.write('#include "../PolyPacket.h"\n\n\n')
+            output.write('using namespace Utilities::PolyPacket; \n\n')
         else:
             output.write('#include <poly_field.h>\n')
             output.write('#include <poly_packet.h>\n\n\n')
@@ -339,14 +386,14 @@ class protocolDesc:
         #write packet descriptors
         output.write('//Declare extern packet descriptors\n')
         for packet in self.packets:
-            output.write('extern packet_desc_t* ' + packet.globalName+ ';\n')
+            output.write('extern poly_packet_desc_t* ' + packet.globalName+ ';\n')
 
         output.write('\n\n')
 
         #write field descriptors
         output.write('//Declare extern field descriptors\n')
         for field in self.fields:
-            output.write('extern field_desc_t* ' + field.globalName+ ';\n')
+            output.write('extern poly_field_desc_t* ' + field.globalName+ ';\n')
 
         output.write('\n\n')
         return output.getvalue()
@@ -371,14 +418,14 @@ class protocolDesc:
         #write packet descriptors
         output.write('//Declare extern packet descriptors\n')
         for packet in self.packets:
-            output.write('packet_desc_t* ' + packet.globalName+ ';\n')
+            output.write('poly_packet_desc_t* ' + packet.globalName+ ';\n')
 
         output.write('\n\n')
 
         #write field descriptors
         output.write('//Declare extern field descriptors\n')
         for field in self.fields:
-            output.write('field_desc_t* ' + field.globalName+ ';\n')
+            output.write('poly_field_desc_t* ' + field.globalName+ ';\n')
 
         output.write('\n\n')
         return output.getvalue()
@@ -425,14 +472,14 @@ class protocolDesc:
         output.write(self.generateSourceCommon(True))
 
         #init
-        output.write("void "+self.fileName+"_protocol_init()\n{\n  //Packet Descriptors\n" )
+        output.write("void "+self.name.capitalize()+"_protocol_init()\n{\n  //Packet Descriptors\n" )
         for packet in self.packets:
             output.write("  "+packet.globalName+" = new_poly_packet_desc(\""+ packet.name+"\", "+ str(len(packet.fields))+ " );\n" )
 
         output.write("\n\n  //Field Descriptos\n")
 
         for field in self.fields:
-            output.write("  "+field.globalName+" = new_poly_field_desc(\""+ field.name+"\", TYPE_"+ field.cppType.upper()+" , "+ str(field.arrayLen)+ " , FORMAT_"+field.format.upper()+" );\n" )
+            output.write("  "+field.globalName+" = new_poly_field_desc(\""+ field.name+"\", TYPE_"+ field.type.upper()+" , "+ str(field.arrayLen)+ " , "+field.format.upper()+" );\n" )
 
         for packet in self.packets:
             output.write("\n\n  //Setting fields Descriptors for "+ packet.className+"\n")
@@ -473,51 +520,26 @@ def parseXML(xmlfile):
         name = field.attrib['name']
         strType = field.attrib['type'];
 
-        arrayLen = 0
-        array = False
-
+        arrayLen = 1
         #see if its an array
         m = re.search('\[([0-9]*)\]', strType)
         if(m):
-            array = True
             if(m.group(1) != ''):
                 arrayLen = int(m.group(1))
             strType = strType[0:m.start()]
 
 
-
-
-        newField = fieldDesc(name, strType)
-
-        strType = strType.replace('_t','')
-
-        if not (strType in sizeDict):
-            print "Unsupported type: " + strType
-
-        newField.size = sizeDict[strType]
-
-        if(array):
-            newField.isArray = True
-            if(arrayLen>0):
-                newField.arrayLen = arrayLen
-            else:
-                newField.isVarLen = True
-                if('max-len' in field.attrib):
-                    newField.arrayLen = int(field.attrib['max-len'])
-                else:
-                    newField.arrayLen = 255
-
-            newField.size = newField.arrayLen
-
+        newField = fieldDesc(name, strType, arrayLen)
 
         if('format' in field.attrib):
-            newField.format = field.attrib['format']
+            format = field.attrib['format'].lower()
+            if not format in formatDict:
+                print "INVALID FORMAT :" + format
+
+            newField.format = formatDict[format]
 
         if('desc' in field.attrib):
             newField.desc = field.attrib['desc']
-
-        if('max-len' in field.attrib):
-            newField.arrayLen = field.attrib['max-len']
 
         if(name in protocol.fields):
             print 'ERROR Duplicate Field Name!: ' + name

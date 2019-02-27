@@ -14,6 +14,9 @@ extern "C"
 {
 #endif
 
+//macro to check if memory has been allocated or bound for packet fields 
+#define MEM_EXISTS( packet) ((packet->mAllocated) || (packet->mBound))
+
 typedef enum PacketStatus {
   PACKET_VALID = -400,
   PACKET_INCOMPLETE,
@@ -83,6 +86,13 @@ void poly_packet_desc_add_field(poly_packet_desc_t* desc, poly_field_desc_t* fie
   *@return ptr to newly created poly_packet_t
   */
 poly_packet_t* new_poly_packet(poly_packet_desc_t* desc);
+
+/**
+  *@brief copies complete packet over to another packet
+  *@param src ptr to packet to be copied
+  *@param dst ptr to packet being written
+  */
+void poly_packet_copy( poly_packet_t* src, poly_packet_t* dst);
 
 /**
   *@brief frees memory from packet

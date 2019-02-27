@@ -11,27 +11,28 @@
 
 #include "SampleProtocol_proto.h"
 
+using namespace Utilities::PolyPacket;
 //Declare extern packet descriptors
-packet_desc_t* PP_SetData;
-packet_desc_t* PP_GetData;
-packet_desc_t* PP_RespData;
-packet_desc_t* PP_blockReq;
-packet_desc_t* PP_blockResp;
+poly_packet_desc_t* PP_SetData;
+poly_packet_desc_t* PP_GetData;
+poly_packet_desc_t* PP_RespData;
+poly_packet_desc_t* PP_blockReq;
+poly_packet_desc_t* PP_blockResp;
 
 
 //Declare extern field descriptors
-field_desc_t* PF_src;
-field_desc_t* PF_dst;
-field_desc_t* PF_cmd;
-field_desc_t* PF_sensorA;
-field_desc_t* PF_sensorB;
-field_desc_t* PF_sensorName;
-field_desc_t* PF_blockOffset;
-field_desc_t* PF_blockSize;
-field_desc_t* PF_blockData;
+poly_field_desc_t* PF_src;
+poly_field_desc_t* PF_dst;
+poly_field_desc_t* PF_cmd;
+poly_field_desc_t* PF_sensorA;
+poly_field_desc_t* PF_sensorB;
+poly_field_desc_t* PF_sensorName;
+poly_field_desc_t* PF_blockOffset;
+poly_field_desc_t* PF_blockSize;
+poly_field_desc_t* PF_blockData;
 
 
-void SampleProtocol_proto_protocol_init()
+void SampleProtocol_protocol_init()
 {
   //Packet Descriptors
   PP_SetData = new_poly_packet_desc("SetData", 5 );
@@ -42,15 +43,15 @@ void SampleProtocol_proto_protocol_init()
 
 
   //Field Descriptos
-  PF_src = new_poly_field_desc("src", TYPE_UINT16_T , 1 , FORMAT_HEX );
-  PF_dst = new_poly_field_desc("dst", TYPE_UINT16_T , 1 , FORMAT_HEX );
-  PF_cmd = new_poly_field_desc("cmd", TYPE_UINT8_T , 1 , FORMAT_HEX );
+  PF_src = new_poly_field_desc("src", TYPE_UINT16 , 1 , FORMAT_HEX );
+  PF_dst = new_poly_field_desc("dst", TYPE_UINT16 , 1 , FORMAT_HEX );
+  PF_cmd = new_poly_field_desc("cmd", TYPE_UINT8 , 1 , FORMAT_HEX );
   PF_sensorA = new_poly_field_desc("sensorA", TYPE_INT16 , 1 , FORMAT_DEC );
   PF_sensorB = new_poly_field_desc("sensorB", TYPE_INT , 1 , FORMAT_DEC );
-  PF_sensorName = new_poly_field_desc("sensorName", TYPE_STRING , 16 , FORMAT_ASCII );
-  PF_blockOffset = new_poly_field_desc("blockOffset", TYPE_UINT32_T , 1 , FORMAT_HEX );
-  PF_blockSize = new_poly_field_desc("blockSize", TYPE_UINT32_T , 1 , FORMAT_DEC );
-  PF_blockData = new_poly_field_desc("blockData", TYPE_UINT8_T , 64 , FORMAT_NONE );
+  PF_sensorName = new_poly_field_desc("sensorName", TYPE_STRING , 32 , FORMAT_ASCII );
+  PF_blockOffset = new_poly_field_desc("blockOffset", TYPE_UINT32 , 1 , FORMAT_HEX );
+  PF_blockSize = new_poly_field_desc("blockSize", TYPE_UINT32 , 1 , FORMAT_DEC );
+  PF_blockData = new_poly_field_desc("blockData", TYPE_UINT8 , 64 , FORMAT_NONE );
 
 
   //Setting fields Descriptors for SetdataPacket
@@ -93,222 +94,226 @@ void SampleProtocol_proto_protocol_init()
 
 }
 /**********************************************************
-              SetdataPacket                       
+              SetdataPacket
 **********************************************************/
 
 
-SetdataPacket::SetdataPacket()
+SetdataPacket::SetdataPacket(poly_packet_t* packet)
 :PolyPacket(PP_SetData)
 {  //Bind all fields
-  getField(PF_src)->mData = (uint16_t*) &mSrc;
-  getField(PF_dst)->mData = (uint16_t*) &mDst;
-  getField(PF_sensorA)->mData = (int16*) &mSensora;
-  getField(PF_sensorB)->mData = (int*) &mSensorb;
-  getField(PF_sensorName)->mData = (string*) &mSensorname;
+  getField(PF_src)->mData = (uint8_t*) &mSrc;
+  getField(PF_dst)->mData = (uint8_t*) &mDst;
+  getField(PF_sensorA)->mData = (uint8_t*) &mSensora;
+  getField(PF_sensorB)->mData = (uint8_t*) &mSensorb;
+  getField(PF_sensorName)->mData = (uint8_t*) &mSensorname;
   mPacket->mBound = true;
+  copyFrom(packet);
 }
 
-uint16_t SetdataPacket::Src(uint16_t  val)
+void SetdataPacket::Src(uint16_t  val)
 {
   hasField(PF_src,true);
   mSrc = val;
 }
 
-uint16_t SetdataPacket::Dst(uint16_t  val)
+void SetdataPacket::Dst(uint16_t  val)
 {
   hasField(PF_dst,true);
   mDst = val;
 }
 
-int16 SetdataPacket::Sensora(int16  val)
+void SetdataPacket::Sensora(int16_t  val)
 {
   hasField(PF_sensorA,true);
   mSensora = val;
 }
 
-int SetdataPacket::Sensorb(int  val)
+void SetdataPacket::Sensorb(int  val)
 {
   hasField(PF_sensorB,true);
   mSensorb = val;
 }
 
-string SetdataPacket::Sensorname(string  val)
+void SetdataPacket::Sensorname(string  val)
 {
   hasField(PF_sensorName,true);
-  memcpy(mSensorname, val.c_str(), min((int)val.length(),16);
+  memcpy(mSensorname, val.c_str(), min((int)val.length(),32));
 }
 /**********************************************************
-              GetdataPacket                       
+              GetdataPacket
 **********************************************************/
 
 
-GetdataPacket::GetdataPacket()
+GetdataPacket::GetdataPacket(poly_packet_t* packet)
 :PolyPacket(PP_GetData)
 {  //Bind all fields
-  getField(PF_src)->mData = (uint16_t*) &mSrc;
-  getField(PF_dst)->mData = (uint16_t*) &mDst;
-  getField(PF_sensorA)->mData = (int16*) &mSensora;
-  getField(PF_sensorB)->mData = (int*) &mSensorb;
-  getField(PF_sensorName)->mData = (string*) &mSensorname;
+  getField(PF_src)->mData = (uint8_t*) &mSrc;
+  getField(PF_dst)->mData = (uint8_t*) &mDst;
+  getField(PF_sensorA)->mData = (uint8_t*) &mSensora;
+  getField(PF_sensorB)->mData = (uint8_t*) &mSensorb;
+  getField(PF_sensorName)->mData = (uint8_t*) &mSensorname;
   mPacket->mBound = true;
+  copyFrom(packet);
 }
 
-uint16_t GetdataPacket::Src(uint16_t  val)
+void GetdataPacket::Src(uint16_t  val)
 {
   hasField(PF_src,true);
   mSrc = val;
 }
 
-uint16_t GetdataPacket::Dst(uint16_t  val)
+void GetdataPacket::Dst(uint16_t  val)
 {
   hasField(PF_dst,true);
   mDst = val;
 }
 
-int16 GetdataPacket::Sensora(int16  val)
+void GetdataPacket::Sensora(int16_t  val)
 {
   hasField(PF_sensorA,true);
   mSensora = val;
 }
 
-int GetdataPacket::Sensorb(int  val)
+void GetdataPacket::Sensorb(int  val)
 {
   hasField(PF_sensorB,true);
   mSensorb = val;
 }
 
-string GetdataPacket::Sensorname(string  val)
+void GetdataPacket::Sensorname(string  val)
 {
   hasField(PF_sensorName,true);
-  memcpy(mSensorname, val.c_str(), min((int)val.length(),16);
+  memcpy(mSensorname, val.c_str(), min((int)val.length(),32));
 }
 /**********************************************************
-              RespdataPacket                       
+              RespdataPacket
 **********************************************************/
 
 
-RespdataPacket::RespdataPacket()
+RespdataPacket::RespdataPacket(poly_packet_t* packet)
 :PolyPacket(PP_RespData)
 {  //Bind all fields
-  getField(PF_src)->mData = (uint16_t*) &mSrc;
-  getField(PF_dst)->mData = (uint16_t*) &mDst;
-  getField(PF_sensorA)->mData = (int16*) &mSensora;
-  getField(PF_sensorB)->mData = (int*) &mSensorb;
-  getField(PF_sensorName)->mData = (string*) &mSensorname;
+  getField(PF_src)->mData = (uint8_t*) &mSrc;
+  getField(PF_dst)->mData = (uint8_t*) &mDst;
+  getField(PF_sensorA)->mData = (uint8_t*) &mSensora;
+  getField(PF_sensorB)->mData = (uint8_t*) &mSensorb;
+  getField(PF_sensorName)->mData = (uint8_t*) &mSensorname;
   mPacket->mBound = true;
+  copyFrom(packet);
 }
 
-uint16_t RespdataPacket::Src(uint16_t  val)
+void RespdataPacket::Src(uint16_t  val)
 {
   hasField(PF_src,true);
   mSrc = val;
 }
 
-uint16_t RespdataPacket::Dst(uint16_t  val)
+void RespdataPacket::Dst(uint16_t  val)
 {
   hasField(PF_dst,true);
   mDst = val;
 }
 
-int16 RespdataPacket::Sensora(int16  val)
+void RespdataPacket::Sensora(int16_t  val)
 {
   hasField(PF_sensorA,true);
   mSensora = val;
 }
 
-int RespdataPacket::Sensorb(int  val)
+void RespdataPacket::Sensorb(int  val)
 {
   hasField(PF_sensorB,true);
   mSensorb = val;
 }
 
-string RespdataPacket::Sensorname(string  val)
+void RespdataPacket::Sensorname(string  val)
 {
   hasField(PF_sensorName,true);
-  memcpy(mSensorname, val.c_str(), min((int)val.length(),16);
+  memcpy(mSensorname, val.c_str(), min((int)val.length(),32));
 }
 /**********************************************************
-              BlockreqPacket                       
+              BlockreqPacket
 **********************************************************/
 
 
-BlockreqPacket::BlockreqPacket()
+BlockreqPacket::BlockreqPacket(poly_packet_t* packet)
 :PolyPacket(PP_blockReq)
 {  //Bind all fields
-  getField(PF_src)->mData = (uint16_t*) &mSrc;
-  getField(PF_dst)->mData = (uint16_t*) &mDst;
-  getField(PF_blockOffset)->mData = (uint32_t*) &mBlockoffset;
-  getField(PF_blockSize)->mData = (uint32_t*) &mBlocksize;
+  getField(PF_src)->mData = (uint8_t*) &mSrc;
+  getField(PF_dst)->mData = (uint8_t*) &mDst;
+  getField(PF_blockOffset)->mData = (uint8_t*) &mBlockoffset;
+  getField(PF_blockSize)->mData = (uint8_t*) &mBlocksize;
   mPacket->mBound = true;
+  copyFrom(packet);
 }
 
-uint16_t BlockreqPacket::Src(uint16_t  val)
+void BlockreqPacket::Src(uint16_t  val)
 {
   hasField(PF_src,true);
   mSrc = val;
 }
 
-uint16_t BlockreqPacket::Dst(uint16_t  val)
+void BlockreqPacket::Dst(uint16_t  val)
 {
   hasField(PF_dst,true);
   mDst = val;
 }
 
-uint32_t BlockreqPacket::Blockoffset(uint32_t  val)
+void BlockreqPacket::Blockoffset(uint32_t  val)
 {
   hasField(PF_blockOffset,true);
   mBlockoffset = val;
 }
 
-uint32_t BlockreqPacket::Blocksize(uint32_t  val)
+void BlockreqPacket::Blocksize(uint32_t  val)
 {
   hasField(PF_blockSize,true);
   mBlocksize = val;
 }
 
 /**********************************************************
-              BlockrespPacket                       
+              BlockrespPacket
 **********************************************************/
 
 
-BlockrespPacket::BlockrespPacket()
+BlockrespPacket::BlockrespPacket(poly_packet_t* packet)
 :PolyPacket(PP_blockResp)
 {  //Bind all fields
-  getField(PF_src)->mData = (uint16_t*) &mSrc;
-  getField(PF_dst)->mData = (uint16_t*) &mDst;
-  getField(PF_blockOffset)->mData = (uint32_t*) &mBlockoffset;
-  getField(PF_blockSize)->mData = (uint32_t*) &mBlocksize;
+  getField(PF_src)->mData = (uint8_t*) &mSrc;
+  getField(PF_dst)->mData = (uint8_t*) &mDst;
+  getField(PF_blockOffset)->mData = (uint8_t*) &mBlockoffset;
+  getField(PF_blockSize)->mData = (uint8_t*) &mBlocksize;
   getField(PF_blockData)->mData = (uint8_t*) &mBlockdata;
   mPacket->mBound = true;
+  copyFrom(packet);
 }
 
-uint16_t BlockrespPacket::Src(uint16_t  val)
+void BlockrespPacket::Src(uint16_t  val)
 {
   hasField(PF_src,true);
   mSrc = val;
 }
 
-uint16_t BlockrespPacket::Dst(uint16_t  val)
+void BlockrespPacket::Dst(uint16_t  val)
 {
   hasField(PF_dst,true);
   mDst = val;
 }
 
-uint32_t BlockrespPacket::Blockoffset(uint32_t  val)
+void BlockrespPacket::Blockoffset(uint32_t  val)
 {
   hasField(PF_blockOffset,true);
   mBlockoffset = val;
 }
 
-uint32_t BlockrespPacket::Blocksize(uint32_t  val)
+void BlockrespPacket::Blocksize(uint32_t  val)
 {
   hasField(PF_blockSize,true);
   mBlocksize = val;
 }
 
-uint8_t BlockrespPacket::Blockdata(uint8_t  val)
+void BlockrespPacket::Blockdata(uint8_t*  val)
 {
   hasField(PF_blockData,true);
-  mBlockdata = val;
+  memcpy(mBlockdata, val, 64 * sizeof(uint8_t));
 }
-

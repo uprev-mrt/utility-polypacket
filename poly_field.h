@@ -41,7 +41,8 @@ typedef enum FieldFormat {
   FORMAT_DEFAULT,
   FORMAT_DEC,
   FORMAT_HEX,
-  FORMAT_ASCII
+  FORMAT_ASCII,
+  FORMAT_NONE
 }eFieldFormat;
 
 /**
@@ -86,6 +87,13 @@ poly_field_desc_t* new_poly_field_desc(const char* name, eFieldType type, uint32
   *@param data ptr to store data
   */
 void poly_field_init(poly_field_t* field, poly_field_desc_t* desc);
+
+/**
+  *@brief copies complete field over to another field
+  *@param src ptr to field to be copied
+  *@param dst ptr to field being written
+  */
+void poly_field_copy(poly_field_t* src, poly_field_t* dst);
 
 /**
   *@brief binds poly field to data in memory

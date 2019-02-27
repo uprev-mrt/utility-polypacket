@@ -13,7 +13,6 @@ int main()
 
   SetdataPacket setDataPacket;
 
-  setDataPacket.Src(16);
 
   printf("%s\n", setDataPacket.toJSON().c_str());
 

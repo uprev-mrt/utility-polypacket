@@ -12,7 +12,7 @@
     <!-- SensorData -->
     <Field name="sensorA" type="int16" format="dec" desc="Value of Sensor A"/>
     <Field name="sensorB" type="int" format="dec" desc="Value of Sensor B" />
-    <Field name="sensorName" type="string[32]" max-len="16" format="ascii" desc="Name of sensor"/>
+    <Field name="sensorName" type="string[32]" format="ascii" desc="Name of sensor"/>
 
     <!-- Ota Block data -->
     <Field name="blockOffset" type="uint32_t" format="hex"  desc="Offset of block in memory"/>

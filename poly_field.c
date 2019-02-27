@@ -73,6 +73,17 @@ void poly_field_init(poly_field_t* field, poly_field_desc_t* desc)
   field->mPresent = false;
 }
 
+void poly_field_copy(poly_field_t* src, poly_field_t* dst)
+{
+  //must be same type to copy
+  if(src->mDesc != dst->mDesc)
+    return;
+
+  memcpy(dst->mData, src->mData, src->mSize);
+  dst->mSize = src->mSize;
+  dst->mPresent = src->mPresent;
+}
+
 void poly_field_bind(poly_field_t* field, uint8_t* data)
 {
   field->mData = data;
