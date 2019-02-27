@@ -323,7 +323,7 @@ class packetDesc:
 
             output.write( "  hasField("+field.globalName+",true);\n" )
             if(field.cppType == 'string'):
-                output.write( "  memcpy(m"+field.name.capitalize()+", val.c_str(), min((int)val.length(),"+str(field.arrayLen)+"));\n}\n" )
+                output.write( "  memcpy(m"+field.name.capitalize()+", val.c_str(), min((int)val.length() + 1,"+str(field.arrayLen)+"));\n}\n" )
             else:
                 if(field.isArray):
                     output.write( "  memcpy(m"+field.name.capitalize()+", val, "+ str(field.arrayLen)+" * sizeof("+ field.cType+"));\n}\n" )
@@ -472,7 +472,7 @@ class protocolDesc:
         output.write(self.generateSourceCommon(True))
 
         #init
-        output.write("void "+self.name.capitalize()+"_protocol_init()\n{\n  //Packet Descriptors\n" )
+        output.write("void "+self.name+"_protocol_init()\n{\n  //Packet Descriptors\n" )
         for packet in self.packets:
             output.write("  "+packet.globalName+" = new_poly_packet_desc(\""+ packet.name+"\", "+ str(len(packet.fields))+ " );\n" )
 

@@ -1,26 +1,32 @@
 
 #ifdef UNIT_TESTING_ENABLED
 
-#include "poly_packet.h"
-#include "poly_field.h"
-#include "poly_struct.h"
+
 
 #include "poly_packet.c"
 #include "poly_field.c"
-#include "poly_struct.c"
+#include "PolyPacket.cpp"
+#include "example/SampleProtocol_proto.cpp"
 
 #include <gtest/gtest.h>
 
-using namespace Utilities;
+using namespace Utilities::PolyPacket;
 
 
 //Test ints
 TEST(PolyFieldTest, test1)
 {
-  poly_test_init();
-  test_struct_t* = new_test_struct();
+  SampleProtocol_protocol_init();
 
-  
+  SetdataPacket msg;
+
+  msg.Src(197);
+  msg.Dst(208);
+  msg.Sensorname("testName");
+
+
+  ASSERT_EQ(msg.toJSON() , "{\"src\" : \"xC500\" , \"dst\" : \"xD000\" , \"sensorName\" : \"testName\"}");
+
 
 }
 

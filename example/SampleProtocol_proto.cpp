@@ -11,7 +11,6 @@
 
 #include "SampleProtocol_proto.h"
 
-using namespace Utilities::PolyPacket;
 //Declare extern packet descriptors
 poly_packet_desc_t* PP_SetData;
 poly_packet_desc_t* PP_GetData;
@@ -94,7 +93,7 @@ void SampleProtocol_protocol_init()
 
 }
 /**********************************************************
-              SetdataPacket
+              SetdataPacket                       
 **********************************************************/
 
 
@@ -137,10 +136,10 @@ void SetdataPacket::Sensorb(int  val)
 void SetdataPacket::Sensorname(string  val)
 {
   hasField(PF_sensorName,true);
-  memcpy(mSensorname, val.c_str(), min((int)val.length(),32));
+  memcpy(mSensorname, val.c_str(), min((int)val.length() + 1,32));
 }
 /**********************************************************
-              GetdataPacket
+              GetdataPacket                       
 **********************************************************/
 
 
@@ -183,10 +182,10 @@ void GetdataPacket::Sensorb(int  val)
 void GetdataPacket::Sensorname(string  val)
 {
   hasField(PF_sensorName,true);
-  memcpy(mSensorname, val.c_str(), min((int)val.length(),32));
+  memcpy(mSensorname, val.c_str(), min((int)val.length() + 1,32));
 }
 /**********************************************************
-              RespdataPacket
+              RespdataPacket                       
 **********************************************************/
 
 
@@ -229,10 +228,10 @@ void RespdataPacket::Sensorb(int  val)
 void RespdataPacket::Sensorname(string  val)
 {
   hasField(PF_sensorName,true);
-  memcpy(mSensorname, val.c_str(), min((int)val.length(),32));
+  memcpy(mSensorname, val.c_str(), min((int)val.length() + 1,32));
 }
 /**********************************************************
-              BlockreqPacket
+              BlockreqPacket                       
 **********************************************************/
 
 
@@ -272,7 +271,7 @@ void BlockreqPacket::Blocksize(uint32_t  val)
 }
 
 /**********************************************************
-              BlockrespPacket
+              BlockrespPacket                       
 **********************************************************/
 
 
