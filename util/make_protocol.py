@@ -17,6 +17,7 @@ import zlib
 now = datetime.datetime.now()
 path ="./"
 
+
 sizeDict = {
     "uint8" : 1,
     "int8" : 1,
