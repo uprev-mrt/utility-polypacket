@@ -22,6 +22,7 @@ poly_packet_desc_t* new_poly_packet_desc(const char* name, int maxFields)
   desc->mFieldCount =0;
   desc->mFields = (poly_field_desc_t**) malloc(sizeof(poly_field_desc_t*) * desc->mMaxFields);
   desc->mRequirementMap = (bool*) malloc(sizeof(bool) * desc->mMaxFields);
+  desc->mMaxPacketSize = PACKET_METADATA_SIZE;
 
   return desc;
 }
@@ -36,6 +37,17 @@ void poly_packet_desc_add_field(poly_packet_desc_t* desc, poly_field_desc_t* fie
 
     //increment field count
     desc->mFieldCount++;
+
+    //add to max size
+    if(fieldDesc->mLen > 1)
+    {
+      //array fields have a leading byte with their length
+      desc->mMaxPacketSize += (fieldDesc->mObjSize * fieldDesc->mLen) + 1;
+    }
+    else
+    {
+      desc->mMaxPacketSize += fieldDesc->mObjSize
+    }
 
     //recalculate manifest size
     desc->mManifestSize = (desc->mFieldCount +8)/8;

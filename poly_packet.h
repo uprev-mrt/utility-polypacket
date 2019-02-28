@@ -14,7 +14,7 @@ extern "C"
 {
 #endif
 
-//macro to check if memory has been allocated or bound for packet fields 
+//macro to check if memory has been allocated or bound for packet fields
 #define MEM_EXISTS( packet) ((packet->mAllocated) || (packet->mBound))
 
 typedef enum PacketStatus {
@@ -22,7 +22,8 @@ typedef enum PacketStatus {
   PACKET_INCOMPLETE,
   PACKET_BAD_CHECKSUM,
   PACKET_PARSING_ERROR,
-  INVALID_PACKET_TYPE
+  INVALID_PACKET_TYPE,
+  PACKET_NONE
 }ePacketStatus;
 
 #define PACKET_METADATA_SIZE (sizeof(poly_packet_hdr_t))
@@ -41,6 +42,7 @@ typedef struct{
   int mFieldCount;              //number of field descriptors
   uint8_t mOptionalFieldCount;  //number of fields that are optional (used to calc manifest size)
   uint8_t mManifestSize;        //size in bytes of manifest
+  int mMaxPacketSize; 
 }poly_packet_desc_t;
 
 
