@@ -63,6 +63,8 @@ typedef struct{
   poly_field_desc_t* mDesc;    //pointer to descriptor
   uint8_t mSize;         //actual size (used for variable len fields)
   bool mPresent;          //indicated field is present in packet
+  bool mBound;
+  bool mAllocated;
 }poly_field_t;
 
 #ifdef __cplusplus
@@ -84,9 +86,10 @@ poly_field_desc_t* new_poly_field_desc(const char* name, eFieldType type, uint32
   *@brief initializes a new field
   *@param field ptr to field
   *@param desc ptr to field descriptor
+  *@param allocate whether or not to allocate memory
   *@param data ptr to store data
   */
-void poly_field_init(poly_field_t* field, poly_field_desc_t* desc);
+void poly_field_init(poly_field_t* field, poly_field_desc_t* desc, bool allocate);
 
 /**
   *@brief copies complete field over to another field

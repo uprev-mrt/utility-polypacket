@@ -42,7 +42,7 @@ typedef struct{
   int mFieldCount;              //number of field descriptors
   uint8_t mOptionalFieldCount;  //number of fields that are optional (used to calc manifest size)
   uint8_t mManifestSize;        //size in bytes of manifest
-  int mMaxPacketSize; 
+  int mMaxPacketSize;
 }poly_packet_desc_t;
 
 
@@ -85,9 +85,10 @@ void poly_packet_desc_add_field(poly_packet_desc_t* desc, poly_field_desc_t* fie
 /**
   *@brief creates a new poly_packet_t in memory and allocates memory for fields
   *@param desc ptr to packet descriptor
+  *@param allocate whether or not to allocate the memory
   *@return ptr to newly created poly_packet_t
   */
-poly_packet_t* new_poly_packet(poly_packet_desc_t* desc);
+poly_packet_t* new_poly_packet(poly_packet_desc_t* desc, bool allocate);
 
 /**
   *@brief copies complete packet over to another packet
@@ -132,7 +133,8 @@ int poly_packet_id(uint8_t* data, int len);
   *@return PACKET_BAD_CHECKSUM if the checksum is incorrect (likely bit error)
   *@return PACKET_PARSING_ERROR if len is longer than it should be (likely missed a delimiter)
   */
-ePacketStatus poly_packet_parse(poly_packet_t* packet, poly_packet_desc_t* dec, uint8_t* data, int len);
+ePacketStatus poly_packet_parse_buffer(poly_packet_t* packet, poly_packet_desc_t* desc, uint8_t* data, int len);
+
 
 /**
   *@brief packs data into byte array

@@ -25,13 +25,19 @@ extern "C"
 
 typedef void (*poly_rx_callback)(poly_packet_t* packet);
 
+typedef enum parseState {
+  STATE_WAITING_FOR_HEADER,
+  STATE_HEADER_FOUND,
+}eParseState;
+
 typdef struct{
   uint8_t* mRaw; //raw packet being parsed
   int mIdx;      //index of raw message
 
   fifo_t mBytefifo;       //fifo of incoming bytes
-  int mExpectedPacketLen; //
-  uint8_t mExpectedTypeId;
+  poly_packet_hdr_t mCurrentHdr; //header for current message candidate
+  eParseState mParseState;
+
 
   fifo_t mPacketBuffer; //outgoing packet buffer
 
@@ -109,19 +115,6 @@ void poly_parser_feed(poly_parser_t* pParser, int interface, uint8_t* data, int 
   */
 bool poly_parser_next(poly_parser_t* pParser,int interface,  poly_packet_t* pPacket);
 
-/**
-  *@brief parses packet from data buffer
-  *@param pParser ptr to poly parser
-  *@param packet ptr to packet being filled out
-  *@param data ptr to raw data to be parsed
-  *@param len length of data buffer to be parsed
-  *@return PACKET_VALID if packet is ok
-  *@return PACKET_INCOMPLETE if len is shorter than packet header indicates
-  *@return PACKET_BAD_CHECKSUM if the checksum is incorrect (likely bit error)
-  *@return PACKET_PARSING_ERROR if len is longer than it should be (likely missed a delimiter)
-  */
-ePacketStatus poly_parser_parse(poly_parser_t* pParser, poly_packet_t* packet, uint8_t* data, int len );
-
 
 /**
   *@brief advances the idx in the interface buffer until the next valid header
@@ -129,7 +122,19 @@ ePacketStatus poly_parser_parse(poly_parser_t* pParser, poly_packet_t* packet, u
   *@param iface ptr to interface
   *@return true if header is found
   */
-bool poly_parser_seek_valid_header(poly_parser_t* pParser, poly_interface_t* iface);
+bool poly_parser_seek_header(poly_parser_t* pParser, poly_interface_t* iface);
+
+/**
+  *@brief parses packet from data buffer
+  *@param pParser ptr to poly parser
+  *@param packet ptr to packet being filled out
+  *@param interface index of interface
+  *@return PACKET_VALID if packet is ok
+  *@return PACKET_INCOMPLETE if len is shorter than packet header indicates
+  *@return PACKET_BAD_CHECKSUM if the checksum is incorrect (likely bit error)
+  *@return PACKET_PARSING_ERROR if len is longer than it should be (likely missed a delimiter)
+  */
+ePacketStatus poly_parser_try_parse(poly_parser_t* pParser, poly_packet_t* packet, int interface);
 
 
 

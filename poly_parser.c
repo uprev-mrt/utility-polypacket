@@ -58,10 +58,8 @@ void poly_parser_start(poly_parser_t* pParser, int fifoDepth)
     pParser->mInterfaces[i]->mBitErrors = 0;
 
     //set up buffers, make incoming byte buffer 2x max packet size
-    pParser->mInterfaces[i]->mRawMessage = (uint8_t*) malloc(pParser->mMaxPacketSize);
-    pParser->mInterfaces[i]->mIdx = 0;
-    pParser->mInterfaces[i]->mExpectedPacketLen = -1;
-    pParser->mInterfaces[i]->mValidHeader = false;
+    pParser->mInterfaces[i]->mParseState= STATE_WAITING_FOR_HEADER;
+    pParser->mInterfaces[i]->mRaw = (uint8_t*) malloc(pParser->mMaxPacketSize);
 
     fifo_init(&pParser->mInterfaces[i]->mPacketFifo, fifoDepth, sizeof(poly_packet_t));
   }
@@ -92,50 +90,84 @@ bool poly_parser_next(poly_parser_t* pParser, int interface,  poly_packet_t* pPa
   return true;
 }
 
-bool poly_parser_seek_valid_header(poly_parser_t* pParser, poly_interface_t* iface)
+bool poly_parser_seek_header(poly_parser_t* pParser, poly_interface_t* iface)
 {
-  poly_packet_hdr_t* pHdr;
-  int hdrAddr =-1;
-  int i;
-  //we must have atleast the header size to be a valid header
-  if(iface->mIdx < sizeof(poly_packet_hdr_t))
-    return false;
-
-  for( i=0; i < (iface->mIdx - sizeof(poly_packet_hdr_t)) ; i++)
+  uint8_t trash;
+  uint8_t id;
+  bool retVal =false;
+  //if we dont have at least the size of a header, it cant be valid
+  while(!(iface->mBytefifo.mCount < sizeof(poly_packet_hdr_t)))
   {
-    pHdr = (poly_packet_hdr_t*) &iface->mByteBuffer[i];
+    //peek in next header
+    fifo_peek_buf(&iface->mBytefifo, &iface->mCurrentHdr, sizeof(poly_packet_hdr_t));
 
-    //check if typeid is valid and data len is valid for that packet type
-    if((pHdr->mTypeId < pParser->mDescCount) && (pHdr->mDataLen <= pParser->mDescs[pHdr->mTypeId]->mMaxPacketSize))
+    id = iface->mCurrentHdr.mTypeId
+    //if packet type is valid, and length is valid for that packet type, we have a candidate
+    if((iface->mCurrentHdr.mTypeId < pParser->mDescCount) && (iface->mCurrentHdr.mDataLen < pParser->mDescs[iface->mCurrentHdr.mTypeId]->mMaxPacketSize))
     {
-      hdrAddr = i;
+      iface->mParseState = STATE_HEADER_FOUND;
+      retVal = true;
       break;
+    }
+    else
+    {
+      //if we are not on a valid header, throw away the fifo tail and move on to the next byte
+      fifo_pop(&iface->mBytefifo, &trash);
+    }
+
+  }
+    return retVal;
+}
+
+ePacketStatus poly_parser_try_parse(poly_parser_t* pParser, poly_packet_t* packet, int interface)
+{
+  poly_interface_t* iface = &pParser->mInterfaces[interface];
+  ePacketStatus retVal = PACKET_NONE;
+  uint16_t checksumComp;
+  uint8_t trash;
+  int len;
+
+  //if we dont have at least the size of a header, it cant be valid
+  while((iface->mBytefifo.mCount >= sizeof(poly_packet_hdr_t))&& (retVal == PACKET_NONE) )
+  {
+    if(iface->mParseState->mParseState == STATE_WAITING_FOR_HEADER)
+    {
+        //moves tail of fifo to next possible header
+        poly_parser_seek_header(pParser, iface);
+    }
+
+    if(iface->mParseState->mParseState == STATE_HEADER_FOUND)
+    {
+        len = iface->mCurrentHdr.mDataLen + PACKET_METADATA_SIZE;
+        //see if fifo has enough to contain the entire packet
+        if(iface->mBytefifo.mCount >= len)
+        {
+          //calculate checksum of data in the fifo, if it matches the checksum in the header, we have a valid packet
+          checksumComp =fifo_checksum(&iface->mBytefifo, sizeof(poly_packet_hdr_t), iface->mCurrentHdr.mDataLen );
+          if(checksumComp == iface->mCurrentHdr.mCheckSum)
+          {
+            //Valid packet, Parse!
+            fifo_peek_buf(&iface->mBytefifo, pParser->mRaw, len );
+            newPacket = new_poly_packet(pParser->mDescs[iface->mCurrentHdr.mTypeId], true);
+
+            //push new packet to the packet fifo (makes a copy)
+            fifo_push(&iface->mPacketFifo, newPacket);
+
+            //free up memory since we made a copy..
+            free(newPacket);
+            retVal = PACKET_VALID;
+          }
+          else
+          {
+            //bad checksum throw away leading byte and try again
+            iface->mParseState->mParseState == STATE_WAITING_FOR_HEADER;
+
+          }
+        }
     }
   }
 
-  //whether we found a header or not, we can get rid of any bytes before i
-
-  if()
-  memcpy(iface->mByteBuffer, iface->mByteBuffer[i], iface->mIdx -i);
-  iface->mIdx -= i; // subtract from byte count
-
-
-  //if no valid headers are in data, we have missed the beginning of a packet and need to clear it
-  if(hdrAddr == -1)
-  {
-    i++; // move past the last idx we checked because we know it isnt a valid packet
-
-    //copy remaining bytes to beginning of buffer;
-    memcpy(iface->mByteBuffer, iface->mByteBuffer[i], iface->mIdx -i);
-    iface->mIdx -= i; // subtract from byte count
-
-    return false;
-  }
-
-  //if we did find a possible header
-
-
-
+  return retVal;
 
 }
 

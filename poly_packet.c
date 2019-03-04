@@ -54,7 +54,7 @@ void poly_packet_desc_add_field(poly_packet_desc_t* desc, poly_field_desc_t* fie
   }
 }
 
-poly_packet_t* new_poly_packet(poly_packet_desc_t* desc)
+poly_packet_t* new_poly_packet(poly_packet_desc_t* desc, bool allocate)
 {
   poly_packet_t* newPacket = (poly_packet_t*)malloc(sizeof(poly_packet_t));
   newPacket->mBound = false;
@@ -64,7 +64,7 @@ poly_packet_t* new_poly_packet(poly_packet_desc_t* desc)
   newPacket->mFields = (poly_field_t*) malloc(sizeof(poly_field_t) * desc->mFieldCount);
   for(int i=0; i< desc->mFieldCount; i++)
   {
-    poly_field_init(&newPacket->mFields[i], desc->mFields[i]);
+    poly_field_init(&newPacket->mFields[i], desc->mFields[i], allocate);
   }
 
   return newPacket;
@@ -72,9 +72,10 @@ poly_packet_t* new_poly_packet(poly_packet_desc_t* desc)
 
 void poly_packet_copy( poly_packet_t* src, poly_packet_t* dst)
 {
-  //make sure they have memory allocated
+  //make sure they have memory allocated/bound
   assert(MEM_EXISTS(src));
   assert(MEM_EXISTS(dst));
+
   assert(src->mDesc == dst->mDesc);
 
   memcpy(&dst->mHeader, &src->mHeader, sizeof(poly_packet_hdr_t));
@@ -222,6 +223,7 @@ ePacketStatus poly_packet_parse(poly_packet_t* packet, poly_packet_desc_t* desc,
 
   return PACKET_VALID;
 }
+
 
 int poly_packet_pack(poly_packet_t* packet, uint8_t* data)
 {

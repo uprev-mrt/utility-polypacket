@@ -18,12 +18,15 @@ namespace PolyPacket{
 class PolyParser
 {
 public:
-  PolyParser();
-
+  PolyParser(int interfaceCount = 1);
   ~PolyParser();
 
+  void feed(uint8_t* data, int len, interface = 0);
+  void feedJSON(std::string json);
+  int available(int interface =0) const {return mParser->mInterfaces[interface].mPacketFifo.mCount;}
+  PolyPacket next(int interface =0);
 protected:
-
+  poly_parser_t* mParser;
 };
 
 

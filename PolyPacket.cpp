@@ -8,7 +8,7 @@ namespace PolyPacket{
 
 PolyPacket::PolyPacket(poly_packet_desc_t* descriptor)
 {
-  mPacket = new_poly_packet(descriptor);
+  mPacket = new_poly_packet(descriptor, false);
 }
 
 PolyPacket::~PolyPacket()

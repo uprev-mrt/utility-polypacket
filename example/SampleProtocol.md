@@ -1,5 +1,5 @@
 # SampleProtocol
-* Generated: 02/27/19<br/>
+* Generated: 03/01/19<br/>
 * CRC: 2674BA21
 
 ##### This is a sample protocol made up to demonstrate features of the PolyPacket code generation tool. The idea   is to have a tool that can automatically create parseable/serializable messaging for embedded systems.
