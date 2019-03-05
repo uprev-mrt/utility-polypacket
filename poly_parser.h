@@ -127,14 +127,13 @@ bool poly_parser_seek_header(poly_parser_t* pParser, poly_interface_t* iface);
 /**
   *@brief parses packet from data buffer
   *@param pParser ptr to poly parser
-  *@param packet ptr to packet being filled out
   *@param interface index of interface
   *@return PACKET_VALID if packet is ok
   *@return PACKET_INCOMPLETE if len is shorter than packet header indicates
   *@return PACKET_BAD_CHECKSUM if the checksum is incorrect (likely bit error)
   *@return PACKET_PARSING_ERROR if len is longer than it should be (likely missed a delimiter)
   */
-ePacketStatus poly_parser_try_parse(poly_parser_t* pParser, poly_packet_t* packet, int interface);
+ePacketStatus poly_parser_try_parse(poly_parser_t* pParser, int interface);
 
 
 
