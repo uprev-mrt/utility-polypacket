@@ -6,6 +6,7 @@
   */
 
 #include "poly_field.h"
+#include <assert.h>
 
 poly_field_desc_t* new_poly_field_desc(const char* name, eFieldType type, uint32_t len, eFieldFormat format)
 {
@@ -14,7 +15,14 @@ poly_field_desc_t* new_poly_field_desc(const char* name, eFieldType type, uint32
   new_desc->mFormat = FORMAT_DEC;
   new_desc->mLen = len;
   new_desc->mDataType = type;
-  new_desc->mVarLen = false;
+  if(len > 1)
+  {
+    new_desc->mVarLen = true;
+  }
+  else
+  {
+    new_desc->mVarLen = false;
+  }
   new_desc->mNullTerm = false;
   switch(type)
   {
@@ -74,7 +82,7 @@ void poly_field_init(poly_field_t* field, poly_field_desc_t* desc, bool allocate
   field->mBound = false;
   if(allocate)
   {
-    field->mBuffer = (uint8_t*) malloc(field->mSize);
+    field->mData = (uint8_t*) malloc(field->mSize);
     field->mAllocated = true;
   }
   else

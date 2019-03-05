@@ -2,7 +2,7 @@
   *@file SampleProtocol.cpp
   *@brief generated protocol source code
   *@author make_protocol.py
-  *@date 03/01/19
+  *@date 03/04/19
   */
 
 /***********************************************************
@@ -136,7 +136,9 @@ void SetdataPacket::Sensorb(int  val)
 void SetdataPacket::Sensorname(string  val)
 {
   hasField(PF_sensorName,true);
-  memcpy(mSensorname, val.c_str(), min((int)val.length() + 1,32));
+  int len= min((int)val.length() + 1,32);
+  getField(PF_sensorName)->mSize = len;
+  memcpy(mSensorname, val.c_str(), len);
 }
 /**********************************************************
               GetdataPacket                       
@@ -182,7 +184,9 @@ void GetdataPacket::Sensorb(int  val)
 void GetdataPacket::Sensorname(string  val)
 {
   hasField(PF_sensorName,true);
-  memcpy(mSensorname, val.c_str(), min((int)val.length() + 1,32));
+  int len= min((int)val.length() + 1,32);
+  getField(PF_sensorName)->mSize = len;
+  memcpy(mSensorname, val.c_str(), len);
 }
 /**********************************************************
               RespdataPacket                       
@@ -228,7 +232,9 @@ void RespdataPacket::Sensorb(int  val)
 void RespdataPacket::Sensorname(string  val)
 {
   hasField(PF_sensorName,true);
-  memcpy(mSensorname, val.c_str(), min((int)val.length() + 1,32));
+  int len= min((int)val.length() + 1,32);
+  getField(PF_sensorName)->mSize = len;
+  memcpy(mSensorname, val.c_str(), len);
 }
 /**********************************************************
               BlockreqPacket                       

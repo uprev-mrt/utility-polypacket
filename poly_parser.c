@@ -119,7 +119,7 @@ bool poly_parser_seek_header(poly_parser_t* pParser, poly_interface_t* iface)
     return retVal;
 }
 
-ePacketStatus poly_parser_try_parse(poly_parser_t* pParser, poly_packet_t* packet, int interface)
+ePacketStatus poly_parser_try_parse(poly_parser_t* pParser, int interface)
 {
   poly_interface_t* iface = &pParser->mInterfaces[interface];
   ePacketStatus retVal = PACKET_NONE;

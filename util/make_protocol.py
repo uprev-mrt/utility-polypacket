@@ -324,7 +324,9 @@ class packetDesc:
 
             output.write( "  hasField("+field.globalName+",true);\n" )
             if(field.cppType == 'string'):
-                output.write( "  memcpy(m"+field.name.capitalize()+", val.c_str(), min((int)val.length() + 1,"+str(field.arrayLen)+"));\n}\n" )
+                output.write( "  int len= min((int)val.length() + 1,"+str(field.arrayLen)+");\n")
+                output.write( "  getField(PF_sensorName)->mSize = len;\n")
+                output.write( "  memcpy(m"+field.name.capitalize()+", val.c_str(), len);\n}\n" )
             else:
                 if(field.isArray):
                     output.write( "  memcpy(m"+field.name.capitalize()+", val, "+ str(field.arrayLen)+" * sizeof("+ field.cType+"));\n}\n" )

@@ -46,7 +46,7 @@ void poly_packet_desc_add_field(poly_packet_desc_t* desc, poly_field_desc_t* fie
     }
     else
     {
-      desc->mMaxPacketSize += fieldDesc->mObjSize
+      desc->mMaxPacketSize += fieldDesc->mObjSize;
     }
 
     //recalculate manifest size
@@ -262,6 +262,8 @@ int poly_packet_pack(poly_packet_t* packet, uint8_t* data)
   }
 
   memcpy((void*)&data[0], (void*)&packet->mHeader, sizeof(poly_packet_hdr_t));
+
+  return idx;
 }
 
 int poly_packet_print_json(poly_packet_t* packet, char* buf, bool printMeta)

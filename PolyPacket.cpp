@@ -46,6 +46,11 @@ string PolyPacket::toJSON(bool printMeta) const
   return std::string(buf);
 }
 
+int PolyPacket::pack(uint8_t* data)
+{
+  return poly_packet_pack(mPacket, data);
+}
+
 
 } //PolyPacket
 } //Utilities

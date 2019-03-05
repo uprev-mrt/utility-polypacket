@@ -29,6 +29,7 @@ public:
   void hasField(poly_field_desc_t* desc, bool val);
 
   string toJSON(bool printMeta = false) const;
+  int pack(uint8_t* data);
 
 protected:
   poly_packet_t* mPacket;
