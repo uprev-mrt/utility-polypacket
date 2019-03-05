@@ -15,13 +15,16 @@ using namespace Utilities::PolyPacket;
 
 
 uint8_t buffer[1024];
+int len;
+uint8_t compBuffer[] = {0x00, 0x00, 0x22, 0x00, 0x00, 0x00, 0x5F, 0x0E, 0xCD, 0xAB, 0xEF, 0xCD, 0xF4, 0x7E, 0xAD, 0xB7, 0x0D, 0x00, 0x17, 0x54, 0x68, 0x69, 0x73, 0x20, 0x69, 0x73, 0x20, 0x6D, 0};
+SetdataPacket msg;
+SetdataPacket msg2;
 
 //Test ints
-TEST(PolyFieldTest, Json Test )
+TEST(PolyFieldTest, JsonTest )
 {
-  SampleProtocol_protocol_init();
 
-  SetdataPacket msg;
+
 
   msg.Src(0xABCD);
   msg.Dst(0xCDEF);
@@ -29,22 +32,32 @@ TEST(PolyFieldTest, Json Test )
   msg.Sensorb(898989);
   msg.Sensorname("This is my test string");
 
-  int len = msg.pack(buffer);
-
-
-  ASSERT_EQ(msg.toJSON() , "{\"src\" : \"xCDAB\" , \"dst\" : \"xEFCD\" , \"sensorA\" : 32500 , \"sensorB\" : 898989 , \"sensorName\" : \"This is my test string\"}");
-
-  for(int i; i < len; i++)
-  {
-
-  }
+  //validate json
+  ASSERT_EQ(msg.toJSON(false) , "{\"src\" : \"xCDAB\" , \"dst\" : \"xEFCD\" , \"sensorA\" : 32500 , \"sensorB\" : 898989 , \"sensorName\" : \"This is my test string\"}");
 
 }
 
 
 //Test ints
-TEST(PolyFieldTest, packetTest)
+TEST(PolyFieldTest, PackTest)
 {
+  len = msg.pack(buffer);
+
+  //validate length
+  ASSERT_EQ(len , 43 );
+
+  //verify mCheckSum
+  ASSERT_EQ( msg.Checksum(), 3903 );
+
+}
+
+//Test ints
+TEST(PolyFieldTest, ParseTest)
+{
+  msg2.parse(buffer, len);
+
+  //validate json
+  ASSERT_EQ(msg2.toJSON(false) , "{\"src\" : \"xCDAB\" , \"dst\" : \"xEFCD\" , \"sensorA\" : 32500 , \"sensorB\" : 898989 , \"sensorName\" : \"This is my test string\"}");
 
 
 }

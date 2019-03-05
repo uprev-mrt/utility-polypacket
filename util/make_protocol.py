@@ -303,14 +303,14 @@ class packetDesc:
         output.write("};\n\n")
         return output.getvalue()
 
-    def generateFunctions(self):
+    def generateFunctions(self, protocolName):
         #generate value getters
         output = StringIO.StringIO()
         output.write("/**********************************************************\n" )
         output.write("              " +self.className+ "                       \n" )
         output.write("**********************************************************/\n\n\n" )
 
-        output.write(self.className+"::"+self.className +"(poly_packet_t* packet)\n:PolyPacket("+self.globalName+")\n{" )
+        output.write(self.className+"::"+self.className +"(poly_packet_t* packet)\n:PolyPacket(&"+self.globalName+", &"+protocolName+"_protocol_init)\n{" )
         output.write("  //Bind all fields\n" )
 
         for field in self.fields:
@@ -475,7 +475,7 @@ class protocolDesc:
         output.write(self.generateSourceCommon(True))
 
         #init
-        output.write("void "+self.name+"_protocol_init()\n{\n  //Packet Descriptors\n" )
+        output.write("void "+self.name+"_protocol_init()\n{\n  static int initialized=false;\n  if(initialized)\n    return;\n  //Packet Descriptors\n" )
         for packet in self.packets:
             output.write("  "+packet.globalName+" = new_poly_packet_desc(\""+ packet.name+"\", "+ str(len(packet.fields))+ " );\n" )
 
@@ -489,11 +489,11 @@ class protocolDesc:
             for field in packet.fields:
                 output.write("  poly_packet_desc_add_field(" + packet.globalName +" , " + field.globalName+" , " + str(field.isRequired).lower() +" );\n")
 
-        output.write("\n}\n" )
+        output.write("\n  initialized =true;\n}\n" )
 
         #packets
         for packet in self.packets:
-            output.write(packet.generateFunctions())
+            output.write(packet.generateFunctions(self.name))
 
         text_file = open(file,"w")
         text_file.write(output.getvalue())

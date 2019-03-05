@@ -8,11 +8,10 @@ char printBuf[1024];
 int main()
 {
   printf("\nBuilding Test packet C++\n\n*******************************\n\n");
-  SampleProtocol_protocol_init();
-
 
   SetdataPacket setDataPacket;
 
+  printf("Test point 2\n" );
   setDataPacket.Src(0xABCD);
   setDataPacket.Dst(0xCDEF);
   setDataPacket.Sensora(32500);

@@ -2,7 +2,7 @@
   *@file SampleProtocol.cpp
   *@brief generated protocol source code
   *@author make_protocol.py
-  *@date 03/04/19
+  *@date 03/05/19
   */
 
 /***********************************************************
@@ -33,6 +33,9 @@ poly_field_desc_t* PF_blockData;
 
 void SampleProtocol_protocol_init()
 {
+  static int initialized=false;
+  if(initialized)
+    return;
   //Packet Descriptors
   PP_SetData = new_poly_packet_desc("SetData", 5 );
   PP_GetData = new_poly_packet_desc("GetData", 5 );
@@ -91,6 +94,7 @@ void SampleProtocol_protocol_init()
   poly_packet_desc_add_field(PP_blockResp , PF_blockSize , true );
   poly_packet_desc_add_field(PP_blockResp , PF_blockData , true );
 
+  initialized =true;
 }
 /**********************************************************
               SetdataPacket                       
@@ -98,7 +102,7 @@ void SampleProtocol_protocol_init()
 
 
 SetdataPacket::SetdataPacket(poly_packet_t* packet)
-:PolyPacket(PP_SetData)
+:PolyPacket(&PP_SetData, &SampleProtocol_protocol_init)
 {  //Bind all fields
   getField(PF_src)->mData = (uint8_t*) &mSrc;
   getField(PF_dst)->mData = (uint8_t*) &mDst;
@@ -146,7 +150,7 @@ void SetdataPacket::Sensorname(string  val)
 
 
 GetdataPacket::GetdataPacket(poly_packet_t* packet)
-:PolyPacket(PP_GetData)
+:PolyPacket(&PP_GetData, &SampleProtocol_protocol_init)
 {  //Bind all fields
   getField(PF_src)->mData = (uint8_t*) &mSrc;
   getField(PF_dst)->mData = (uint8_t*) &mDst;
@@ -194,7 +198,7 @@ void GetdataPacket::Sensorname(string  val)
 
 
 RespdataPacket::RespdataPacket(poly_packet_t* packet)
-:PolyPacket(PP_RespData)
+:PolyPacket(&PP_RespData, &SampleProtocol_protocol_init)
 {  //Bind all fields
   getField(PF_src)->mData = (uint8_t*) &mSrc;
   getField(PF_dst)->mData = (uint8_t*) &mDst;
@@ -242,7 +246,7 @@ void RespdataPacket::Sensorname(string  val)
 
 
 BlockreqPacket::BlockreqPacket(poly_packet_t* packet)
-:PolyPacket(PP_blockReq)
+:PolyPacket(&PP_blockReq, &SampleProtocol_protocol_init)
 {  //Bind all fields
   getField(PF_src)->mData = (uint8_t*) &mSrc;
   getField(PF_dst)->mData = (uint8_t*) &mDst;
@@ -282,7 +286,7 @@ void BlockreqPacket::Blocksize(uint32_t  val)
 
 
 BlockrespPacket::BlockrespPacket(poly_packet_t* packet)
-:PolyPacket(PP_blockResp)
+:PolyPacket(&PP_blockResp, &SampleProtocol_protocol_init)
 {  //Bind all fields
   getField(PF_src)->mData = (uint8_t*) &mSrc;
   getField(PF_dst)->mData = (uint8_t*) &mDst;

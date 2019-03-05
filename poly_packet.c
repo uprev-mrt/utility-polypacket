@@ -129,13 +129,13 @@ int poly_packet_id(uint8_t* data, int len)
 }
 
 
-ePacketStatus poly_packet_parse(poly_packet_t* packet, poly_packet_desc_t* desc, uint8_t* data, int len)
+ePacketStatus poly_packet_parse_buffer(poly_packet_t* packet, poly_packet_desc_t* desc, uint8_t* data, int len)
 {
   int idx=0;                //cursor in data
   int expectedLen =0;       //length indicated in header
 
   int manifestBit =0;        //bit offset for manifest
-  int manifestByte;         //current manifest byte
+  uint8_t manifestByte;         //current manifest byte
 
   uint16_t checkSumComp =0; //calculated checksum
 
@@ -230,9 +230,38 @@ int poly_packet_pack(poly_packet_t* packet, uint8_t* data)
   int idx=0;
   poly_field_t* field;
   packet->mHeader.mCheckSum =0;
+  int manifestBit =0;        //bit offset for manifest
+  uint8_t* manifestByte;         //current manifest byte
 
   //Skip header for now, this will be written in after we get length and checksum
   idx+=sizeof(poly_packet_hdr_t);
+
+  //create manifest
+  for(int i=0; i < packet->mDesc->mFieldCount; i++)
+  {
+    //if fields are required, they are not in the manifest
+    if(!packet->mDesc->mRequirementMap[i])
+    {
+
+      //if manifest bit is 0, we are either just starting, or rolling over
+      if(manifestBit == 0)
+      {
+        manifestByte = &data[idx++];
+        *manifestByte = 0;
+      }
+
+      if(packet->mFields[i].mPresent)
+      {
+        *manifestByte |= (0x80) >> manifestBit;
+      }
+
+
+            //increment and roll over manifest bit
+            manifestBit++;
+            if(manifestBit == 8)
+              manifestBit =0;
+    }
+  }
 
   //copy fields
   for(int i=0; i < packet->mDesc->mFieldCount; i++)

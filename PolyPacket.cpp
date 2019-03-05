@@ -6,9 +6,18 @@ using namespace std;
 namespace Utilities{
 namespace PolyPacket{
 
-PolyPacket::PolyPacket(poly_packet_desc_t* descriptor)
+
+PolyPacket::PolyPacket(poly_packet_desc_t** descriptor, void (*init_function)())
 {
-  mPacket = new_poly_packet(descriptor, false);
+  //if we havent already initialized the protocol, do it now
+    (*init_function)();
+
+  mPacket = new_poly_packet(*descriptor, false);
+}
+
+PolyPacket::PolyPacket(poly_packet_desc_t** descriptor)
+{
+  mPacket = new_poly_packet(*descriptor, false);
 }
 
 PolyPacket::~PolyPacket()
@@ -49,6 +58,11 @@ string PolyPacket::toJSON(bool printMeta) const
 int PolyPacket::pack(uint8_t* data)
 {
   return poly_packet_pack(mPacket, data);
+}
+
+bool PolyPacket::parse(uint8_t* data, int len)
+{
+  return (poly_packet_parse_buffer(mPacket, mPacket->mDesc , data, len ) == PACKET_VALID);
 }
 
 
