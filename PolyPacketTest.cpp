@@ -21,7 +21,7 @@ SetdataPacket msg;
 SetdataPacket msg2;
 
 //Test ints
-TEST(PolyFieldTest, JsonTest )
+TEST(PolyPacketTest, JsonTest )
 {
 
 
@@ -39,7 +39,7 @@ TEST(PolyFieldTest, JsonTest )
 
 
 //Test ints
-TEST(PolyFieldTest, PackTest)
+TEST(PolyPacketTest, PackTest)
 {
   len = msg.pack(buffer);
 
@@ -52,7 +52,7 @@ TEST(PolyFieldTest, PackTest)
 }
 
 //Test ints
-TEST(PolyFieldTest, ParseTest)
+TEST(PolyPacketTest, ParseTest)
 {
   msg2.parse(buffer, len);
 
