@@ -13,20 +13,31 @@
 using namespace Utilities::PolyPacket;
 
 
+
+uint8_t buffer[1024];
+
 //Test ints
-TEST(PolyFieldTest, test1)
+TEST(PolyFieldTest, Json Test )
 {
   SampleProtocol_protocol_init();
 
   SetdataPacket msg;
 
-  msg.Src(197);
-  msg.Dst(208);
-  msg.Sensorname("testName");
+  msg.Src(0xABCD);
+  msg.Dst(0xCDEF);
+  msg.Sensora(32500);
+  msg.Sensorb(898989);
+  msg.Sensorname("This is my test string");
+
+  int len = msg.pack(buffer);
 
 
-  ASSERT_EQ(msg.toJSON() , "{\"src\" : \"xC500\" , \"dst\" : \"xD000\" , \"sensorName\" : \"testName\"}");
+  ASSERT_EQ(msg.toJSON() , "{\"src\" : \"xCDAB\" , \"dst\" : \"xEFCD\" , \"sensorA\" : 32500 , \"sensorB\" : 898989 , \"sensorName\" : \"This is my test string\"}");
 
+  for(int i; i < len; i++)
+  {
+
+  }
 
 }
 
