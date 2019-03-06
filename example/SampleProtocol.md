@@ -20,6 +20,17 @@ Every Packet has a standard Header before the data
 ----
 # Packet Types:
 
+### ack
+
+
+|***Byte***|
+|---|
+|***Field***
+|***Type***
+
+
+
+------
 ### SetData
 Message to set data in node
 

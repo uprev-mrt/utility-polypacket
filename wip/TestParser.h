@@ -16,11 +16,14 @@ using namespace std;
 namespace Utilities{
 namespace PolyPacket{
 
-class PolyParser : public PolyParser
+class TestService : public PolyParser
 {
 public:
-  PolyParser(int interfaceCount = 1);
-  ~PolyParser();
+  TestParser(int interfaceCount = 1);
+  ~TestParser();
+
+private:
+  
 
 };
 

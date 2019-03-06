@@ -13,6 +13,10 @@ import StringIO
 import copy
 import datetime
 import zlib
+import argparse
+
+args = None
+parser = None
 
 now = datetime.datetime.now()
 path ="./"
@@ -123,6 +127,7 @@ class packetDesc:
         self.fieldCount=0
         self.respondsTo = {}
         self.requests = {}
+        self.standard = False
 
     def addField(self, field):
         field.id = self.fieldCount
@@ -499,7 +504,10 @@ class protocolDesc:
         text_file.write(output.getvalue())
         text_file.close()
 
-
+def addStandardPackets(protocol):
+    ack = packetDesc("ack")
+    ack.standard = True
+    protocol.addPacket(ack)
 
 
 def parseXML(xmlfile):
@@ -512,6 +520,8 @@ def parseXML(xmlfile):
 
     # create empty list for Fields
     protocol = protocolDesc(root.attrib['name'])
+
+    addStandardPackets(protocol)
 
     if('desc' in root.attrib):
         protocol.desc = root.attrib['desc']
@@ -599,6 +609,7 @@ def parseXML(xmlfile):
     # return news items list
     return protocol
 
+
 def createSourceC(protocol):
     output = StringIO.StringIO()
     output.write('/**\n')
@@ -677,23 +688,28 @@ def createDoc(protocol, filename):
     text_file.write(output.getvalue())
     text_file.close()
 
-
+# Initialize the argument parser
+def init_args():
+    global parser
+    parser = argparse.ArgumentParser("Tool to generate code and documentation for PolyPacket protocol")
+    parser.add_argument('-i', '--input', type=str, help='Xml file to parse', required=True)
+    parser.add_argument('-o', '--output', type=str, help='Output path', default="")
+    parser.add_argument('-d', '--document', action='store_true', help='Enable documentation', default=False)
 
 def main():
     global path
+    global parser
+    global args
+
+    init_args()
+    args= parser.parse_args()
     argCount = len(sys.argv)
 
-    # print command line arguments
-    for arg in sys.argv[1:]:
-        print arg
+    xmlFile = args.input
+    path = args.output
 
-
-
-    xmlFile = sys.argv[1]
     fileCrc = crc(xmlFile)
 
-    if(argCount >2):
-        path = sys.argv[2]
 
     protocol = parseXML(xmlFile)
     protocol.hash = fileCrc
@@ -701,7 +717,8 @@ def main():
     protocol.generateHeaderCPP(path+"/" + protocol.fileName+".h")
     protocol.generateSourceCPP(path+"/" + protocol.fileName+".cpp")
     #createSourceC(protocol)
-    createDoc(protocol,path+"/" + protocol.fileName+".md")
+    if(args.document):
+        createDoc(protocol,path+"/" + protocol.fileName+".md")
 
 if __name__ == "__main__":
     main()

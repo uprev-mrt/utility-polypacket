@@ -12,6 +12,7 @@
 #include "SampleProtocol.h"
 
 //Declare extern packet descriptors
+poly_packet_desc_t* PP_ack;
 poly_packet_desc_t* PP_SetData;
 poly_packet_desc_t* PP_GetData;
 poly_packet_desc_t* PP_RespData;
@@ -37,6 +38,7 @@ void SampleProtocol_protocol_init()
   if(initialized)
     return;
   //Packet Descriptors
+  PP_ack = new_poly_packet_desc("ack", 0 );
   PP_SetData = new_poly_packet_desc("SetData", 5 );
   PP_GetData = new_poly_packet_desc("GetData", 5 );
   PP_RespData = new_poly_packet_desc("RespData", 5 );
@@ -54,6 +56,9 @@ void SampleProtocol_protocol_init()
   PF_blockOffset = new_poly_field_desc("blockOffset", TYPE_UINT32 , 1 , FORMAT_HEX );
   PF_blockSize = new_poly_field_desc("blockSize", TYPE_UINT32 , 1 , FORMAT_DEC );
   PF_blockData = new_poly_field_desc("blockData", TYPE_UINT8 , 64 , FORMAT_NONE );
+
+
+  //Setting fields Descriptors for AckPacket
 
 
   //Setting fields Descriptors for SetdataPacket
@@ -96,6 +101,18 @@ void SampleProtocol_protocol_init()
 
   initialized =true;
 }
+/**********************************************************
+              AckPacket                       
+**********************************************************/
+
+
+AckPacket::AckPacket(poly_packet_t* packet)
+:PolyPacket(&PP_ack, &SampleProtocol_protocol_init)
+{  //Bind all fields
+  mPacket->mBound = true;
+  copyFrom(packet);
+}
+
 /**********************************************************
               SetdataPacket                       
 **********************************************************/

@@ -15,6 +15,7 @@
 using namespace Utilities::PolyPacket; 
 
 //Declare extern packet descriptors
+extern poly_packet_desc_t* PP_ack;
 extern poly_packet_desc_t* PP_SetData;
 extern poly_packet_desc_t* PP_GetData;
 extern poly_packet_desc_t* PP_RespData;
@@ -35,6 +36,24 @@ extern poly_field_desc_t* PF_blockData;
 
 
 //Classes for packet types
+/**********************************************************
+              AckPacket                       
+**********************************************************/
+class AckPacket : public PolyPacket
+{
+public:
+  AckPacket(poly_packet_t* packet = NULL);
+
+
+  //Value Getters
+
+  //Value Setters
+
+  //Present Getters
+
+private:
+};
+
 /**********************************************************
               SetdataPacket                       
 **********************************************************/
