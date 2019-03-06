@@ -2,7 +2,7 @@
   *@file SampleProtocol.cpp
   *@brief generated protocol source code
   *@author make_protocol.py
-  *@date 02/27/19
+  *@date 03/05/19
   */
 
 /***********************************************************
@@ -12,6 +12,7 @@
 #include "SampleProtocol.h"
 
 //Declare extern packet descriptors
+poly_packet_desc_t* PP_ack;
 poly_packet_desc_t* PP_SetData;
 poly_packet_desc_t* PP_GetData;
 poly_packet_desc_t* PP_RespData;
@@ -33,7 +34,11 @@ poly_field_desc_t* PF_blockData;
 
 void SampleProtocol_protocol_init()
 {
+  static int initialized=false;
+  if(initialized)
+    return;
   //Packet Descriptors
+  PP_ack = new_poly_packet_desc("ack", 0 );
   PP_SetData = new_poly_packet_desc("SetData", 5 );
   PP_GetData = new_poly_packet_desc("GetData", 5 );
   PP_RespData = new_poly_packet_desc("RespData", 5 );
@@ -51,6 +56,9 @@ void SampleProtocol_protocol_init()
   PF_blockOffset = new_poly_field_desc("blockOffset", TYPE_UINT32 , 1 , FORMAT_HEX );
   PF_blockSize = new_poly_field_desc("blockSize", TYPE_UINT32 , 1 , FORMAT_DEC );
   PF_blockData = new_poly_field_desc("blockData", TYPE_UINT8 , 64 , FORMAT_NONE );
+
+
+  //Setting fields Descriptors for AckPacket
 
 
   //Setting fields Descriptors for SetdataPacket
@@ -91,14 +99,27 @@ void SampleProtocol_protocol_init()
   poly_packet_desc_add_field(PP_blockResp , PF_blockSize , true );
   poly_packet_desc_add_field(PP_blockResp , PF_blockData , true );
 
+  initialized =true;
 }
+/**********************************************************
+              AckPacket                       
+**********************************************************/
+
+
+AckPacket::AckPacket(poly_packet_t* packet)
+:PolyPacket(&PP_ack, &SampleProtocol_protocol_init)
+{  //Bind all fields
+  mPacket->mBound = true;
+  copyFrom(packet);
+}
+
 /**********************************************************
               SetdataPacket                       
 **********************************************************/
 
 
 SetdataPacket::SetdataPacket(poly_packet_t* packet)
-:PolyPacket(PP_SetData)
+:PolyPacket(&PP_SetData, &SampleProtocol_protocol_init)
 {  //Bind all fields
   getField(PF_src)->mData = (uint8_t*) &mSrc;
   getField(PF_dst)->mData = (uint8_t*) &mDst;
@@ -136,7 +157,9 @@ void SetdataPacket::Sensorb(int  val)
 void SetdataPacket::Sensorname(string  val)
 {
   hasField(PF_sensorName,true);
-  memcpy(mSensorname, val.c_str(), min((int)val.length() + 1,32));
+  int len= min((int)val.length() + 1,32);
+  getField(PF_sensorName)->mSize = len;
+  memcpy(mSensorname, val.c_str(), len);
 }
 /**********************************************************
               GetdataPacket                       
@@ -144,7 +167,7 @@ void SetdataPacket::Sensorname(string  val)
 
 
 GetdataPacket::GetdataPacket(poly_packet_t* packet)
-:PolyPacket(PP_GetData)
+:PolyPacket(&PP_GetData, &SampleProtocol_protocol_init)
 {  //Bind all fields
   getField(PF_src)->mData = (uint8_t*) &mSrc;
   getField(PF_dst)->mData = (uint8_t*) &mDst;
@@ -182,7 +205,9 @@ void GetdataPacket::Sensorb(int  val)
 void GetdataPacket::Sensorname(string  val)
 {
   hasField(PF_sensorName,true);
-  memcpy(mSensorname, val.c_str(), min((int)val.length() + 1,32));
+  int len= min((int)val.length() + 1,32);
+  getField(PF_sensorName)->mSize = len;
+  memcpy(mSensorname, val.c_str(), len);
 }
 /**********************************************************
               RespdataPacket                       
@@ -190,7 +215,7 @@ void GetdataPacket::Sensorname(string  val)
 
 
 RespdataPacket::RespdataPacket(poly_packet_t* packet)
-:PolyPacket(PP_RespData)
+:PolyPacket(&PP_RespData, &SampleProtocol_protocol_init)
 {  //Bind all fields
   getField(PF_src)->mData = (uint8_t*) &mSrc;
   getField(PF_dst)->mData = (uint8_t*) &mDst;
@@ -228,7 +253,9 @@ void RespdataPacket::Sensorb(int  val)
 void RespdataPacket::Sensorname(string  val)
 {
   hasField(PF_sensorName,true);
-  memcpy(mSensorname, val.c_str(), min((int)val.length() + 1,32));
+  int len= min((int)val.length() + 1,32);
+  getField(PF_sensorName)->mSize = len;
+  memcpy(mSensorname, val.c_str(), len);
 }
 /**********************************************************
               BlockreqPacket                       
@@ -236,7 +263,7 @@ void RespdataPacket::Sensorname(string  val)
 
 
 BlockreqPacket::BlockreqPacket(poly_packet_t* packet)
-:PolyPacket(PP_blockReq)
+:PolyPacket(&PP_blockReq, &SampleProtocol_protocol_init)
 {  //Bind all fields
   getField(PF_src)->mData = (uint8_t*) &mSrc;
   getField(PF_dst)->mData = (uint8_t*) &mDst;
@@ -276,7 +303,7 @@ void BlockreqPacket::Blocksize(uint32_t  val)
 
 
 BlockrespPacket::BlockrespPacket(poly_packet_t* packet)
-:PolyPacket(PP_blockResp)
+:PolyPacket(&PP_blockResp, &SampleProtocol_protocol_init)
 {  //Bind all fields
   getField(PF_src)->mData = (uint8_t*) &mSrc;
   getField(PF_dst)->mData = (uint8_t*) &mDst;

@@ -13,6 +13,10 @@ import StringIO
 import copy
 import datetime
 import zlib
+import argparse
+
+args = None
+parser = None
 
 now = datetime.datetime.now()
 path ="./"
@@ -123,6 +127,7 @@ class packetDesc:
         self.fieldCount=0
         self.respondsTo = {}
         self.requests = {}
+        self.standard = False
 
     def addField(self, field):
         field.id = self.fieldCount
@@ -303,14 +308,14 @@ class packetDesc:
         output.write("};\n\n")
         return output.getvalue()
 
-    def generateFunctions(self):
+    def generateFunctions(self, protocolName):
         #generate value getters
         output = StringIO.StringIO()
         output.write("/**********************************************************\n" )
         output.write("              " +self.className+ "                       \n" )
         output.write("**********************************************************/\n\n\n" )
 
-        output.write(self.className+"::"+self.className +"(poly_packet_t* packet)\n:PolyPacket("+self.globalName+")\n{" )
+        output.write(self.className+"::"+self.className +"(poly_packet_t* packet)\n:PolyPacket(&"+self.globalName+", &"+protocolName+"_protocol_init)\n{" )
         output.write("  //Bind all fields\n" )
 
         for field in self.fields:
@@ -324,7 +329,9 @@ class packetDesc:
 
             output.write( "  hasField("+field.globalName+",true);\n" )
             if(field.cppType == 'string'):
-                output.write( "  memcpy(m"+field.name.capitalize()+", val.c_str(), min((int)val.length() + 1,"+str(field.arrayLen)+"));\n}\n" )
+                output.write( "  int len= min((int)val.length() + 1,"+str(field.arrayLen)+");\n")
+                output.write( "  getField(PF_sensorName)->mSize = len;\n")
+                output.write( "  memcpy(m"+field.name.capitalize()+", val.c_str(), len);\n}\n" )
             else:
                 if(field.isArray):
                     output.write( "  memcpy(m"+field.name.capitalize()+", val, "+ str(field.arrayLen)+" * sizeof("+ field.cType+"));\n}\n" )
@@ -473,7 +480,7 @@ class protocolDesc:
         output.write(self.generateSourceCommon(True))
 
         #init
-        output.write("void "+self.name+"_protocol_init()\n{\n  //Packet Descriptors\n" )
+        output.write("void "+self.name+"_protocol_init()\n{\n  static int initialized=false;\n  if(initialized)\n    return;\n  //Packet Descriptors\n" )
         for packet in self.packets:
             output.write("  "+packet.globalName+" = new_poly_packet_desc(\""+ packet.name+"\", "+ str(len(packet.fields))+ " );\n" )
 
@@ -487,17 +494,20 @@ class protocolDesc:
             for field in packet.fields:
                 output.write("  poly_packet_desc_add_field(" + packet.globalName +" , " + field.globalName+" , " + str(field.isRequired).lower() +" );\n")
 
-        output.write("\n}\n" )
+        output.write("\n  initialized =true;\n}\n" )
 
         #packets
         for packet in self.packets:
-            output.write(packet.generateFunctions())
+            output.write(packet.generateFunctions(self.name))
 
         text_file = open(file,"w")
         text_file.write(output.getvalue())
         text_file.close()
 
-
+def addStandardPackets(protocol):
+    ack = packetDesc("ack")
+    ack.standard = True
+    protocol.addPacket(ack)
 
 
 def parseXML(xmlfile):
@@ -510,6 +520,8 @@ def parseXML(xmlfile):
 
     # create empty list for Fields
     protocol = protocolDesc(root.attrib['name'])
+
+    addStandardPackets(protocol)
 
     if('desc' in root.attrib):
         protocol.desc = root.attrib['desc']
@@ -597,6 +609,7 @@ def parseXML(xmlfile):
     # return news items list
     return protocol
 
+
 def createSourceC(protocol):
     output = StringIO.StringIO()
     output.write('/**\n')
@@ -675,23 +688,28 @@ def createDoc(protocol, filename):
     text_file.write(output.getvalue())
     text_file.close()
 
-
+# Initialize the argument parser
+def init_args():
+    global parser
+    parser = argparse.ArgumentParser("Tool to generate code and documentation for PolyPacket protocol")
+    parser.add_argument('-i', '--input', type=str, help='Xml file to parse', required=True)
+    parser.add_argument('-o', '--output', type=str, help='Output path', default="")
+    parser.add_argument('-d', '--document', action='store_true', help='Enable documentation', default=False)
 
 def main():
     global path
+    global parser
+    global args
+
+    init_args()
+    args= parser.parse_args()
     argCount = len(sys.argv)
 
-    # print command line arguments
-    for arg in sys.argv[1:]:
-        print arg
+    xmlFile = args.input
+    path = args.output
 
-
-
-    xmlFile = sys.argv[1]
     fileCrc = crc(xmlFile)
 
-    if(argCount >2):
-        path = sys.argv[2]
 
     protocol = parseXML(xmlFile)
     protocol.hash = fileCrc
@@ -699,7 +717,8 @@ def main():
     protocol.generateHeaderCPP(path+"/" + protocol.fileName+".h")
     protocol.generateSourceCPP(path+"/" + protocol.fileName+".cpp")
     #createSourceC(protocol)
-    createDoc(protocol,path+"/" + protocol.fileName+".md")
+    if(args.document):
+        createDoc(protocol,path+"/" + protocol.fileName+".md")
 
 if __name__ == "__main__":
     main()

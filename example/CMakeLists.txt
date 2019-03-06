@@ -19,7 +19,7 @@ add_library(
 add_executable(
   example
   main.cpp
-  SampleProtocol_proto.cpp
-  SampleProtocol_proto.h
+  SampleProtocol.cpp
+  SampleProtocol.h
   )
 target_link_libraries(example PolyPacket)

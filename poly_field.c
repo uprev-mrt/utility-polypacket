@@ -6,6 +6,7 @@
   */
 
 #include "poly_field.h"
+#include <assert.h>
 
 poly_field_desc_t* new_poly_field_desc(const char* name, eFieldType type, uint32_t len, eFieldFormat format)
 {
@@ -14,7 +15,14 @@ poly_field_desc_t* new_poly_field_desc(const char* name, eFieldType type, uint32
   new_desc->mFormat = FORMAT_DEC;
   new_desc->mLen = len;
   new_desc->mDataType = type;
-  new_desc->mVarLen = false;
+  if(len > 1)
+  {
+    new_desc->mVarLen = true;
+  }
+  else
+  {
+    new_desc->mVarLen = false;
+  }
   new_desc->mNullTerm = false;
   switch(type)
   {
@@ -66,15 +74,27 @@ poly_field_desc_t* new_poly_field_desc(const char* name, eFieldType type, uint32
   return new_desc;
 }
 
-void poly_field_init(poly_field_t* field, poly_field_desc_t* desc)
+void poly_field_init(poly_field_t* field, poly_field_desc_t* desc, bool allocate)
 {
   field->mSize = desc->mObjSize * desc->mLen;
   field->mDesc = desc;
   field->mPresent = false;
+  field->mBound = false;
+  if(allocate)
+  {
+    field->mData = (uint8_t*) malloc(field->mSize);
+    field->mAllocated = true;
+  }
+  else
+  {
+    field->mAllocated = false;
+  }
 }
 
 void poly_field_copy(poly_field_t* src, poly_field_t* dst)
 {
+  assert(dst->mBound || dst->mAllocated);
+
   //must be same type to copy
   if(src->mDesc != dst->mDesc)
     return;
@@ -87,6 +107,7 @@ void poly_field_copy(poly_field_t* src, poly_field_t* dst)
 void poly_field_bind(poly_field_t* field, uint8_t* data)
 {
   field->mData = data;
+  field->mBound = true;
 }
 
 int poly_field_parse(poly_field_t* field, uint8_t* data)

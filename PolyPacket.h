@@ -18,7 +18,8 @@ namespace PolyPacket{
 class PolyPacket
 {
 public:
-  PolyPacket(poly_packet_desc_t* descriptor);
+  PolyPacket(poly_packet_desc_t** descriptor, void (*init_function)());
+  PolyPacket(poly_packet_desc_t** descriptor);
 
   ~PolyPacket();
   void copyFrom(poly_packet_t* packet);
@@ -29,6 +30,10 @@ public:
   void hasField(poly_field_desc_t* desc, bool val);
 
   string toJSON(bool printMeta = false) const;
+  int pack(uint8_t* data);
+  bool parse(uint8_t* data, int len);
+
+  uint16_t Checksum() const {return mPacket->mHeader.mCheckSum;}
 
 protected:
   poly_packet_t* mPacket;
