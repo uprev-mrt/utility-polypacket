@@ -60,6 +60,7 @@ poly_packet_t* new_poly_packet(poly_packet_desc_t* desc, bool allocate)
   newPacket->mBound = false;
   newPacket->mAllocated = false;
   newPacket->mDesc = desc;
+  newPacket->mInterface = 0;
 
   newPacket->mFields = (poly_field_t*) malloc(sizeof(poly_field_t) * desc->mFieldCount);
   for(int i=0; i< desc->mFieldCount; i++)

@@ -13,8 +13,8 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "fifo.h"
-#include "spool.h"
+#include "Utilities/fifo.h"
+#include "Utilities/spool.h"
 
 
 #ifdef __cplusplus
