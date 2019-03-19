@@ -99,8 +99,7 @@ typedef struct{
 }blockresp_packet_t;
 
 
-typedef union{
-  uint8_t mTypeId;
+typedef struct{
   poly_packet_t* mPacket;
   union{
     ack_packet_t* ack;
@@ -127,12 +126,14 @@ void sp_service_init(int interfaceCount);
   */
 void sp_service_process();
 
+void sp_service_feed(int iface, uint8_t* data, int len);
+
 /**
   *@brief sends packet over given interface
   *@param metaPacket packet to be sent
   *@param iface index of interface to send on
   */
-void sp_service_send(sp_packet_t* metaPacket, int iface);
+void sp_service_send( int iface, sp_packet_t* metaPacket);
 
 
 

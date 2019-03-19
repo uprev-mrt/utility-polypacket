@@ -59,6 +59,7 @@ void poly_service_start(poly_service_t* pService, int fifoDepth)
     pService->mInterfaces[i].mBitErrors = 0;
 
     //set up buffers, make incoming byte buffer 2x max packet size
+    fifo_init(&pService->mInterfaces[i].mBytefifo, fifoDepth, sizeof(uint8_t));
     pService->mInterfaces[i].mParseState= STATE_WAITING_FOR_HEADER;
     pService->mInterfaces[i].mRaw = (uint8_t*) malloc(pService->mMaxPacketSize);
 
@@ -75,7 +76,9 @@ void poly_service_feed(poly_service_t* pService, int interface, uint8_t* data, i
   poly_interface_t* iface = &pService->mInterfaces[interface];
 
   //make sure we stay in bounds
-  //TODO
+
+  fifo_push_buf(&iface->mBytefifo, data, len);
+
 }
 
 bool poly_service_seek_header(poly_service_t* pService, poly_interface_t* iface)

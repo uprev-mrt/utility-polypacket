@@ -106,9 +106,16 @@ void ${proto.prefix}_service_init(int interfaceCount)
   poly_service_register_desc(${proto.service()}, ${packet.globalName});
 % endfor
 
+  poly_service_start(${proto.service()}, 512);
+
 }
 
-void ${proto.prefix}_service_send(${proto.prefix}_packet_t* metaPacket, int iface)
+void ${proto.prefix}_service_feed(int iface, uint8_t* data, int len)
+{
+  poly_service_feed(${proto.service()},iface,data,len);
+}
+
+void ${proto.prefix}_service_send(int iface, ${proto.prefix}_packet_t* metaPacket)
 {
 
 }

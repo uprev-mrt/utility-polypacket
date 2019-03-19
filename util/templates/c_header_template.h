@@ -36,8 +36,7 @@ typedef struct{
 
 % endfor
 
-typedef union{
-  uint8_t mTypeId;
+typedef struct{
   poly_packet_t* mPacket;
   union{
 % for packet in proto.packets:
@@ -61,12 +60,14 @@ void ${proto.prefix}_service_init(int interfaceCount);
   */
 void ${proto.prefix}_service_process();
 
+void ${proto.prefix}_service_feed(int iface, uint8_t* data, int len);
+
 /**
   *@brief sends packet over given interface
   *@param metaPacket packet to be sent
   *@param iface index of interface to send on
   */
-void ${proto.prefix}_service_send(${proto.prefix}_packet_t* metaPacket, int iface);
+void ${proto.prefix}_service_send( int iface, ${proto.prefix}_packet_t* metaPacket);
 
 
 

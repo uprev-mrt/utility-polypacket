@@ -167,9 +167,16 @@ void sp_service_init(int interfaceCount)
   poly_service_register_desc(SP_SERVICE, BLOCKREQ_P_DESC);
   poly_service_register_desc(SP_SERVICE, BLOCKRESP_P_DESC);
 
+  poly_service_start(SP_SERVICE, 512);
+
 }
 
-void sp_service_send(sp_packet_t* metaPacket, int iface)
+void sp_service_feed(int iface, uint8_t* data, int len)
+{
+  poly_service_feed(SP_SERVICE,iface,data,len);
+}
+
+void sp_service_send(int iface, sp_packet_t* metaPacket)
 {
 
 }

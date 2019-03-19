@@ -8,7 +8,7 @@ int len;
 int main()
 {
   printf("\nBuilding Test packet C++\n\n*******************************\n\n");
-  sp_service_init(1);
+  sp_service_init(2);
   sp_packet_t* msg = new_sp_packet(SETDATA_P_DESC);
 
   sp_setSrc(msg,0xABCD );
@@ -18,6 +18,12 @@ int main()
   sp_setSensorname(msg, "This is my test string");
 
   len = sp_pack(msg, buffer);
+
+  sp_service_feed(0,buffer,len);
+
+  sp_service_process();
+
+
 
   return 0;
 }
