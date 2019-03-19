@@ -23,7 +23,7 @@ extern "C"
 {
 #endif
 
-typedef void (*poly_rx_callback)(poly_packet_t* packet);
+typedef void (*poly_rx_callback)(poly_packet_t* packet, int iface);
 
 typedef enum parseState {
   STATE_WAITING_FOR_HEADER,

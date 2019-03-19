@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Protocol name="SampleProtocol"
+<Protocol name="SampleProtocol" prefix="sp"
   desc="This is a sample protocol made up to demonstrate features of the PolyPacket code generation tool. The idea
   is to have a tool that can automatically create parseable/serializable messaging for embedded systems.">
   <!--First we declare all Field descriptors-->

@@ -128,6 +128,7 @@ class packetDesc:
         self.respondsTo = {}
         self.requests = {}
         self.standard = False
+        self.structName = name.lower() + '_packet_t'
 
     def addField(self, field):
         field.id = self.fieldCount
@@ -232,10 +233,9 @@ class packetDesc:
 
         return output.getvalue();
 
-    def getStructName(self):
-        return self.name.lower() + "_struct_t"
-
     def getStruct(self):
+        if(len(self.fields) == 0 ):
+            return ''
         output = StringIO.StringIO()
         output.write("//Struct for "+ self.name+" Packet\n")
         output.write("//"+ self.desc+" Packet\n")
@@ -250,15 +250,38 @@ class packetDesc:
             else:
                 output.write(";\n")
 
+        output.write("} " + self.structName + ";\n\n")
 
-        output.write("} " + self.name.lower() + "_struct_t;\n\n")
-        output.write(self.name.lower() + "_struct_t* new_"+self.name.lower() +"();\n\n")
+        return output.getvalue()
 
+    def getStructConstructorProto(self):
+        output = StringIO.StringIO()
+        output.write(self.structName +"* new_"+self.name.lower() +"();\n")
         return output.getvalue()
 
     def getStructConstructor(self):
         output = StringIO.StringIO()
-        output.write(self.name.lower() + "_struct_t* new_"+self.name.lower() +"()\n{\n")
+        output.write(self.structName +"* new_"+self.name.lower() +"()\n{\n")
+        output.write("  {0}* newStruct = ({0}*) malloc(sizeof({0}));\n".format(self.structName))
+        output.write("  newStruct->mPacket = new_poly_packet({0});\n\n".format(self.globalName))
+
+        for field in self.fields:
+            output.write('  poly_packet_gett_field(newStruct->mPacket, {0})->mData = (uint8_t*) &newStruct->{1};\n'.format(field.globalName, field.name))
+
+        output.write('  newStruct->mPacket->mBound = true;\n\n  return newStruct;\n')
+
+        output.write('}\n\n')
+        return output.getvalue()
+
+    def getHandlerProto(self, prefix):
+        output = StringIO.StringIO()
+        output.write('__weak uint8_t '+ prefix + '_' + self.name.lower() + "_handler("+self.structName+" * packet, int interface);\n\n")
+        return output.getvalue()
+
+    def getHandler(self, prefix):
+        output = StringIO.StringIO()
+        output.write('__weak uint8_t '+ prefix + '_' + self.name.lower() + "_handler("+self.structName+" * packet, int interface)\n{\n  return PACKET_UNHANDLED;\n}\n\n")
+        return output.getvalue()
 
     def generateClass(self, base):
         output = StringIO.StringIO()
@@ -358,6 +381,7 @@ class protocolDesc:
         self.packets = []
         self.packetIdx ={}
         self.packetId =0
+        self.prefix = name;
 
     def addField(self,field):
         field.id = self.fieldId
@@ -384,12 +408,12 @@ class protocolDesc:
         output.write('***********************************************************/\n')
 
         if(cpp):
-            output.write('#include "../poly_field.h"\n')
-            output.write('#include "../PolyPacket.h"\n\n\n')
+            output.write('#include "Utilities/PolyPacket/poly_field.h"\n')
+            output.write('#include "Utilities/PolyPacket/PolyPacket.h"\n\n\n')
             output.write('using namespace Utilities::PolyPacket; \n\n')
         else:
-            output.write('#include <poly_field.h>\n')
-            output.write('#include <poly_packet.h>\n\n\n')
+            output.write('#include "Utilities/PolyPacket/poly_field.h"\n')
+            output.write('#include "Utilities/PolyPacket/poly_packet.h"\n\n\n')
 
         #write packet descriptors
         output.write('//Declare extern packet descriptors\n')
@@ -423,6 +447,7 @@ class protocolDesc:
 
 
         output.write("#include \""+self.fileName+".h\"\n\n")
+        output.write('#include "Utilities/PolyPacket/poly_parser.h"\n\n\n')
         #write packet descriptors
         output.write('//Declare extern packet descriptors\n')
         for packet in self.packets:
@@ -450,9 +475,30 @@ class protocolDesc:
         for packet in self.packets:
             output.write(packet.getStruct())
 
+        for packet in self.packets:
+            output.write(packet.getStructConstructorProto())
+
+
+
         output.write('\n\n')
 
-        output.write('void '+self.name+'protocol_init();\n')
+        output.write('/**\n')
+        output.write('  *@brief initializes protocol service\n')
+        output.write('  *@param ifaces number of interfaces to use\n')
+        output.write('  */\n\n')
+        output.write('void {0}_protocol_init(int ifaces);\n\n'.format(self.prefix))
+
+        output.write('/**\n')
+        output.write('  *@brief processes data in buffers\n')
+        output.write('  */\n\n')
+        output.write('void '+self.prefix+'_protocol_process();\n\n')
+
+        for packet in self.packets:
+            output.write('/*@brief weak Handler for '+packet.name+' packets */\n')
+            output.write(packet.getHandlerProto(self.prefix) )
+
+        output.write('/*@brief weak Handler for '+packet.name+' packets */\n')
+
 
         text_file = open(file,"w")
         text_file.write(output.getvalue())
@@ -504,6 +550,61 @@ class protocolDesc:
         text_file.write(output.getvalue())
         text_file.close()
 
+    def generateSourceC(self,file):
+        parser = self.prefix.upper() + '_PARSER'
+        output = StringIO.StringIO()
+        output.write(self.generateSourceCommon(True))
+
+        output.write('poly_parser_t* {0};\n\n'.format(parser))
+
+        output.write('void {0}_protocol_init()\n'.format(self.prefix))
+        output.write('{\n')
+        output.write('  {0} = new_poly_parser({1},ifaces);\n\n'.format(parser, str(len(self.packets))))
+
+        #cosntruct all Packet Descriptors descriptors
+        output.write('//Build Packet descriptors\n')
+        for packet in self.packets:
+            output.write("  "+packet.globalName+" = new_poly_packet_desc(\""+ packet.name+"\", "+ str(len(packet.fields))+ " );\n" )
+
+        output.write('\n\n  //Build Field descriptors\n')
+        for field in self.fields:
+            output.write("  "+field.globalName+" = new_poly_field_desc(\""+ field.name+"\", TYPE_"+ field.type.upper()+" , "+ str(field.arrayLen)+ " , "+field.format.upper()+" );\n" )
+
+        for packet in self.packets:
+            if(len(packet.fields) > 0):
+                output.write("\n\n  //Setting fields Descriptors for "+ packet.className+"\n")
+                for field in packet.fields:
+                    output.write("  poly_packet_desc_add_field(" + packet.globalName +" , " + field.globalName+" , " + str(field.isRequired).lower() +" );\n")
+
+        output.write('\n\n  //Register packet descriptors with parser \n')
+        for packet in self.packets:
+            output.write('  poly_parser_register_desc({0},{1});\n'.format(parser, packet.globalName ))
+
+        output.write('\n //Start parser\n')
+        output.write('  poly_parser_start({0});\n\n'.format(parser))
+        output.write('}\n\n')
+
+        #init
+        # output.write("void "+self.name+"_protocol_init()\n{\n  static int initialized=false;\n  if(initialized)\n    return;\n  //Packet Descriptors\n" )
+
+        # output.write("\n\n  //Field Descriptos\n")
+        #
+        # for field in self.fields:
+        #     output.write("  "+field.globalName+" = new_poly_field_desc(\""+ field.name+"\", TYPE_"+ field.type.upper()+" , "+ str(field.arrayLen)+ " , "+field.format.upper()+" );\n" )
+        #
+                #
+        # output.write("\n  initialized =true;\n}\n" )
+
+        #packets
+        for packet in self.packets:
+            output.write(packet.getStructConstructor())
+
+        text_file = open(file,"w")
+        text_file.write(output.getvalue())
+        text_file.close()
+
+
+
 def addStandardPackets(protocol):
     ack = packetDesc("ack")
     ack.standard = True
@@ -525,6 +626,9 @@ def parseXML(xmlfile):
 
     if('desc' in root.attrib):
         protocol.desc = root.attrib['desc']
+
+    if('prefix' in root.attrib):
+        protocol.prefix = root.attrib['prefix']
 
 
     #parse out fields
@@ -694,6 +798,7 @@ def init_args():
     parser = argparse.ArgumentParser("Tool to generate code and documentation for PolyPacket protocol")
     parser.add_argument('-i', '--input', type=str, help='Xml file to parse', required=True)
     parser.add_argument('-o', '--output', type=str, help='Output path', default="")
+    parser.add_argument('-c', '--pure_c', action='store_true', help='generate pure c code', default=False)
     parser.add_argument('-d', '--document', action='store_true', help='Enable documentation', default=False)
 
 def main():
@@ -714,8 +819,12 @@ def main():
     protocol = parseXML(xmlFile)
     protocol.hash = fileCrc
     #protocol.generateHeaderC(path+"/c_header.h")
-    protocol.generateHeaderCPP(path+"/" + protocol.fileName+".h")
-    protocol.generateSourceCPP(path+"/" + protocol.fileName+".cpp")
+    if(args.pure_c):
+        protocol.generateSourceC(path+"/" + protocol.fileName+".c")
+        protocol.generateHeaderC(path+"/" + protocol.fileName+".h")
+    else:
+        protocol.generateHeaderCPP(path+"/" + protocol.fileName+".h")
+        protocol.generateSourceCPP(path+"/" + protocol.fileName+".cpp")
     #createSourceC(protocol)
     if(args.document):
         createDoc(protocol,path+"/" + protocol.fileName+".md")

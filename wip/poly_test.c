@@ -1,4 +1,5 @@
 #include "poly_test.h"
+#include "poly_parser"
 
 poly_packet_desc_t* PP_TestPacket;
 poly_field_desc_t* PF_TestString;
