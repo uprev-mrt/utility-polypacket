@@ -8,7 +8,7 @@ int len;
 int main()
 {
   printf("\nBuilding Test packet C++\n\n*******************************\n\n");
-
+  sp_service_init(1);
   sp_packet_t* msg = new_sp_packet(SETDATA_P_DESC);
 
   sp_setSrc(msg,0xABCD );

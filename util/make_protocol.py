@@ -404,7 +404,8 @@ def parseXML(xmlfile):
 def buildTemplate(protocol, templateFile, outputFile):
     template = Template(filename= templateFile )
     text_file = open( outputFile , "w")
-    text_file.write(template.render(proto = protocol))
+    text_file.write("\n".join(template.render(proto = protocol).splitlines()))
+    #text_file.write(template.render(proto = protocol))
     text_file.close()
 
 def createDoc(protocol, filename):

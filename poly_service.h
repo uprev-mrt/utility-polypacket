@@ -13,7 +13,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "Utilities/Fifo/fifo.h"
+#include "Utilities/Fifo/Fifo.h"
 #include "poly_packet.h"
 
 

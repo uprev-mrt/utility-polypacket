@@ -11,11 +11,12 @@
 
 #include "${proto.fileName}.h"
 #include "Utilities/PolyPacket/poly_service.h"
+#include <assert.h>
 
 
 //Define packet IDs
 % for packet in proto.packets:
-#define ${} ${packet.globalName}_ID ${packet.packetId};
+#define ${} ${packet.globalName}_ID ${packet.packetId}
 % endfor
 
 
@@ -43,12 +44,12 @@ void ${proto.prefix}_service_process()
 
   uint8_t handlingStatus = PACKET_UNHANDLED;
 
-  if(poly_service_try_parse(${proto.service()}) == PACKET_VALID)
+  if(poly_service_try_parse(${proto.service()}, newPacket) == PACKET_VALID)
   {
-    ${proto.prefix}_packet_init(&metaPacket, newPacket);
+    ${proto.prefix}_init(&metaPacket, newPacket);
 
     //Dispatch packet
-    switch(metaPacket->mTypeId)
+    switch(newPacket->mDesc->mTypeId)
     {
   % for packet in proto.packets:
       case ${packet.globalName}_ID:
@@ -57,15 +58,15 @@ void ${proto.prefix}_service_process()
   % endfor
       default:
         //we should never get here
-        asser(false);
+        assert(false);
         break;
     }
 
     //If the packet was not handled, throw it to the default handler
     if(handlingStatus == PACKET_UNHANDLED)
-      handlingStatus = ${proto.prefix}_default)handler(&metaPacket);
+      handlingStatus = ${proto.prefix}_default_handler(&metaPacket);
 
-    ${proto.prefix}_packet_teardown(&metaPacket);
+    ${proto.prefix}_teardown(&metaPacket);
   }
 
 }
@@ -130,7 +131,7 @@ ${proto.prefix}_packet_t* new_${proto.prefix}_packet(poly_packet_desc_t* desc)
   newMetaPacket->mPacket = new_poly_packet(desc, false);
 
 
-  switch(newMetaPacket->mPacket->mTypeId)
+  switch(newMetaPacket->mPacket->mDesc->mTypeId)
   {
 % for packet in proto.packets:
     case ${packet.globalName}_ID:
@@ -153,11 +154,11 @@ void ${proto.prefix}_init(${proto.prefix}_packet_t* metaPacket, poly_packet_t* p
   //set packet
   metaPacket->mPacket = packet;
 
-  switch(metaPacket->mPacket->mTypeId)
+  switch(metaPacket->mPacket->mDesc->mTypeId)
   {
 % for packet in proto.packets:
     case ${packet.globalName}_ID:
-      newMetaPacket->mPayload.${packet.name.lower()} = (${packet.structName}*) malloc(sizeof(${packet.structName}));
+      metaPacket->mPayload.${packet.name.lower()} = (${packet.structName}*) malloc(sizeof(${packet.structName}));
       ${proto.prefix}_${packet.name.lower()}_bind(metaPacket->mPayload.${packet.name.lower()}, metaPacket->mPacket, true);
       break;
 % endfor
@@ -170,11 +171,10 @@ void ${proto.prefix}_init(${proto.prefix}_packet_t* metaPacket, poly_packet_t* p
   */
 void ${proto.prefix}_teardown(${proto.prefix}_packet_t* metaPacket)
 {
-  switch(metaPacket->mPacket->mTypeId)
+  switch(metaPacket->mPacket->mDesc->mTypeId)
   {
 % for packet in proto.packets:
     case ${packet.globalName}_ID:
-    packet = metaPacket->mPayload.${packet.name.lower()}->mPacket;
     free(metaPacket->mPayload.${packet.name.lower()});
     break;
 % endfor
@@ -192,7 +192,7 @@ void ${proto.prefix}_teardown(${proto.prefix}_packet_t* metaPacket)
 void ${proto.prefix}_destroy(${proto.prefix}_packet_t* metaPacket)
 {
   //teardown
-  ${proto.prefix}_packet_teardown(metaPacket);
+  ${proto.prefix}_teardown(metaPacket);
 
   //free memory
   free(metaPacket);
@@ -211,9 +211,13 @@ int ${proto.prefix}_pack(${proto.prefix}_packet_t* metaPacket, uint8_t* data)
 *******************************************************************************/
 
 % for field in proto.fields:
+%if field.isArray:
+void ${proto.prefix}_set${field.name.capitalize()}(${proto.prefix}_packet_t* packet, const ${field.getParamType()} val)
+% else:
 void ${proto.prefix}_set${field.name.capitalize()}(${proto.prefix}_packet_t* packet, ${field.getParamType()} val)
+%endif
 {
-  poly_field_t* field = poly_packet_get_field(packet->mPacket, packet->mPacket->mDesc);
+  poly_field_t* field = poly_packet_get_field(packet->mPacket, ${field.globalName});
 %if field.isArray:
   poly_field_set(field,( const uint8_t*) val);
 % else:
@@ -231,8 +235,9 @@ void ${proto.prefix}_set${field.name.capitalize()}(${proto.prefix}_packet_t* pac
 ${field.getParamType()} ${proto.prefix}_get${field.name.capitalize()}(${proto.prefix}_packet_t* packet)
 {
   ${field.getParamType()} val;
+  poly_field_t* field = poly_packet_get_field(packet->mPacket, ${field.globalName});
 %if field.isArray:
-  val = (${field.getParamType()})poly_field_get(field);
+  val = (${field.getParamType()})poly_field_get(field, (uint8_t*)val);
 % else:
   poly_field_get(field,(uint8_t*) &val);
 % endif
@@ -251,12 +256,12 @@ ${field.getParamType()} ${proto.prefix}_get${field.name.capitalize()}(${proto.pr
   *@param ${packet.name.lower()} ptr to ${packet.structName} to be bound
   *@param packet packet to bind to
   */
-void ${packet.name.lower()}_bind(${packet.structName}* ${packet.name.lower()}, poly_packet_t* packet)
+void ${proto.prefix}_${packet.name.lower()}_bind(${packet.structName}* ${packet.name.lower()}, poly_packet_t* packet, bool copy)
 {
   ${packet.name.lower()}->mPacket = packet;
 
 % for field in packet.fields:
-  poly_field_bind( poly_packet_get_field(packet, ${field.globalName}), (uint8_t*) &${packet.name.lower()}->${field.memberName});
+  poly_field_bind( poly_packet_get_field(packet, ${field.globalName}), (uint8_t*) &${packet.name.lower()}->${field.memberName}, copy);
 % endfor
 
 }
@@ -269,8 +274,13 @@ void ${packet.name.lower()}_bind(${packet.structName}* ${packet.name.lower()}, p
   Do not modify these, just create your own without the '__weak' attribute
 *******************************************************************************/
 % for packet in proto.packets:
-__weak uint8_t ${proto.prefix}_${packet.name.lower()}_handler(${packet.structName} * packet)
+uint8_t ${proto.prefix}_${packet.name.lower()}_handler(${packet.structName} * packet)
 {
   return PACKET_UNHANDLED;
 }
 % endfor
+
+uint8_t ${proto.prefix}_default_handler( ${proto.prefix}_packet_t * metaPacket)
+{
+  return PACKET_UNHANDLED;
+}

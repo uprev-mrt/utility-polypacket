@@ -12,6 +12,10 @@ add_definitions(-DUNIT_TESTING_ENABLED)
 #  message(STATUS "dir='${dir}'")
 #endforeach()
 
+add_definitions(
+    -fmax-errors=5
+    -g
+    )
 
 add_library(
   PolyPacket
@@ -21,6 +25,7 @@ add_library(
   ../poly_field.c
   ../poly_service.h
   ../poly_service.c
+  ../../../Utilities/Fifo/Fifo.c
   )
 
 

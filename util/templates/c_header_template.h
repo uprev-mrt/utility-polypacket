@@ -105,7 +105,7 @@ ${field.getParamType()} ${proto.prefix}_get${field.name.capitalize()}(${proto.pr
   Packet binders
 *******************************************************************************/
 % for packet in proto.packets:
-void ${proto.prefix}_${packet.name.lower()}_bind(${packet.structName}* ${packet.name.lower()}, poly_packet_t* packet);
+void ${proto.prefix}_${packet.name.lower()}_bind(${packet.structName}* ${packet.name.lower()}, poly_packet_t* packet, bool copy);
 % endfor
 
 
@@ -116,3 +116,5 @@ void ${proto.prefix}_${packet.name.lower()}_bind(${packet.structName}* ${packet.
 /*@brief Handler for ${packet.name} packets */
 uint8_t ${proto.prefix}_${packet.name.lower()}_handler(${packet.structName} * packet);
 % endfor
+
+uint8_t ${proto.prefix}_default_handler(${proto.prefix}_packet_t * packet);
