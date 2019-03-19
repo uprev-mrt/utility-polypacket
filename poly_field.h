@@ -92,6 +92,12 @@ poly_field_desc_t* new_poly_field_desc(const char* name, eFieldType type, uint32
 void poly_field_init(poly_field_t* field, poly_field_desc_t* desc, bool allocate);
 
 /**
+  *@brief frees memory from poly_field
+  *@param field ptr to field
+  */
+void poly_field_destroy(poly_field_t* field);
+
+/**
   *@brief copies complete field over to another field
   *@param src ptr to field to be copied
   *@param dst ptr to field being written

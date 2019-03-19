@@ -37,10 +37,8 @@ typdef struct{
   fifo_t mBytefifo;       //fifo of incoming bytes
   poly_packet_hdr_t mCurrentHdr; //header for current message candidate
   eParseState mParseState;
-
-
   fifo_t mPacketBuffer; //outgoing packet buffer
-
+  bool mUpdate;         //flag set when there is new data to process
   //diagnostic info
   int mPacketsIn;     //Total number of incoming packets parsed
   int mPacketsOut;    //Total packets sent on on spool
@@ -62,6 +60,7 @@ typedef struct{
   int mMaxDescs;
   int mMaxPacketSize;
 }poly_parser_t;
+
 
 /**
   *@brief create new parser
@@ -106,17 +105,6 @@ void poly_parser_start(poly_parser_t* pParser, int fifoDepth);
 void poly_parser_feed(poly_parser_t* pParser, int interface, uint8_t* data, int len);
 
 /**
-  *@brief gets next packet from packet buffer
-  *@param pParser ptr to poly parser
-  *@param interface index of interface to read from
-  *@param pPacket ptr to store packet
-  *@return True if packet was available
-  *@return False if no packet is available
-  */
-bool poly_parser_next(poly_parser_t* pParser,int interface,  poly_packet_t* pPacket);
-
-
-/**
   *@brief advances the idx in the interface buffer until the next valid header
   *@param pParser ptr to poly parser
   *@param iface ptr to interface
@@ -125,15 +113,25 @@ bool poly_parser_next(poly_parser_t* pParser,int interface,  poly_packet_t* pPac
 bool poly_parser_seek_header(poly_parser_t* pParser, poly_interface_t* iface);
 
 /**
-  *@brief parses packet from data buffer
+  *@brief parses packet from interface
   *@param pParser ptr to poly parser
+  *@param packet ptr to store packet if found
   *@param interface index of interface
   *@return PACKET_VALID if packet is ok
   *@return PACKET_INCOMPLETE if len is shorter than packet header indicates
   *@return PACKET_BAD_CHECKSUM if the checksum is incorrect (likely bit error)
   *@return PACKET_PARSING_ERROR if len is longer than it should be (likely missed a delimiter)
   */
-ePacketStatus poly_parser_try_parse(poly_parser_t* pParser, int interface);
+ePacketStatus poly_parser_try_parse_interface(poly_parser_t* pParser, poly_packet_t* packet,  int interface);
+
+/**
+  *@brief parses packet from data buffer
+  *@param pParser ptr to poly parser
+  *@param packet ptr to store packet if found
+  *@return PACKET_VALID if packet is ok
+  *@return PACKET_NONE is no valid packets are found
+  */
+ePacketStatus poly_parser_try_parse(poly_parser_t* pParser, poly_packet_t* packet);
 
 
 

@@ -61,7 +61,6 @@ void poly_parser_start(poly_parser_t* pParser, int fifoDepth)
     pParser->mInterfaces[i]->mParseState= STATE_WAITING_FOR_HEADER;
     pParser->mInterfaces[i]->mRaw = (uint8_t*) malloc(pParser->mMaxPacketSize);
 
-    fifo_init(&pParser->mInterfaces[i]->mPacketFifo, fifoDepth, sizeof(poly_packet_t));
   }
 
   pParser->mStarted = true;
@@ -78,16 +77,6 @@ void poly_parser_feed(poly_parser_t* pParser, int interface, uint8_t* data, int 
   len = min(len, (pParser->mMaxPacketSize - iface->mIdx));
 
 
-}
-
-
-bool poly_parser_next(poly_parser_t* pParser, int interface,  poly_packet_t* pPacket)
-{
-  if(pParser->mInterfaces[interface]->mPacketFifo->mCount == 0)
-    return false;
-
-  fifo_pop(&pParser->mInterfaces[interface]->mPacketFifo, pPacket);
-  return true;
 }
 
 bool poly_parser_seek_header(poly_parser_t* pParser, poly_interface_t* iface)
@@ -119,7 +108,7 @@ bool poly_parser_seek_header(poly_parser_t* pParser, poly_interface_t* iface)
     return retVal;
 }
 
-ePacketStatus poly_parser_try_parse(poly_parser_t* pParser, int interface)
+ePacketStatus poly_parser_try_parse_interface(poly_parser_t* pParser, poly_packet_t* packet, int interface)
 {
   poly_interface_t* iface = &pParser->mInterfaces[interface];
   ePacketStatus retVal = PACKET_NONE;
@@ -150,18 +139,22 @@ ePacketStatus poly_parser_try_parse(poly_parser_t* pParser, int interface)
             fifo_peek_buf(&iface->mBytefifo, pParser->mRaw, len );
             newPacket = new_poly_packet(pParser->mDescs[iface->mCurrentHdr.mTypeId], true);
 
-            //push new packet to the packet fifo (makes a copy)
-            fifo_push(&iface->mPacketFifo, newPacket);
+            retVal = poly_packet_parse_buffer(packet, packet->mDesc, pParser->mRaw);
 
-            //free up memory since we made a copy..
-            free(newPacket);
-            retVal = PACKET_VALID;
+            switch(retVal)
+            {
+              case PACKET_VALID:
+                fifo_clear(&iface->mBytefifo, len); //remove these bytes from fifo
+                break;
+              default:
+                fifo_clear(&iface->mBytefifo, 1); //remove one byte
+                break;
+            }
           }
           else
           {
             //bad checksum throw away leading byte and try again
             iface->mParseState->mParseState == STATE_WAITING_FOR_HEADER;
-
           }
         }
     }
@@ -169,6 +162,19 @@ ePacketStatus poly_parser_try_parse(poly_parser_t* pParser, int interface)
 
   return retVal;
 
+}
+
+ePacketStatus poly_parser_try_parse(poly_parser_t* pParser, poly_packet_t* packet)
+{
+  for(int i=0; i < pParser->mInterfaceCount; i++)
+  {
+    if (poly_parser_try_parse_interface(pParser, packet,i) == PACKET_VALID)
+    {
+      return PACKET_VALID;
+    }
+  }
+
+  return PACKET_NONE;
 }
 
 

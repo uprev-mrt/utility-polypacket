@@ -91,6 +91,17 @@ void poly_field_init(poly_field_t* field, poly_field_desc_t* desc, bool allocate
   }
 }
 
+void poly_field_destroy(poly_field_t* field)
+{
+  //if we allocated our own memory, free it
+  if(field->mAllocated)
+  {
+    free(field->mData);
+  }
+
+  free(field);
+}
+
 void poly_field_copy(poly_field_t* src, poly_field_t* dst)
 {
   assert(dst->mBound || dst->mAllocated);
@@ -106,6 +117,19 @@ void poly_field_copy(poly_field_t* src, poly_field_t* dst)
 
 void poly_field_bind(poly_field_t* field, uint8_t* data)
 {
+  //if data is alread present, copy it first
+  if(field->mAllocated || field->mBound)
+  {
+    memcpy(data, field->mData, field->mSize);
+  }
+
+  //if data was allocated free the old
+  if(field->mAllocated)
+  {
+    free(field->mData);
+    field->mAllocated = false;
+  }
+
   field->mData = data;
   field->mBound = true;
 }

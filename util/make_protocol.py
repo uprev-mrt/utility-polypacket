@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 #
 #@file make_protocol.py
 #@brief python script to generate code for PolyPacket
@@ -9,11 +9,12 @@
 import sys
 import xml.etree.ElementTree as ET
 import re
-import StringIO
+import io
 import copy
 import datetime
 import zlib
 import argparse
+from mako.template import Template
 
 args = None
 parser = None
@@ -88,7 +89,7 @@ class fieldDesc:
         self.type = type.lower().replace('_t','')
 
         if not (self.type in cNameDict):
-            print "INVALID DATA TYPE!:  " + type
+            print( "INVALID DATA TYPE!:  " + type)
 
         self.size = sizeDict[self.type] * len
         self.cType = cNameDict[self.type]
@@ -117,6 +118,18 @@ class fieldDesc:
         self.isRequired = False
         self.desc = ""
 
+    def getFieldDeclaration(self):
+        output = io.StringIO()
+        output.write("  {0} m{1}".format(self.type, self.name))
+        if(self.arrayLen > 1):
+            output.write("["+str(self.arrayLen)+"]")
+
+        if(self.desc != ""):
+            output.write(";\t//"+self.desc +"")
+        else:
+            output.write(";")
+        return output.getvalue()
+
 class packetDesc:
     def __init__(self, name):
         self.name = name
@@ -136,7 +149,7 @@ class packetDesc:
         self.fieldCount+=1
 
     def getDocMd(self):
-        output = StringIO.StringIO()
+        output = io.StringIO()
         output.write('### ' + self.name + '\n')
         output.write(self.desc + '\n\n')
         requestCount = len(self.requests)
@@ -166,10 +179,10 @@ class packetDesc:
                 output.write(resp)
             output.write('*\n\n')
 
-        rowBytes = StringIO.StringIO()
-        rowBorder = StringIO.StringIO()
-        rowFields = StringIO.StringIO()
-        rowTypes = StringIO.StringIO()
+        rowBytes = io.StringIO()
+        rowBorder = io.StringIO()
+        rowFields = io.StringIO()
+        rowTypes = io.StringIO()
 
         rowBytes.write('|***Byte***|')
         rowBorder.write('|---|')
@@ -236,7 +249,7 @@ class packetDesc:
     def getStruct(self):
         if(len(self.fields) == 0 ):
             return ''
-        output = StringIO.StringIO()
+        output = io.StringIO()
         output.write("//Struct for "+ self.name+" Packet\n")
         output.write("//"+ self.desc+" Packet\n")
         output.write("typedef struct{\n")
@@ -255,12 +268,12 @@ class packetDesc:
         return output.getvalue()
 
     def getStructConstructorProto(self):
-        output = StringIO.StringIO()
+        output = io.StringIO()
         output.write(self.structName +"* new_"+self.name.lower() +"();\n")
         return output.getvalue()
 
     def getStructConstructor(self):
-        output = StringIO.StringIO()
+        output = io.StringIO()
         output.write(self.structName +"* new_"+self.name.lower() +"()\n{\n")
         output.write("  {0}* newStruct = ({0}*) malloc(sizeof({0}));\n".format(self.structName))
         output.write("  newStruct->mPacket = new_poly_packet({0});\n\n".format(self.globalName))
@@ -274,17 +287,17 @@ class packetDesc:
         return output.getvalue()
 
     def getHandlerProto(self, prefix):
-        output = StringIO.StringIO()
+        output = io.StringIO()
         output.write('__weak uint8_t '+ prefix + '_' + self.name.lower() + "_handler("+self.structName+" * packet, int interface);\n\n")
         return output.getvalue()
 
     def getHandler(self, prefix):
-        output = StringIO.StringIO()
+        output = io.StringIO()
         output.write('__weak uint8_t '+ prefix + '_' + self.name.lower() + "_handler("+self.structName+" * packet, int interface)\n{\n  return PACKET_UNHANDLED;\n}\n\n")
         return output.getvalue()
 
     def generateClass(self, base):
-        output = StringIO.StringIO()
+        output = io.StringIO()
         output.write("/**********************************************************\n" )
         output.write("              " +self.className+ "                       \n" )
         output.write("**********************************************************/\n" )
@@ -333,7 +346,7 @@ class packetDesc:
 
     def generateFunctions(self, protocolName):
         #generate value getters
-        output = StringIO.StringIO()
+        output = io.StringIO()
         output.write("/**********************************************************\n" )
         output.write("              " +self.className+ "                       \n" )
         output.write("**********************************************************/\n\n\n" )
@@ -383,6 +396,9 @@ class protocolDesc:
         self.packetId =0
         self.prefix = name;
 
+    def parser(self):
+        return self.prefix +'_PARSER'
+
     def addField(self,field):
         field.id = self.fieldId
         self.fields.append(field)
@@ -396,7 +412,7 @@ class protocolDesc:
         self.packetId+=1
 
     def generateHeaderCommon(self, cpp):
-        output = StringIO.StringIO()
+        output = io.StringIO()
         output.write('/**\n')
         output.write('  *@file '+self.fileName +'.h\n')
         output.write('  *@brief generated protocol source code\n')
@@ -431,7 +447,7 @@ class protocolDesc:
         return output.getvalue()
 
     def generateSourceCommon(self, cpp):
-        output = StringIO.StringIO()
+        output = io.StringIO()
         output.write('/**\n')
         if(cpp):
             output.write('  *@file '+self.fileName +'.cpp\n')
@@ -467,7 +483,7 @@ class protocolDesc:
 
 
     def generateHeaderC(self, file):
-        output = StringIO.StringIO()
+        output = io.StringIO()
         output.write(self.generateHeaderCommon(False))
 
         #write structs for each packet
@@ -505,7 +521,7 @@ class protocolDesc:
         text_file.close()
 
     def generateHeaderCPP(self, file):
-        output = StringIO.StringIO()
+        output = io.StringIO()
         output.write(self.generateHeaderCommon(True))
 
         #write classes for each packet
@@ -522,7 +538,7 @@ class protocolDesc:
         text_file.close()
 
     def generateSourceCPP(self,file):
-        output = StringIO.StringIO()
+        output = io.StringIO()
         output.write(self.generateSourceCommon(True))
 
         #init
@@ -552,7 +568,7 @@ class protocolDesc:
 
     def generateSourceC(self,file):
         parser = self.prefix.upper() + '_PARSER'
-        output = StringIO.StringIO()
+        output = io.StringIO()
         output.write(self.generateSourceCommon(True))
 
         output.write('poly_parser_t* {0};\n\n'.format(parser))
@@ -651,7 +667,7 @@ def parseXML(xmlfile):
         if('format' in field.attrib):
             format = field.attrib['format'].lower()
             if not format in formatDict:
-                print "INVALID FORMAT :" + format
+                print( "INVALID FORMAT :" + format)
 
             newField.format = formatDict[format]
 
@@ -659,7 +675,7 @@ def parseXML(xmlfile):
             newField.desc = field.attrib['desc']
 
         if(name in protocol.fields):
-            print 'ERROR Duplicate Field Name!: ' + name
+            print( 'ERROR Duplicate Field Name!: ' + name)
 
         protocol.addField(newField)
 
@@ -671,7 +687,7 @@ def parseXML(xmlfile):
         newPacket = packetDesc(name)
 
         if(name in protocol.packetIdx):
-            print 'ERROR Duplicate Packet Name!: ' + name
+            print( 'ERROR Duplicate Packet Name!: ' + name)
 
         if('desc' in packet.attrib):
             desc = packet.attrib['desc']
@@ -685,7 +701,7 @@ def parseXML(xmlfile):
             pfname = pfield.attrib['name']
             strReq =""
             if not (pfname in protocol.fieldIdx):
-                print 'ERROR Field not declared: ' + pfname
+                print( 'ERROR Field not declared: ' + pfname)
 
             #get id of field and make a copy
             idx = protocol.fieldIdx[pfname]
@@ -715,7 +731,7 @@ def parseXML(xmlfile):
 
 
 def createSourceC(protocol):
-    output = StringIO.StringIO()
+    output = io.StringIO()
     output.write('/**\n')
     output.write('  *@file '+protocol.name +'.c\n')
     output.write('  *@brief generated protocol source code\n')
@@ -766,12 +782,12 @@ def createSourceC(protocol):
 #    text_file.write(output.getvalue())
 #    text_file.close()
 
-    #print output.getvalue()
+    #print( output.getvalue())
 
 
 def createDoc(protocol, filename):
     global path
-    output = StringIO.StringIO()
+    output = io.StringIO()
     output.write('# ' + protocol.name + '\n')
     output.write('* Generated: '+now.strftime("%m/%d/%y")+'<br/>\n')
     output.write('* CRC: '+protocol.hash+'\n\n')
@@ -818,6 +834,16 @@ def main():
 
     protocol = parseXML(xmlFile)
     protocol.hash = fileCrc
+
+    template = Template(filename='templates/c_header_template.h')
+    text_file = open("test.h", "w")
+    text_file.write(template.render(proto = protocol))
+    text_file.close()
+
+    template = Template(filename='templates/c_source_template.c')
+    text_file = open("test.c", "w")
+    text_file.write(template.render(proto = protocol))
+    text_file.close()
     #protocol.generateHeaderC(path+"/c_header.h")
     if(args.pure_c):
         protocol.generateSourceC(path+"/" + protocol.fileName+".c")

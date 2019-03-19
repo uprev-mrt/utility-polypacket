@@ -66,8 +66,6 @@ typedef struct{
   poly_packet_desc_t* mDesc;     //prt to packet descriptor
   poly_field_t* mFields;        //array of fields contained in packet
   uint8_t mInterface;              //id of interface that packet is from/to
-  bool mAllocated;             //indicates if packet has allocated its own memory
-  bool mBound;                //indicates if packet has been bound to struct/memory
 }poly_packet_t;
 
 

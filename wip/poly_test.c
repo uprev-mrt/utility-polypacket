@@ -35,6 +35,8 @@ test_struct_t* new_test_struct()
   return newStruct;
 }
 
+
+
 void destroy_test_struct(test_struct_t* t)
 {
 
