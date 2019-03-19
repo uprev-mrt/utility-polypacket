@@ -1,85 +1,85 @@
 /**
-  *@file poly_parser.c
+  *@file poly_service.c
   *@brief implementation for variable packet module
   *@author Jason Berger
   *@date 02/19/"2019
   */
 
-#include "poly_parser.h"
+#include "poly_service.h"
 #include <assert.h>
 
 
 
-poly_parser_t* new_poly_parser(int maxDescs, int interfaceCount)
+poly_service_t* new_poly_service(int maxDescs, int interfaceCount)
 {
-  //allocate parser
-  poly_parser_t* parser = (poly_parser_t*)malloc(sizeof(poly_parser_t));
+  //allocate service
+  poly_service_t* service = (poly_service_t*)malloc(sizeof(poly_service_t));
 
   //allocate interfaces
-  parser->mInterfaceCount = interfaceCount;
-  parser->mInterfaces = (poly_interface_t*) malloc(sizeof(poly_interface_t) * interfaceCount);
+  service->mInterfaceCount = interfaceCount;
+  service->mInterfaces = (poly_interface_t*) malloc(sizeof(poly_interface_t) * interfaceCount);
 
   //allocate packet descriptors
-  parser->mMaxDescs = maxDescs;
-  parser->mPacketDescs = (poly_packet_desc_t**) malloc(sizeof(poly_packet_desc_t*));
+  service->mMaxDescs = maxDescs;
+  service->mPacketDescs = (poly_packet_desc_t**) malloc(sizeof(poly_packet_desc_t*));
 
-  parser->mDescCount =0;
-  parser->mStarted = false;
+  service->mDescCount =0;
+  service->mStarted = false;
 
-  return parser;
+  return service;
 }
 
 
-void poly_parser_register_desc(poly_parser_t* pParser, poly_packet_desc_t* pDesc)
+void poly_service_register_desc(poly_service_t* pService, poly_packet_desc_t* pDesc)
 {
-  assert(pParser->mDescCount < pParser->mMaxDescs);
+  assert(pService->mDescCount < pService->mMaxDescs);
 
-  pParser->mDescs[pParser->mDescCount++] = pDesc;
+  pService->mDescs[pService->mDescCount++] = pDesc;
 }
 
 
-void poly_parser_start(poly_parser_t* pParser, int fifoDepth)
+void poly_service_start(poly_service_t* pService, int fifoDepth)
 {
 
   //find max packet size
-  for(int i=0; i < pParser->mDescCount; i++)
+  for(int i=0; i < pService->mDescCount; i++)
   {
-    pParser->mMaxPacketSize = max(pParser->mMaxPacketSize, mParser->mDescs[i]->mMaxPacketSize);
+    pService->mMaxPacketSize = max(pService->mMaxPacketSize, mService->mDescs[i]->mMaxPacketSize);
   }
 
   //initialize interfaces
-  for(int i=0; i < pParser->mInterfaceCount;i++)
+  for(int i=0; i < pService->mInterfaceCount;i++)
   {
     //reset diagnostic info
-    pParser->mInterfaces[i]->mPacketsIn = 0;
-    pParser->mInterfaces[i]->mPacketsOut = 0;
-    pParser->mInterfaces[i]->mRetries = 0;
-    pParser->mInterfaces[i]->mFailures = 0;
-    pParser->mInterfaces[i]->mBitErrors = 0;
+    pService->mInterfaces[i]->mPacketsIn = 0;
+    pService->mInterfaces[i]->mPacketsOut = 0;
+    pService->mInterfaces[i]->mRetries = 0;
+    pService->mInterfaces[i]->mFailures = 0;
+    pService->mInterfaces[i]->mBitErrors = 0;
 
     //set up buffers, make incoming byte buffer 2x max packet size
-    pParser->mInterfaces[i]->mParseState= STATE_WAITING_FOR_HEADER;
-    pParser->mInterfaces[i]->mRaw = (uint8_t*) malloc(pParser->mMaxPacketSize);
+    pService->mInterfaces[i]->mParseState= STATE_WAITING_FOR_HEADER;
+    pService->mInterfaces[i]->mRaw = (uint8_t*) malloc(pService->mMaxPacketSize);
 
   }
 
-  pParser->mStarted = true;
+  pService->mStarted = true;
 
 }
 
 
 
-void poly_parser_feed(poly_parser_t* pParser, int interface, uint8_t* data, int len)
+void poly_service_feed(poly_service_t* pService, int interface, uint8_t* data, int len)
 {
-  poly_interface_t* iface = pParser->mInterfaces[i];
+  poly_interface_t* iface = pService->mInterfaces[i];
 
   //make sure we stay in bounds
-  len = min(len, (pParser->mMaxPacketSize - iface->mIdx));
+  len = min(len, (pService->mMaxPacketSize - iface->mIdx));
 
 
 }
 
-bool poly_parser_seek_header(poly_parser_t* pParser, poly_interface_t* iface)
+bool poly_service_seek_header(poly_service_t* pService, poly_interface_t* iface)
 {
   uint8_t trash;
   uint8_t id;
@@ -92,7 +92,7 @@ bool poly_parser_seek_header(poly_parser_t* pParser, poly_interface_t* iface)
 
     id = iface->mCurrentHdr.mTypeId
     //if packet type is valid, and length is valid for that packet type, we have a candidate
-    if((iface->mCurrentHdr.mTypeId < pParser->mDescCount) && (iface->mCurrentHdr.mDataLen < pParser->mDescs[iface->mCurrentHdr.mTypeId]->mMaxPacketSize))
+    if((iface->mCurrentHdr.mTypeId < pService->mDescCount) && (iface->mCurrentHdr.mDataLen < pService->mDescs[iface->mCurrentHdr.mTypeId]->mMaxPacketSize))
     {
       iface->mParseState = STATE_HEADER_FOUND;
       retVal = true;
@@ -108,9 +108,9 @@ bool poly_parser_seek_header(poly_parser_t* pParser, poly_interface_t* iface)
     return retVal;
 }
 
-ePacketStatus poly_parser_try_parse_interface(poly_parser_t* pParser, poly_packet_t* packet, int interface)
+ePacketStatus poly_service_try_parse_interface(poly_service_t* pService, poly_packet_t* packet, int interface)
 {
-  poly_interface_t* iface = &pParser->mInterfaces[interface];
+  poly_interface_t* iface = &pService->mInterfaces[interface];
   ePacketStatus retVal = PACKET_NONE;
   uint16_t checksumComp;
   uint8_t trash;
@@ -122,7 +122,7 @@ ePacketStatus poly_parser_try_parse_interface(poly_parser_t* pParser, poly_packe
     if(iface->mParseState->mParseState == STATE_WAITING_FOR_HEADER)
     {
         //moves tail of fifo to next possible header
-        poly_parser_seek_header(pParser, iface);
+        poly_service_seek_header(pService, iface);
     }
 
     if(iface->mParseState->mParseState == STATE_HEADER_FOUND)
@@ -136,10 +136,10 @@ ePacketStatus poly_parser_try_parse_interface(poly_parser_t* pParser, poly_packe
           if(checksumComp == iface->mCurrentHdr.mCheckSum)
           {
             //Valid packet, Parse!
-            fifo_peek_buf(&iface->mBytefifo, pParser->mRaw, len );
-            newPacket = new_poly_packet(pParser->mDescs[iface->mCurrentHdr.mTypeId], true);
+            fifo_peek_buf(&iface->mBytefifo, pService->mRaw, len );
+            newPacket = new_poly_packet(pService->mDescs[iface->mCurrentHdr.mTypeId], true);
 
-            retVal = poly_packet_parse_buffer(packet, packet->mDesc, pParser->mRaw);
+            retVal = poly_packet_parse_buffer(packet, packet->mDesc, pService->mRaw);
 
             switch(retVal)
             {
@@ -164,11 +164,11 @@ ePacketStatus poly_parser_try_parse_interface(poly_parser_t* pParser, poly_packe
 
 }
 
-ePacketStatus poly_parser_try_parse(poly_parser_t* pParser, poly_packet_t* packet)
+ePacketStatus poly_service_try_parse(poly_service_t* pService, poly_packet_t* packet)
 {
-  for(int i=0; i < pParser->mInterfaceCount; i++)
+  for(int i=0; i < pService->mInterfaceCount; i++)
   {
-    if (poly_parser_try_parse_interface(pParser, packet,i) == PACKET_VALID)
+    if (poly_service_try_parse_interface(pService, packet,i) == PACKET_VALID)
     {
       return PACKET_VALID;
     }

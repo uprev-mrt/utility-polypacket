@@ -10,7 +10,7 @@
 ***********************************************************/
 
 #include "SampleProtocol.h"
-#include "Utilities/PolyPacket/poly_parser.h"
+#include "Utilities/PolyPacket/poly_service.h"
 
 
 //Define packet IDs
@@ -23,24 +23,24 @@
 
 
 //Global descriptors
-  poly_packet_desc_t* ACK_P_DESC
-  poly_packet_desc_t* SETDATA_P_DESC
-  poly_packet_desc_t* GETDATA_P_DESC
-  poly_packet_desc_t* RESPDATA_P_DESC
-  poly_packet_desc_t* BLOCKREQ_P_DESC
-  poly_packet_desc_t* BLOCKRESP_P_DESC
+poly_packet_desc_t* ACK_P_DESC
+poly_packet_desc_t* SETDATA_P_DESC
+poly_packet_desc_t* GETDATA_P_DESC
+poly_packet_desc_t* RESPDATA_P_DESC
+poly_packet_desc_t* BLOCKREQ_P_DESC
+poly_packet_desc_t* BLOCKRESP_P_DESC
 
-  poly_field_desc_t* SRC_F_DESC
-  poly_field_desc_t* DST_F_DESC
-  poly_field_desc_t* CMD_F_DESC
-  poly_field_desc_t* SENSORA_F_DESC
-  poly_field_desc_t* SENSORB_F_DESC
-  poly_field_desc_t* SENSORNAME_F_DESC
-  poly_field_desc_t* BLOCKOFFSET_F_DESC
-  poly_field_desc_t* BLOCKSIZE_F_DESC
-  poly_field_desc_t* BLOCKDATA_F_DESC
+poly_field_desc_t* SRC_F_DESC
+poly_field_desc_t* DST_F_DESC
+poly_field_desc_t* CMD_F_DESC
+poly_field_desc_t* SENSORA_F_DESC
+poly_field_desc_t* SENSORB_F_DESC
+poly_field_desc_t* SENSORNAME_F_DESC
+poly_field_desc_t* BLOCKOFFSET_F_DESC
+poly_field_desc_t* BLOCKSIZE_F_DESC
+poly_field_desc_t* BLOCKDATA_F_DESC
 
-poly_parser_t* sp_PARSER;
+poly_service_t* SP_SERVICE;
 
 /*******************************************************************************
   Service Process
@@ -48,9 +48,50 @@ poly_parser_t* sp_PARSER;
 /**
   *@brief attempts to process data in buffers and parse out packets
   */
-void sp_protocol_process()
+void sp_service_process()
 {
-  sp_PARSER
+  static sp_packet_t metaPacket;
+  poly_packet_t* newPacket;
+
+  uint8_t handlingStatus = PACKET_UNHANDLED;
+
+  if(poly_service_try_parse(SP_SERVICE) == PACKET_VALID)
+  {
+    sp_packet_init(&metaPacket, newPacket);
+
+    //Dispatch packet
+    switch(metaPacket->mTypeId)
+    {
+      case ACK_P_DESC_ID:
+        handlingStatus = sp_ack_handler(metaPacket.mPayload.ack);
+        break;
+      case SETDATA_P_DESC_ID:
+        handlingStatus = sp_setdata_handler(metaPacket.mPayload.setdata);
+        break;
+      case GETDATA_P_DESC_ID:
+        handlingStatus = sp_getdata_handler(metaPacket.mPayload.getdata);
+        break;
+      case RESPDATA_P_DESC_ID:
+        handlingStatus = sp_respdata_handler(metaPacket.mPayload.respdata);
+        break;
+      case BLOCKREQ_P_DESC_ID:
+        handlingStatus = sp_blockreq_handler(metaPacket.mPayload.blockreq);
+        break;
+      case BLOCKRESP_P_DESC_ID:
+        handlingStatus = sp_blockresp_handler(metaPacket.mPayload.blockresp);
+        break;
+      default:
+        //we should never get here
+        asser(false);
+        break;
+    }
+
+    if(handlingStatus == PACKET_UNHANDLED)
+      handlingStatus = sp_default)handler(&metaPacket);
+
+    sp_packet_teardown(&metaPacket);
+  }
+
 }
 
 /*******************************************************************************
@@ -61,10 +102,10 @@ void sp_protocol_process()
   *@brief initializes sp_protocol
   *@param interfaceCount number of interfaces to create
   */
-void sp_protocol_init(int interfaceCount)
+void sp_service_init(int interfaceCount)
 {
 
-  sp_PARSER = new_poly_parser(6, interfaceCount);
+  SP_SERVICE = new_poly_service(6, interfaceCount);
 
   //Build Packet Descriptors
   ACK_P_DESC = new_poly_packet_desc("ack", 0);
@@ -116,49 +157,83 @@ void sp_protocol_init(int interfaceCount)
   poly_packet_desc_add_field(BLOCKRESP_P_DESC , BLOCKSIZE_F_DESC , true );
   poly_packet_desc_add_field(BLOCKRESP_P_DESC , BLOCKDATA_F_DESC , true );
 
-  //Register packet descriptors with the parser
-  poly_parser_register_desc(sp_PARSER, ACK_P_DESC);
-  poly_parser_register_desc(sp_PARSER, SETDATA_P_DESC);
-  poly_parser_register_desc(sp_PARSER, GETDATA_P_DESC);
-  poly_parser_register_desc(sp_PARSER, RESPDATA_P_DESC);
-  poly_parser_register_desc(sp_PARSER, BLOCKREQ_P_DESC);
-  poly_parser_register_desc(sp_PARSER, BLOCKRESP_P_DESC);
+  //Register packet descriptors with the service
+  poly_service_register_desc(SP_SERVICE, ACK_P_DESC);
+  poly_service_register_desc(SP_SERVICE, SETDATA_P_DESC);
+  poly_service_register_desc(SP_SERVICE, GETDATA_P_DESC);
+  poly_service_register_desc(SP_SERVICE, RESPDATA_P_DESC);
+  poly_service_register_desc(SP_SERVICE, BLOCKREQ_P_DESC);
+  poly_service_register_desc(SP_SERVICE, BLOCKRESP_P_DESC);
 
 }
 
 /*******************************************************************************
   Meta packet
 *******************************************************************************/
-void sp_packet_init(sp_packet_t* packet, poly_packet_desc_t* desc)
+void sp_packet_init(sp_packet_t* metaPacket, poly_packet_t* packet)
 {
   //set typeId
-  packet->mTypeId = desc->mTypeId;
+  metaPacket->mTypeId = packet->mDesc->mTypeId;
 
   //create a new unallocated packet
   poly_packet_t* newPacket = new_poly_packet(desc, false);
 
 
-  switch(packet->mTypeId)
+  switch(metaPacket->mTypeId)
   {
     case ACK_P_DESC_ID:
-    sp_ack_bind(packet->mPayload.ack, newPacket);
+    sp_ack_bind(metaPacket->mPayload.ack, newPacket);
     break;
     case SETDATA_P_DESC_ID:
-    sp_setdata_bind(packet->mPayload.setdata, newPacket);
+    sp_setdata_bind(metaPacket->mPayload.setdata, newPacket);
     break;
     case GETDATA_P_DESC_ID:
-    sp_getdata_bind(packet->mPayload.getdata, newPacket);
+    sp_getdata_bind(metaPacket->mPayload.getdata, newPacket);
     break;
     case RESPDATA_P_DESC_ID:
-    sp_respdata_bind(packet->mPayload.respdata, newPacket);
+    sp_respdata_bind(metaPacket->mPayload.respdata, newPacket);
     break;
     case BLOCKREQ_P_DESC_ID:
-    sp_blockreq_bind(packet->mPayload.blockreq, newPacket);
+    sp_blockreq_bind(metaPacket->mPayload.blockreq, newPacket);
     break;
     case BLOCKRESP_P_DESC_ID:
-    sp_blockresp_bind(packet->mPayload.blockresp, newPacket);
+    sp_blockresp_bind(metaPacket->mPayload.blockresp, newPacket);
     break;
   }
+}
+
+void sp_packet_teardown(sp_packet_t* metaPacket)
+{
+  poly_packet_t* packet;
+  switch(metaPacket->mTypeId)
+  {
+    case ACK_P_DESC_ID:
+    packet = metaPacket->mPayload.ack->mPacket;
+    free(metaPacket->mPayload.ack);
+    break;
+    case SETDATA_P_DESC_ID:
+    packet = metaPacket->mPayload.setdata->mPacket;
+    free(metaPacket->mPayload.setdata);
+    break;
+    case GETDATA_P_DESC_ID:
+    packet = metaPacket->mPayload.getdata->mPacket;
+    free(metaPacket->mPayload.getdata);
+    break;
+    case RESPDATA_P_DESC_ID:
+    packet = metaPacket->mPayload.respdata->mPacket;
+    free(metaPacket->mPayload.respdata);
+    break;
+    case BLOCKREQ_P_DESC_ID:
+    packet = metaPacket->mPayload.blockreq->mPacket;
+    free(metaPacket->mPayload.blockreq);
+    break;
+    case BLOCKRESP_P_DESC_ID:
+    packet = metaPacket->mPayload.blockresp->mPacket;
+    free(metaPacket->mPayload.blockresp);
+    break;
+  }
+
+  poly_packet_destroy(packet);
 }
 
 
@@ -288,7 +363,7 @@ uint8_t* sp_getBlockdata(sp_packet_t* packet)
   Packet Binding
 *******************************************************************************/
 /**
-  *@brief Binds struct to poly_parser_t
+  *@brief Binds struct to poly_service_t
   *@param ack ptr to ack_packet_t to be bound
   *@param packet packet to bind to
   */
@@ -300,7 +375,7 @@ void ack_bind(ack_packet_t* ack, poly_packet_t* packet)
 }
 
 /**
-  *@brief Binds struct to poly_parser_t
+  *@brief Binds struct to poly_service_t
   *@param setdata ptr to setdata_packet_t to be bound
   *@param packet packet to bind to
   */
@@ -317,7 +392,7 @@ void setdata_bind(setdata_packet_t* setdata, poly_packet_t* packet)
 }
 
 /**
-  *@brief Binds struct to poly_parser_t
+  *@brief Binds struct to poly_service_t
   *@param getdata ptr to getdata_packet_t to be bound
   *@param packet packet to bind to
   */
@@ -334,7 +409,7 @@ void getdata_bind(getdata_packet_t* getdata, poly_packet_t* packet)
 }
 
 /**
-  *@brief Binds struct to poly_parser_t
+  *@brief Binds struct to poly_service_t
   *@param respdata ptr to respdata_packet_t to be bound
   *@param packet packet to bind to
   */
@@ -351,7 +426,7 @@ void respdata_bind(respdata_packet_t* respdata, poly_packet_t* packet)
 }
 
 /**
-  *@brief Binds struct to poly_parser_t
+  *@brief Binds struct to poly_service_t
   *@param blockreq ptr to blockreq_packet_t to be bound
   *@param packet packet to bind to
   */
@@ -367,7 +442,7 @@ void blockreq_bind(blockreq_packet_t* blockreq, poly_packet_t* packet)
 }
 
 /**
-  *@brief Binds struct to poly_parser_t
+  *@brief Binds struct to poly_service_t
   *@param blockresp ptr to blockresp_packet_t to be bound
   *@param packet packet to bind to
   */

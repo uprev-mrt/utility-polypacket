@@ -10,7 +10,7 @@
 ***********************************************************/
 
 #include "${proto.fileName}.h"
-#include "Utilities/PolyPacket/poly_parser.h"
+#include "Utilities/PolyPacket/poly_service.h"
 
 
 //Define packet IDs
@@ -21,14 +21,14 @@
 
 //Global descriptors
 % for packet in proto.packets:
-  poly_packet_desc_t* ${packet.globalName}
+poly_packet_desc_t* ${packet.globalName}
 % endfor
 
 % for field in proto.fields:
-  poly_field_desc_t* ${field.globalName}
+poly_field_desc_t* ${field.globalName}
 % endfor
 
-poly_parser_t* ${proto.parser()};
+poly_service_t* ${proto.service()};
 
 /*******************************************************************************
   Service Process
@@ -36,9 +36,38 @@ poly_parser_t* ${proto.parser()};
 /**
   *@brief attempts to process data in buffers and parse out packets
   */
-void ${proto.prefix}_protocol_process()
+void ${proto.prefix}_service_process()
 {
-  ${proto.parser()}
+  static ${proto.prefix}_packet_t metaPacket;
+  poly_packet_t* newPacket;
+
+  uint8_t handlingStatus = PACKET_UNHANDLED;
+
+  if(poly_service_try_parse(${proto.service()}) == PACKET_VALID)
+  {
+    ${proto.prefix}_packet_init(&metaPacket, newPacket);
+
+    //Dispatch packet
+    switch(metaPacket->mTypeId)
+    {
+  % for packet in proto.packets:
+      case ${packet.globalName}_ID:
+        handlingStatus = ${proto.prefix}_${packet.name.lower()}_handler(metaPacket.mPayload.${packet.name.lower()});
+        break;
+  % endfor
+      default:
+        //we should never get here
+        asser(false);
+        break;
+    }
+
+    //If the packet was not handled, throw it to the default handler 
+    if(handlingStatus == PACKET_UNHANDLED)
+      handlingStatus = ${proto.prefix}_default)handler(&metaPacket);
+
+    ${proto.prefix}_packet_teardown(&metaPacket);
+  }
+
 }
 
 /*******************************************************************************
@@ -49,10 +78,10 @@ void ${proto.prefix}_protocol_process()
   *@brief initializes ${proto.prefix}_protocol
   *@param interfaceCount number of interfaces to create
   */
-void ${proto.prefix}_protocol_init(int interfaceCount)
+void ${proto.prefix}_service_init(int interfaceCount)
 {
 
-  ${proto.parser()} = new_poly_parser(${len(proto.packets)}, interfaceCount);
+  ${proto.service()} = new_poly_service(${len(proto.packets)}, interfaceCount);
 
   //Build Packet Descriptors
 % for packet in proto.packets:
@@ -71,9 +100,9 @@ void ${proto.prefix}_protocol_init(int interfaceCount)
   % endfor
 % endfor
 
-  //Register packet descriptors with the parser
+  //Register packet descriptors with the service
 % for packet in proto.packets:
-  poly_parser_register_desc(${proto.parser()}, ${packet.globalName});
+  poly_service_register_desc(${proto.service()}, ${packet.globalName});
 % endfor
 
 }
@@ -81,23 +110,39 @@ void ${proto.prefix}_protocol_init(int interfaceCount)
 /*******************************************************************************
   Meta packet
 *******************************************************************************/
-void ${proto.prefix}_packet_init(${proto.prefix}_packet_t* packet, poly_packet_desc_t* desc)
+void ${proto.prefix}_packet_init(${proto.prefix}_packet_t* metaPacket, poly_packet_t* packet)
 {
   //set typeId
-  packet->mTypeId = desc->mTypeId;
+  metaPacket->mTypeId = packet->mDesc->mTypeId;
 
   //create a new unallocated packet
   poly_packet_t* newPacket = new_poly_packet(desc, false);
 
 
-  switch(packet->mTypeId)
+  switch(metaPacket->mTypeId)
   {
 % for packet in proto.packets:
     case ${packet.globalName}_ID:
-    ${proto.prefix}_${packet.name.lower()}_bind(packet->mPayload.${packet.name.lower()}, newPacket);
+    ${proto.prefix}_${packet.name.lower()}_bind(metaPacket->mPayload.${packet.name.lower()}, newPacket);
     break;
 % endfor
   }
+}
+
+void ${proto.prefix}_packet_teardown(${proto.prefix}_packet_t* metaPacket)
+{
+  poly_packet_t* packet;
+  switch(metaPacket->mTypeId)
+  {
+% for packet in proto.packets:
+    case ${packet.globalName}_ID:
+    packet = metaPacket->mPayload.${packet.name.lower()}->mPacket;
+    free(metaPacket->mPayload.${packet.name.lower()});
+    break;
+% endfor
+  }
+
+  poly_packet_destroy(packet);
 }
 
 
@@ -136,7 +181,7 @@ ${field.getParamType()} ${proto.prefix}_get${field.name.capitalize()}(${proto.pr
 *******************************************************************************/
 % for packet in proto.packets:
 /**
-  *@brief Binds struct to poly_parser_t
+  *@brief Binds struct to poly_service_t
   *@param ${packet.name.lower()} ptr to ${packet.structName} to be bound
   *@param packet packet to bind to
   */

@@ -403,8 +403,8 @@ class protocolDesc:
         self.packetId =0
         self.prefix = name;
 
-    def parser(self):
-        return self.prefix +'_PARSER'
+    def service(self):
+        return self.prefix.upper() +'_SERVICE'
 
     def addField(self,field):
         field.id = self.fieldId

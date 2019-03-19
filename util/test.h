@@ -105,7 +105,21 @@ typedef union{
 } mPayload;
 } sp_packet_t;
 
-void sp_packet_init(sp_packet_t* packet, poly_packet_desc_t* desc);
+
+/**
+*@brief initializes protocol service
+*@param ifaces number of interfaces to use
+*/
+void sp_service_init(int interfaceCount);
+
+/**
+  *@brief processes data in buffers
+  */
+void sp_service_process();
+
+
+void sp_packet_init(sp_packet_t* metaPacket, poly_packet_t* packet);
+void sp_packet_teardown(sp_packet_t* metaPacket);
 
 
 //Meta packet setters
@@ -137,17 +151,6 @@ void sp_getdata_bind(getdata_packet_t* getdata, poly_packet_t* packet);
 void sp_respdata_bind(respdata_packet_t* respdata, poly_packet_t* packet);
 void sp_blockreq_bind(blockreq_packet_t* blockreq, poly_packet_t* packet);
 void sp_blockresp_bind(blockresp_packet_t* blockresp, poly_packet_t* packet);
-
-/**
-*@brief initializes protocol service
-*@param ifaces number of interfaces to use
-*/
-void sp_protocol_init(int interfaceCount);
-
-/**
-  *@brief processes data in buffers
-  */
-void sp_protocol_process();
 
 
 

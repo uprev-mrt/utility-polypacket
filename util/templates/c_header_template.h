@@ -44,7 +44,21 @@ typedef union{
 } mPayload;
 } ${proto.prefix}_packet_t;
 
-void ${proto.prefix}_packet_init(${proto.prefix}_packet_t* packet, poly_packet_desc_t* desc);
+
+/**
+*@brief initializes protocol service
+*@param ifaces number of interfaces to use
+*/
+void ${proto.prefix}_service_init(int interfaceCount);
+
+/**
+  *@brief processes data in buffers
+  */
+void ${proto.prefix}_service_process();
+
+
+void ${proto.prefix}_packet_init(${proto.prefix}_packet_t* metaPacket, poly_packet_t* packet);
+void ${proto.prefix}_packet_teardown(${proto.prefix}_packet_t* metaPacket);
 
 
 //Meta packet setters
@@ -65,17 +79,6 @@ ${field.getParamType()} ${proto.prefix}_get${field.name.capitalize()}(${proto.pr
 % for packet in proto.packets:
 void ${proto.prefix}_${packet.name.lower()}_bind(${packet.structName}* ${packet.name.lower()}, poly_packet_t* packet);
 % endfor
-
-/**
-*@brief initializes protocol service
-*@param ifaces number of interfaces to use
-*/
-void ${proto.prefix}_protocol_init(int interfaceCount);
-
-/**
-  *@brief processes data in buffers
-  */
-void ${proto.prefix}_protocol_process();
 
 
 

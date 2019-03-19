@@ -1,5 +1,5 @@
 /**
-  *@file poly_parser.h
+  *@file poly_service.h
   *@brief header for variable packet module
   *@author Jason Berger
   *@date 02/19/2019
@@ -49,7 +49,7 @@ typdef struct{
 }poly_interface_t;
 
 /**
-  *@brief packet handling parser
+  *@brief packet handling service
   */
 typedef struct{
   int mInterfaceCount;
@@ -59,62 +59,62 @@ typedef struct{
   int mMaxPacketSize;
   int mMaxDescs;
   int mMaxPacketSize;
-}poly_parser_t;
+}poly_service_t;
 
 
 /**
-  *@brief create new parser
+  *@brief create new service
   *@param maxDesc max number of Packet descriptors in protocol
   *@param interfaceCount number of interfaces to allocate
-  *@return ptr to newly allocated parser
+  *@return ptr to newly allocated service
   */
-poly_parser_t* new_poly_parser(int maxDescs, int interfaceCount);
+poly_service_t* new_poly_service(int maxDescs, int interfaceCount);
 
 /**
-  *@brief register packet descriptor with parser
-  *@param pParser ptr to poly_parser
+  *@brief register packet descriptor with service
+  *@param pService ptr to poly_service
   *@param pDesc packet descriptor to be registered
-  *@post Once all packets descriptors are registered the parser can be started
+  *@post Once all packets descriptors are registered the service can be started
   */
-void poly_parser_register_desc(poly_parser_t* pParser, poly_packet_desc_t* pDesc);
+void poly_service_register_desc(poly_service_t* pService, poly_packet_desc_t* pDesc);
 
 /**
   *@brief registers a packet received callback for a given interface
-  *@param pParser ptr to poly parser
+  *@param pService ptr to poly service
   *@param interface index of interface to register callback with
   *@post callback callback function
   */
-void poly_parser_register_rx_callback(poly_parser_t* pParser, int interface, poly_rx_callback* callback);
+void poly_service_register_rx_callback(poly_service_t* pService, int interface, poly_rx_callback* callback);
 
 /**
-  *@brief Starts the parser with a given number of interfaces
-  *@param pParser ptr to parser
+  *@brief Starts the service with a given number of interfaces
+  *@param pService ptr to service
   *@param fifoDepth how many objects the parsed packet fifo should hold
   *@pre must register all descriptors first
   */
-void poly_parser_start(poly_parser_t* pParser, int fifoDepth);
+void poly_service_start(poly_service_t* pService, int fifoDepth);
 
 
 /**
-  *@brief 'Feeds' the parser bytes to parse
-  *@param pParser ptr to poly parser
+  *@brief 'Feeds' the service bytes to parse
+  *@param pService ptr to poly service
   *@param interface index of interface to feed
   *@param data ptr to data being added
-  *@param len number of bytes being fed to parser
+  *@param len number of bytes being fed to service
   */
-void poly_parser_feed(poly_parser_t* pParser, int interface, uint8_t* data, int len);
+void poly_service_feed(poly_service_t* pService, int interface, uint8_t* data, int len);
 
 /**
   *@brief advances the idx in the interface buffer until the next valid header
-  *@param pParser ptr to poly parser
+  *@param pService ptr to poly service
   *@param iface ptr to interface
   *@return true if header is found
   */
-bool poly_parser_seek_header(poly_parser_t* pParser, poly_interface_t* iface);
+bool poly_service_seek_header(poly_service_t* pService, poly_interface_t* iface);
 
 /**
   *@brief parses packet from interface
-  *@param pParser ptr to poly parser
+  *@param pService ptr to poly service
   *@param packet ptr to store packet if found
   *@param interface index of interface
   *@return PACKET_VALID if packet is ok
@@ -122,16 +122,16 @@ bool poly_parser_seek_header(poly_parser_t* pParser, poly_interface_t* iface);
   *@return PACKET_BAD_CHECKSUM if the checksum is incorrect (likely bit error)
   *@return PACKET_PARSING_ERROR if len is longer than it should be (likely missed a delimiter)
   */
-ePacketStatus poly_parser_try_parse_interface(poly_parser_t* pParser, poly_packet_t* packet,  int interface);
+ePacketStatus poly_service_try_parse_interface(poly_service_t* pService, poly_packet_t* packet,  int interface);
 
 /**
   *@brief parses packet from data buffer
-  *@param pParser ptr to poly parser
+  *@param pService ptr to poly service
   *@param packet ptr to store packet if found
   *@return PACKET_VALID if packet is ok
   *@return PACKET_NONE is no valid packets are found
   */
-ePacketStatus poly_parser_try_parse(poly_parser_t* pParser, poly_packet_t* packet);
+ePacketStatus poly_service_try_parse(poly_service_t* pService, poly_packet_t* packet);
 
 
 
