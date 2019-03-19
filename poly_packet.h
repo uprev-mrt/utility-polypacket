@@ -14,8 +14,6 @@ extern "C"
 {
 #endif
 
-//macro to check if memory has been allocated or bound for packet fields
-#define MEM_EXISTS( packet) ((packet->mAllocated) || (packet->mBound))
 
 typedef enum PacketStatus {
   PACKET_VALID = -400,

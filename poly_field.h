@@ -112,6 +112,20 @@ void poly_field_copy(poly_field_t* src, poly_field_t* dst);
 void poly_field_bind(poly_field_t* field, uint8_t* data);
 
 /**
+  *@brief sets data in field
+  *@param field ptr to field
+  *@param data ptr to data
+  */
+void poly_field_set(poly_field_t* field, const uint8_t* data);
+
+/**
+  *@brief copies data from field and returns pointer (for use with arrays)
+  *@param field ptr to field
+  *@returns pointer to data
+  */
+uint8_t* poly_field_get(poly_field_t* field, uint8_t* data);
+
+/**
   *@brief Parses raw data for a field
   *@param field ptr to field being parsed
   *@param data ptr to raw data to be parsed

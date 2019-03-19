@@ -8,6 +8,8 @@
 #include "poly_field.h"
 #include <assert.h>
 
+#define MEM_EXISTS( field) ((field->mAllocated) || (field->mBound))
+
 poly_field_desc_t* new_poly_field_desc(const char* name, eFieldType type, uint32_t len, eFieldFormat format)
 {
   poly_field_desc_t* new_desc = (poly_field_desc_t*) malloc(sizeof(poly_field_desc_t));
@@ -132,6 +134,30 @@ void poly_field_bind(poly_field_t* field, uint8_t* data)
 
   field->mData = data;
   field->mBound = true;
+}
+
+void poly_field_set(poly_field_t* field, const uint8_t* data)
+{
+  assert(MEM_EXISTS(field));
+
+  //if its a null terminated type, we can adjust size
+  if(field->mNullTerm)
+  {
+    field->mSize = strlen(data);
+  }
+
+  field->mPresent =true;
+
+  memcpy(field->mData, data, field->mSize);
+}
+
+uint8_t* poly_field_get(poly_field_t* field, uint8_t* data)
+{
+  assert(MEM_EXISTS(field));
+
+  memcpy(data, field->mData, field->mSize);
+
+  return field->mData;
 }
 
 int poly_field_parse(poly_field_t* field, uint8_t* data)

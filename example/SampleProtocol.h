@@ -13,24 +13,24 @@
 
 
 //Declare extern packet descriptors
-extern poly_packet_desc_t* PP_ack;
-extern poly_packet_desc_t* PP_SetData;
-extern poly_packet_desc_t* PP_GetData;
-extern poly_packet_desc_t* PP_RespData;
-extern poly_packet_desc_t* PP_blockReq;
-extern poly_packet_desc_t* PP_blockResp;
+extern poly_packet_desc_t* ACK_P_DESC;
+extern poly_packet_desc_t* SETDATA_P_DESC;
+extern poly_packet_desc_t* GETDATA_P_DESC;
+extern poly_packet_desc_t* RESPDATA_P_DESC;
+extern poly_packet_desc_t* BLOCKREQ_P_DESC;
+extern poly_packet_desc_t* BLOCKRESP_P_DESC;
 
 
 //Declare extern field descriptors
-extern poly_field_desc_t* PF_src;
-extern poly_field_desc_t* PF_dst;
-extern poly_field_desc_t* PF_cmd;
-extern poly_field_desc_t* PF_sensorA;
-extern poly_field_desc_t* PF_sensorB;
-extern poly_field_desc_t* PF_sensorName;
-extern poly_field_desc_t* PF_blockOffset;
-extern poly_field_desc_t* PF_blockSize;
-extern poly_field_desc_t* PF_blockData;
+extern poly_field_desc_t* SRC_F_DESC;
+extern poly_field_desc_t* DST_F_DESC;
+extern poly_field_desc_t* CMD_F_DESC;
+extern poly_field_desc_t* SENSORA_F_DESC;
+extern poly_field_desc_t* SENSORB_F_DESC;
+extern poly_field_desc_t* SENSORNAME_F_DESC;
+extern poly_field_desc_t* BLOCKOFFSET_F_DESC;
+extern poly_field_desc_t* BLOCKSIZE_F_DESC;
+extern poly_field_desc_t* BLOCKDATA_F_DESC;
 
 
 //Structs for packet types//Struct for SetData Packet

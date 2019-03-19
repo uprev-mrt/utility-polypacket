@@ -112,15 +112,16 @@ class fieldDesc:
 
         self.id = 0
         self.name = name
-        self.globalName = "PF_"+self.name
+        self.globalName = self.name.upper()+"_F_DESC"
         self.isVarLen = False
         self.format = 'FORMAT_DEFAULT'
         self.isRequired = False
         self.desc = ""
+        self.memberName = "m"+ self.name.capitalize()
 
     def getFieldDeclaration(self):
         output = io.StringIO()
-        output.write("  {0} m{1}".format(self.type, self.name))
+        output.write("  {0} {1}".format(self.cType, self.memberName))
         if(self.arrayLen > 1):
             output.write("["+str(self.arrayLen)+"]")
 
@@ -130,10 +131,16 @@ class fieldDesc:
             output.write(";")
         return output.getvalue()
 
+    def getParamType(self):
+        if self.isArray:
+            return self.cType +"*"
+        else:
+            return self.cType;
+
 class packetDesc:
     def __init__(self, name):
         self.name = name
-        self.globalName = "PP_" + name
+        self.globalName =  name.upper()+"_P_DESC"
         self.className = name.capitalize() +"Packet"
         self.desc =""
         self.fields = []
@@ -407,6 +414,7 @@ class protocolDesc:
 
 
     def addPacket(self,packet):
+        packet.packetId = self.packetId
         self.packets.append(packet)
         self.packetIdx[packet.name] = self.packetId
         self.packetId+=1

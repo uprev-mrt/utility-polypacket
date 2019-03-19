@@ -12,6 +12,13 @@
 #include "${proto.fileName}.h"
 #include "Utilities/PolyPacket/poly_parser.h"
 
+
+//Define packet IDs
+% for packet in proto.packets:
+#define ${} ${packet.globalName}_ID ${packet.packetId}
+% endfor
+
+
 //Global descriptors
 % for packet in proto.packets:
   poly_packet_desc_t* ${packet.globalName}
@@ -72,9 +79,61 @@ void ${proto.prefix}_protocol_init(int interfaceCount)
 }
 
 /*******************************************************************************
+  Meta packet
+*******************************************************************************/
+void ${proto.prefix}_packet_init(${proto.prefix}_packet_t* packet, poly_packet_desc_t* desc)
+{
+  //set typeId
+  packet->mTypeId = desc->mTypeId;
+
+  //create a new unallocated packet
+  poly_packet_t* newPacket = new_poly_packet(desc, false);
+
+
+  switch(packet->mTypeId)
+  {
+% for packet in proto.packets:
+    case ${packet.globalName}_ID:
+    ${proto.prefix}_${packet.name.lower()}_bind(packet->mPayload.${packet.name.lower()}, newPacket);
+    break;
+% endfor
+  }
+}
+
+
+//Meta packet setters
+% for field in proto.fields:
+void ${proto.prefix}_set${field.name.capitalize()}(${proto.prefix}_packet_t* packet, ${field.getParamType()} val)
+{
+  poly_field_t* field = poly_packet_get_field(packet->mPacket, packet->mPacket->mDesc);
+%if field.isArray:
+  poly_field_set(field,( const uint8_t*) val);
+% else:
+  poly_field_set(field,( const uint8_t*) &val);
+% endif
+}
+
+% endfor
+
+//Meta packet getters
+% for field in proto.fields:
+${field.getParamType()} ${proto.prefix}_get${field.name.capitalize()}(${proto.prefix}_packet_t* packet)
+{
+  ${field.getParamType()} val;
+%if field.isArray:
+  val = (${field.getParamType()})poly_field_get(field);
+% else:
+  poly_field_get(field,(uint8_t*) &val);
+% endif
+  return val;
+}
+
+% endfor
+
+
+/*******************************************************************************
   Packet Binding
 *******************************************************************************/
-//Packet binders
 % for packet in proto.packets:
 /**
   *@brief Binds struct to poly_parser_t
@@ -86,7 +145,7 @@ void ${packet.name.lower()}_bind(${packet.structName}* ${packet.name.lower()}, p
   ${packet.name.lower()}->mPacket = packet;
 
 % for field in packet.fields:
-  poly_field_bind( poly_packet_get_field(packet, ${field.globalName}), (uint8_t*) &${packet.name.lower()}->${field.name});
+  poly_field_bind( poly_packet_get_field(packet, ${field.globalName}), (uint8_t*) &${packet.name.lower()}->${field.memberName});
 % endfor
 
 }

@@ -35,9 +35,35 @@ typedef struct{
 
 % endfor
 
+typedef union{
+  uint8_t mTypeId;
+  union{
+% for packet in proto.packets:
+    ${packet.structName}* ${packet.name.lower()};
+% endfor
+} mPayload;
+} ${proto.prefix}_packet_t;
+
+void ${proto.prefix}_packet_init(${proto.prefix}_packet_t* packet, poly_packet_desc_t* desc);
+
+
+//Meta packet setters
+% for field in proto.fields:
+  %if field.isArray:
+void ${proto.prefix}_set${field.name.capitalize()}(${proto.prefix}_packet_t* packet, const ${field.getParamType()} val);
+  % else:
+void ${proto.prefix}_set${field.name.capitalize()}(${proto.prefix}_packet_t* packet, ${field.getParamType()} val);
+  % endif
+% endfor
+
+//Meta packet getters
+% for field in proto.fields:
+${field.getParamType()} ${proto.prefix}_get${field.name.capitalize()}(${proto.prefix}_packet_t* packet);
+% endfor
+
 //Packet binders
 % for packet in proto.packets:
-void ${packet.name.lower()}_bind(${packet.structName}* ${packet.name.lower()}, poly_packet_t* packet);
+void ${proto.prefix}_${packet.name.lower()}_bind(${packet.structName}* ${packet.name.lower()}, poly_packet_t* packet);
 % endfor
 
 /**
