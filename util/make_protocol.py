@@ -121,7 +121,7 @@ class fieldDesc:
 
     def getFieldDeclaration(self):
         output = io.StringIO()
-        output.write("  {0} {1}".format(self.cType, self.memberName))
+        output.write("{0} {1}".format(self.cType, self.memberName))
         if(self.arrayLen > 1):
             output.write("["+str(self.arrayLen)+"]")
 
@@ -253,135 +253,7 @@ class packetDesc:
 
         return output.getvalue();
 
-    def getStruct(self):
-        if(len(self.fields) == 0 ):
-            return ''
-        output = io.StringIO()
-        output.write("//Struct for "+ self.name+" Packet\n")
-        output.write("//"+ self.desc+" Packet\n")
-        output.write("typedef struct{\n")
-        for field in self.fields:
-            output.write("  "+field.type+" m"+field.name)
-            if(field.arrayLen > 1):
-                output.write("["+str(field.arrayLen)+"]")
 
-            if(field.desc != ""):
-                output.write(";\t//"+field.desc +"\n")
-            else:
-                output.write(";\n")
-
-        output.write("} " + self.structName + ";\n\n")
-
-        return output.getvalue()
-
-    def getStructConstructorProto(self):
-        output = io.StringIO()
-        output.write(self.structName +"* new_"+self.name.lower() +"();\n")
-        return output.getvalue()
-
-    def getStructConstructor(self):
-        output = io.StringIO()
-        output.write(self.structName +"* new_"+self.name.lower() +"()\n{\n")
-        output.write("  {0}* newStruct = ({0}*) malloc(sizeof({0}));\n".format(self.structName))
-        output.write("  newStruct->mPacket = new_poly_packet({0});\n\n".format(self.globalName))
-
-        for field in self.fields:
-            output.write('  poly_packet_gett_field(newStruct->mPacket, {0})->mData = (uint8_t*) &newStruct->{1};\n'.format(field.globalName, field.name))
-
-        output.write('  newStruct->mPacket->mBound = true;\n\n  return newStruct;\n')
-
-        output.write('}\n\n')
-        return output.getvalue()
-
-    def getHandlerProto(self, prefix):
-        output = io.StringIO()
-        output.write('__weak uint8_t '+ prefix + '_' + self.name.lower() + "_handler("+self.structName+" * packet, int interface);\n\n")
-        return output.getvalue()
-
-    def getHandler(self, prefix):
-        output = io.StringIO()
-        output.write('__weak uint8_t '+ prefix + '_' + self.name.lower() + "_handler("+self.structName+" * packet, int interface)\n{\n  return PACKET_UNHANDLED;\n}\n\n")
-        return output.getvalue()
-
-    def generateClass(self, base):
-        output = io.StringIO()
-        output.write("/**********************************************************\n" )
-        output.write("              " +self.className+ "                       \n" )
-        output.write("**********************************************************/\n" )
-        output.write("class "+self.className +" : public "+ base+"\n{\npublic:\n" )
-        output.write("  "+self.className +"(poly_packet_t* packet = NULL);\n\n" )
-
-        #generate value getters
-        output.write("\n  //Value Getters\n")
-        for field in self.fields:
-            if(field.cppType == 'string'):
-                output.write( "  " +field.cppType +" " +field.name.capitalize()+"() const {return std::string(m"+ field.name.capitalize()+");}\n" )
-            else:
-                if field.isArray:
-                    output.write( "  " +field.cppType +" " +field.name.capitalize()+"() {return m"+ field.name.capitalize()+";}\n" )
-                else:
-                    output.write( "  " +field.cppType +" " +field.name.capitalize()+"() const {return m"+ field.name.capitalize()+";}\n" )
-
-
-        #generate value setters
-        output.write("\n  //Value Setters\n")
-        for field in self.fields:
-            output.write(  "  void " +field.name.capitalize()+"("+field.cppType+ " val );\n" )
-
-        #generate value getters
-        output.write("\n  //Present Getters\n")
-        for field in self.fields:
-            output.write( "  bool has"  +field.name.capitalize()+"() const { return hasField("+field.globalName+");}\n" )
-
-        #generate value setters
-        #output.write("\n  //Present Setters\n")
-        #for field in self.fields:
-        #    output.write(  "  void has"  +field.name.capitalize()+"( bool val) {hasField("+field.globalName+" , val);}\n" )
-
-        output.write("\nprivate:\n")
-        for field in self.fields:
-            output.write("  "+field.cType+" m"+field.name.capitalize())
-            if(field.isArray):
-                output.write("["+str(field.arrayLen)+"]")
-            if(field.desc != ""):
-                output.write(";  //"+field.desc +"\n");
-            else:
-                output.write(";\n")
-
-        output.write("};\n\n")
-        return output.getvalue()
-
-    def generateFunctions(self, protocolName):
-        #generate value getters
-        output = io.StringIO()
-        output.write("/**********************************************************\n" )
-        output.write("              " +self.className+ "                       \n" )
-        output.write("**********************************************************/\n\n\n" )
-
-        output.write(self.className+"::"+self.className +"(poly_packet_t* packet)\n:PolyPacket(&"+self.globalName+", &"+protocolName+"_protocol_init)\n{" )
-        output.write("  //Bind all fields\n" )
-
-        for field in self.fields:
-            output.write("  getField("+field.globalName+")->mData = (uint8_t*) &m"+field.name.capitalize()+";\n" )
-
-        output.write("  mPacket->mBound = true;\n  copyFrom(packet);\n}\n\n" )
-
-        #create setters
-        for field in self.fields:
-            output.write( "void "+ self.className+"::" +field.name.capitalize()+"("+ field.cppType+"  val)\n{\n" )
-
-            output.write( "  hasField("+field.globalName+",true);\n" )
-            if(field.cppType == 'string'):
-                output.write( "  int len= min((int)val.length() + 1,"+str(field.arrayLen)+");\n")
-                output.write( "  getField(PF_sensorName)->mSize = len;\n")
-                output.write( "  memcpy(m"+field.name.capitalize()+", val.c_str(), len);\n}\n" )
-            else:
-                if(field.isArray):
-                    output.write( "  memcpy(m"+field.name.capitalize()+", val, "+ str(field.arrayLen)+" * sizeof("+ field.cType+"));\n}\n" )
-                else:
-                    output.write( "  m"+field.name.capitalize()+" = val;\n}\n\n" )
-
-        return output.getvalue()
 
 
 
@@ -418,215 +290,6 @@ class protocolDesc:
         self.packets.append(packet)
         self.packetIdx[packet.name] = self.packetId
         self.packetId+=1
-
-    def generateHeaderCommon(self, cpp):
-        output = io.StringIO()
-        output.write('/**\n')
-        output.write('  *@file '+self.fileName +'.h\n')
-        output.write('  *@brief generated protocol source code\n')
-        output.write('  *@author make_protocol.py\n')
-        output.write('  *@date '+now.strftime("%m/%d/%y")+'\n')
-        output.write('  */\n\n')
-        output.write('/***********************************************************\n')
-        output.write('        THIS FILE IS AUTOGENERATED. DO NOT MODIFY\n')
-        output.write('***********************************************************/\n')
-
-        if(cpp):
-            output.write('#include "Utilities/PolyPacket/poly_field.h"\n')
-            output.write('#include "Utilities/PolyPacket/PolyPacket.h"\n\n\n')
-            output.write('using namespace Utilities::PolyPacket; \n\n')
-        else:
-            output.write('#include "Utilities/PolyPacket/poly_field.h"\n')
-            output.write('#include "Utilities/PolyPacket/poly_packet.h"\n\n\n')
-
-        #write packet descriptors
-        output.write('//Declare extern packet descriptors\n')
-        for packet in self.packets:
-            output.write('extern poly_packet_desc_t* ' + packet.globalName+ ';\n')
-
-        output.write('\n\n')
-
-        #write field descriptors
-        output.write('//Declare extern field descriptors\n')
-        for field in self.fields:
-            output.write('extern poly_field_desc_t* ' + field.globalName+ ';\n')
-
-        output.write('\n\n')
-        return output.getvalue()
-
-    def generateSourceCommon(self, cpp):
-        output = io.StringIO()
-        output.write('/**\n')
-        if(cpp):
-            output.write('  *@file '+self.fileName +'.cpp\n')
-        else:
-            output.write('  *@file '+self.fileName +'.c\n')
-        output.write('  *@brief generated protocol source code\n')
-        output.write('  *@author make_protocol.py\n')
-        output.write('  *@date '+now.strftime("%m/%d/%y")+'\n')
-        output.write('  */\n\n')
-        output.write('/***********************************************************\n')
-        output.write('        THIS FILE IS AUTOGENERATED. DO NOT MODIFY\n')
-        output.write('***********************************************************/\n\n')
-
-
-        output.write("#include \""+self.fileName+".h\"\n\n")
-        output.write('#include "Utilities/PolyPacket/poly_parser.h"\n\n\n')
-        #write packet descriptors
-        output.write('//Declare extern packet descriptors\n')
-        for packet in self.packets:
-            output.write('poly_packet_desc_t* ' + packet.globalName+ ';\n')
-
-        output.write('\n\n')
-
-        #write field descriptors
-        output.write('//Declare extern field descriptors\n')
-        for field in self.fields:
-            output.write('poly_field_desc_t* ' + field.globalName+ ';\n')
-
-        output.write('\n\n')
-        return output.getvalue()
-
-
-
-
-    def generateHeaderC(self, file):
-        output = io.StringIO()
-        output.write(self.generateHeaderCommon(False))
-
-        #write structs for each packet
-        output.write('//Structs for packet types')
-        for packet in self.packets:
-            output.write(packet.getStruct())
-
-        for packet in self.packets:
-            output.write(packet.getStructConstructorProto())
-
-
-
-        output.write('\n\n')
-
-        output.write('/**\n')
-        output.write('  *@brief initializes protocol service\n')
-        output.write('  *@param ifaces number of interfaces to use\n')
-        output.write('  */\n\n')
-        output.write('void {0}_protocol_init(int ifaces);\n\n'.format(self.prefix))
-
-        output.write('/**\n')
-        output.write('  *@brief processes data in buffers\n')
-        output.write('  */\n\n')
-        output.write('void '+self.prefix+'_protocol_process();\n\n')
-
-        for packet in self.packets:
-            output.write('/*@brief weak Handler for '+packet.name+' packets */\n')
-            output.write(packet.getHandlerProto(self.prefix) )
-
-        output.write('/*@brief weak Handler for '+packet.name+' packets */\n')
-
-
-        text_file = open(file,"w")
-        text_file.write(output.getvalue())
-        text_file.close()
-
-    def generateHeaderCPP(self, file):
-        output = io.StringIO()
-        output.write(self.generateHeaderCommon(True))
-
-        #write classes for each packet
-        output.write('//Classes for packet types\n')
-        for packet in self.packets:
-            output.write(packet.generateClass("PolyPacket"))
-
-        output.write('\n\n')
-
-        output.write('void '+self.name+'_protocol_init();\n')
-
-        text_file = open(file,"w")
-        text_file.write(output.getvalue())
-        text_file.close()
-
-    def generateSourceCPP(self,file):
-        output = io.StringIO()
-        output.write(self.generateSourceCommon(True))
-
-        #init
-        output.write("void "+self.name+"_protocol_init()\n{\n  static int initialized=false;\n  if(initialized)\n    return;\n  //Packet Descriptors\n" )
-        for packet in self.packets:
-            output.write("  "+packet.globalName+" = new_poly_packet_desc(\""+ packet.name+"\", "+ str(len(packet.fields))+ " );\n" )
-
-        output.write("\n\n  //Field Descriptos\n")
-
-        for field in self.fields:
-            output.write("  "+field.globalName+" = new_poly_field_desc(\""+ field.name+"\", TYPE_"+ field.type.upper()+" , "+ str(field.arrayLen)+ " , "+field.format.upper()+" );\n" )
-
-        for packet in self.packets:
-            output.write("\n\n  //Setting fields Descriptors for "+ packet.className+"\n")
-            for field in packet.fields:
-                output.write("  poly_packet_desc_add_field(" + packet.globalName +" , " + field.globalName+" , " + str(field.isRequired).lower() +" );\n")
-
-        output.write("\n  initialized =true;\n}\n" )
-
-        #packets
-        for packet in self.packets:
-            output.write(packet.generateFunctions(self.name))
-
-        text_file = open(file,"w")
-        text_file.write(output.getvalue())
-        text_file.close()
-
-    def generateSourceC(self,file):
-        parser = self.prefix.upper() + '_PARSER'
-        output = io.StringIO()
-        output.write(self.generateSourceCommon(True))
-
-        output.write('poly_parser_t* {0};\n\n'.format(parser))
-
-        output.write('void {0}_protocol_init()\n'.format(self.prefix))
-        output.write('{\n')
-        output.write('  {0} = new_poly_parser({1},ifaces);\n\n'.format(parser, str(len(self.packets))))
-
-        #cosntruct all Packet Descriptors descriptors
-        output.write('//Build Packet descriptors\n')
-        for packet in self.packets:
-            output.write("  "+packet.globalName+" = new_poly_packet_desc(\""+ packet.name+"\", "+ str(len(packet.fields))+ " );\n" )
-
-        output.write('\n\n  //Build Field descriptors\n')
-        for field in self.fields:
-            output.write("  "+field.globalName+" = new_poly_field_desc(\""+ field.name+"\", TYPE_"+ field.type.upper()+" , "+ str(field.arrayLen)+ " , "+field.format.upper()+" );\n" )
-
-        for packet in self.packets:
-            if(len(packet.fields) > 0):
-                output.write("\n\n  //Setting fields Descriptors for "+ packet.className+"\n")
-                for field in packet.fields:
-                    output.write("  poly_packet_desc_add_field(" + packet.globalName +" , " + field.globalName+" , " + str(field.isRequired).lower() +" );\n")
-
-        output.write('\n\n  //Register packet descriptors with parser \n')
-        for packet in self.packets:
-            output.write('  poly_parser_register_desc({0},{1});\n'.format(parser, packet.globalName ))
-
-        output.write('\n //Start parser\n')
-        output.write('  poly_parser_start({0});\n\n'.format(parser))
-        output.write('}\n\n')
-
-        #init
-        # output.write("void "+self.name+"_protocol_init()\n{\n  static int initialized=false;\n  if(initialized)\n    return;\n  //Packet Descriptors\n" )
-
-        # output.write("\n\n  //Field Descriptos\n")
-        #
-        # for field in self.fields:
-        #     output.write("  "+field.globalName+" = new_poly_field_desc(\""+ field.name+"\", TYPE_"+ field.type.upper()+" , "+ str(field.arrayLen)+ " , "+field.format.upper()+" );\n" )
-        #
-                #
-        # output.write("\n  initialized =true;\n}\n" )
-
-        #packets
-        for packet in self.packets:
-            output.write(packet.getStructConstructor())
-
-        text_file = open(file,"w")
-        text_file.write(output.getvalue())
-        text_file.close()
-
 
 
 def addStandardPackets(protocol):
@@ -738,60 +401,11 @@ def parseXML(xmlfile):
     return protocol
 
 
-def createSourceC(protocol):
-    output = io.StringIO()
-    output.write('/**\n')
-    output.write('  *@file '+protocol.name +'.c\n')
-    output.write('  *@brief generated protocol source code\n')
-    output.write('  *@author make_protocol.py\n')
-    output.write('  *@date '+now.strftime("%m/%d/%y")+'\n')
-    output.write('  */\n\n')
-    output.write('***********************************************************\n')
-    output.write('        THIS FILE IS AUTOGENERATED. DO NOT MODIFY\n')
-    output.write('***********************************************************\n\n')
-    output.write('#include \"'+ protocol.name + '.h\"\n\n')
-
-    output.write('//Declare extern field descriptors\n')
-    for field in protocol.fields:
-        output.write('field_desc_t* VF_' + field.name.upper()+ ';\n')
-
-    output.write('\n\n')
-    output.write('//Declare extern packet descriptors\n')
-    for packet in protocol.packets:
-        output.write('packet_desc_t* VP_' + packet.name.upper()+ ';\n')
-    output.write('\n\n\n')
-
-    #init function
-    output.write('void protocol_init()\n{\n\n')
-    output.write('//Set up Field descriptors\n')
-    #fields
-    for field in protocol.fields:
-        output.write('\tVF_' + field.name.upper()+ '= new_field_desc( \"'+field.name+'\" , sizeof('+ field.type +') , '+str(field.arrayLen)+');\n')
-
-        if(field.isVarLen):
-            output.write('\tVF_' + field.name.upper()+ '->mVarLen = true;\n')
-
-        if (field.format != 'default'):
-            output.write('\tVF_' + field.name.upper()+ '->mFormat = FORMAT_'+ field.format.upper()+';\n')
-        output.write('\n')
-
-    output.write('\n\n\n')
-    output.write('//Set up packet descriptors\n')
-    for packet in protocol.packets:
-        output.write('\tVP_' + packet.name.upper()+ '= new_packet_desc(\"'+ packet.name+'\") ;\n')
-
-        for pfield in packet.fields:
-            output.write('\t\tpacket_desc_add_field( VP_'+ packet.name.upper() +', VF_'+ pfield.name.upper()+', '+ str(pfield.isRequired).lower()+');\n')
-            #packet_desc_add_field(packet_desc_t* desc, field_desc_t* fieldDesc);
-        output.write('\n')
-    output.write('}\n\n')
-
-#    text_file = open("Output.c", "w")
-#    text_file.write(output.getvalue())
-#    text_file.close()
-
-    #print( output.getvalue())
-
+def buildTemplate(protocol, templateFile, outputFile):
+    template = Template(filename= templateFile )
+    text_file = open( outputFile , "w")
+    text_file.write(template.render(proto = protocol))
+    text_file.close()
 
 def createDoc(protocol, filename):
     global path
@@ -843,23 +457,15 @@ def main():
     protocol = parseXML(xmlFile)
     protocol.hash = fileCrc
 
-    template = Template(filename='templates/c_header_template.h')
-    text_file = open("test.h", "w")
-    text_file.write(template.render(proto = protocol))
-    text_file.close()
-
-    template = Template(filename='templates/c_source_template.c')
-    text_file = open("test.c", "w")
-    text_file.write(template.render(proto = protocol))
-    text_file.close()
-    #protocol.generateHeaderC(path+"/c_header.h")
     if(args.pure_c):
-        protocol.generateSourceC(path+"/" + protocol.fileName+".c")
-        protocol.generateHeaderC(path+"/" + protocol.fileName+".h")
+        buildTemplate(protocol, 'templates/c_header_template.h', path+"/" + protocol.fileName+".h")
+        buildTemplate(protocol, 'templates/c_source_template.c', path+"/" + protocol.fileName+".c")
     else:
-        protocol.generateHeaderCPP(path+"/" + protocol.fileName+".h")
-        protocol.generateSourceCPP(path+"/" + protocol.fileName+".cpp")
-    #createSourceC(protocol)
+        buildTemplate(protocol, 'templates/cpp_header_template.h', path+"/" + protocol.fileName+".hpp")
+        buildTemplate(protocol, 'templates/cpp_source_template.cpp', path+"/" + protocol.fileName+".cpp")
+
+
+
     if(args.document):
         createDoc(protocol,path+"/" + protocol.fileName+".md")
 

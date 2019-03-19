@@ -108,8 +108,9 @@ void poly_field_copy(poly_field_t* src, poly_field_t* dst);
   *@brief binds poly field to data in memory
   *@param field ptr to field
   *@param data ptr to data in memory
+  *@param overwrite indicates whether or not the allocated memory is copied over to the new location
   */
-void poly_field_bind(poly_field_t* field, uint8_t* data);
+void poly_field_bind(poly_field_t* field, uint8_t* data, bool copy);
 
 /**
   *@brief sets data in field

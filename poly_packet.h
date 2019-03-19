@@ -26,7 +26,7 @@ typedef enum PacketStatus {
 
 #define PACKET_HANDLED 0
 #define PACKET_ROUTED   1
-#defione PACKET_IGNORED 2
+#define PACKET_IGNORED 2
 #define PACKET_UNHANDLED 4
 
 #define PACKET_METADATA_SIZE (sizeof(poly_packet_hdr_t))

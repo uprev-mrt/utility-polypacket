@@ -57,7 +57,7 @@ void poly_packet_desc_add_field(poly_packet_desc_t* desc, poly_field_desc_t* fie
 poly_packet_t* new_poly_packet(poly_packet_desc_t* desc, bool allocate)
 {
   poly_packet_t* newPacket = (poly_packet_t*)malloc(sizeof(poly_packet_t));
-  
+
   newPacket->mDesc = desc;
   newPacket->mInterface = 0;
 
@@ -73,8 +73,6 @@ poly_packet_t* new_poly_packet(poly_packet_desc_t* desc, bool allocate)
 void poly_packet_copy( poly_packet_t* src, poly_packet_t* dst)
 {
   //make sure they have memory allocated/bound
-  assert(MEM_EXISTS(src));
-  assert(MEM_EXISTS(dst));
 
   assert(src->mDesc == dst->mDesc);
 
@@ -91,7 +89,7 @@ void poly_packet_destroy(poly_packet_t* packet)
   //destroy all fields
   for(int i=0; i < packet->mDesc->mFieldCount; i++)
   {
-    poly_field_destroy(packet->mFields[i]);
+    poly_field_destroy(&packet->mFields[i]);
   }
 
 

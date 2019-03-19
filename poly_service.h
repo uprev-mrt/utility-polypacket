@@ -13,8 +13,9 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "Utilities/fifo.h"
-#include "Utilities/spool.h"
+#include "Utilities/Fifo/fifo.h"
+#include "poly_packet.h"
+
 
 
 #ifdef __cplusplus
@@ -30,7 +31,7 @@ typedef enum parseState {
   STATE_HEADER_FOUND,
 }eParseState;
 
-typdef struct{
+typedef struct{
   uint8_t* mRaw; //raw packet being parsed
   int mIdx;      //index of raw message
 
@@ -56,9 +57,9 @@ typedef struct{
   poly_interface_t* mInterfaces;
   poly_packet_desc_t** mPacketDescs;
   int mDescCount;
-  int mMaxPacketSize;
   int mMaxDescs;
   int mMaxPacketSize;
+  bool mStarted;
 }poly_service_t;
 
 

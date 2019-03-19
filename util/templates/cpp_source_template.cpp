@@ -15,17 +15,17 @@
 
 //Define packet IDs
 % for packet in proto.packets:
-#define ${} ${packet.globalName}_ID ${packet.packetId};
+#define ${} ${packet.globalName}_ID ${packet.packetId}
 % endfor
 
 
 //Global descriptors
 % for packet in proto.packets:
-poly_packet_desc_t* ${packet.globalName};
+poly_packet_desc_t* ${packet.globalName}
 % endfor
 
 % for field in proto.fields:
-poly_field_desc_t* ${field.globalName};
+poly_field_desc_t* ${field.globalName}
 % endfor
 
 poly_service_t* ${proto.service()};
@@ -107,70 +107,32 @@ void ${proto.prefix}_service_init(int interfaceCount)
 
 }
 
-void ${proto.prefix}_service_send(${proto.prefix}_packet_t* metaPacket, int iface)
-{
-
-}
-
 /*******************************************************************************
   Meta packet
 *******************************************************************************/
-
-/**
-  *@brief creates a new meta packet and returns a pointer to it
-  *@param desc packet descriptor
-  *@post creator is responsible for destroying with ${proto.prefix}_packet_destroy()
-  *@return ptr to new meta packet
-  */
-${proto.prefix}_packet_t* new_${proto.prefix}_packet(poly_packet_desc_t* desc)
+void ${proto.prefix}_packet_init(${proto.prefix}_packet_t* metaPacket, poly_packet_t* packet)
 {
-  ${proto.prefix}_packet_t* newMetaPacket = (${proto.prefix}_packet_t*) malloc(sizeof(${proto.prefix}_packet_t));
+  //set typeId
+  metaPacket->mTypeId = packet->mDesc->mTypeId;
 
-  //create new unallocated packet
-  newMetaPacket->mPacket = new_poly_packet(desc, false);
+  //create a new unallocated packet
+  poly_packet_t* newPacket = new_poly_packet(desc, false);
 
 
-  switch(newMetaPacket->mPacket->mTypeId)
+  switch(metaPacket->mTypeId)
   {
 % for packet in proto.packets:
     case ${packet.globalName}_ID:
-      newMetaPacket->mPayload.${packet.name.lower()} = (${packet.structName}*) malloc(sizeof(${packet.structName}));
-      ${proto.prefix}_${packet.name.lower()}_bind(newMetaPacket->mPayload.${packet.name.lower()}, newMetaPacket->mPacket, false);
-      break;
-% endfor
-  }
-
-  return newMetaPacket;
-}
-
-/**
-  *@brief initializes meta packet from previously parsed poly_packet_t
-  *@param metaPacket ptr to metaPacket
-  *@param packet ptr to packet
-  */
-void ${proto.prefix}_init(${proto.prefix}_packet_t* metaPacket, poly_packet_t* packet)
-{
-  //set packet
-  metaPacket->mPacket = packet;
-
-  switch(metaPacket->mPacket->mTypeId)
-  {
-% for packet in proto.packets:
-    case ${packet.globalName}_ID:
-      newMetaPacket->mPayload.${packet.name.lower()} = (${packet.structName}*) malloc(sizeof(${packet.structName}));
-      ${proto.prefix}_${packet.name.lower()}_bind(metaPacket->mPayload.${packet.name.lower()}, metaPacket->mPacket, true);
-      break;
+    ${proto.prefix}_${packet.name.lower()}_bind(metaPacket->mPayload.${packet.name.lower()}, newPacket);
+    break;
 % endfor
   }
 }
 
-/**
-  *@brief reset mega packet to a default state by freeing memory of payload
-  *@param "metaPacket ptr to metaPacket
-  */
-void ${proto.prefix}_teardown(${proto.prefix}_packet_t* metaPacket)
+void ${proto.prefix}_packet_teardown(${proto.prefix}_packet_t* metaPacket)
 {
-  switch(metaPacket->mPacket->mTypeId)
+  poly_packet_t* packet;
+  switch(metaPacket->mTypeId)
   {
 % for packet in proto.packets:
     case ${packet.globalName}_ID:
@@ -180,36 +142,11 @@ void ${proto.prefix}_teardown(${proto.prefix}_packet_t* metaPacket)
 % endfor
   }
 
-  assert(metaPacket->mPacket);
-
-  poly_packet_destroy(metaPacket->mPacket);
-}
-
-/**
-  *@brief frees memory allocated for metapacket
-  *@param "metaPacket ptr to metaPacket
-  */
-void ${proto.prefix}_destroy(${proto.prefix}_packet_t* metaPacket)
-{
-  //teardown
-  ${proto.prefix}_packet_teardown(metaPacket);
-
-  //free memory
-  free(metaPacket);
-}
-
-int ${proto.prefix}_pack(${proto.prefix}_packet_t* metaPacket, uint8_t* data)
-{
-  return poly_packet_pack(metaPacket->mPacket, data);
+  poly_packet_destroy(packet);
 }
 
 
-/*******************************************************************************
-
-  Meta-Packet setters
-
-*******************************************************************************/
-
+//Meta packet setters
 % for field in proto.fields:
 void ${proto.prefix}_set${field.name.capitalize()}(${proto.prefix}_packet_t* packet, ${field.getParamType()} val)
 {
@@ -223,10 +160,7 @@ void ${proto.prefix}_set${field.name.capitalize()}(${proto.prefix}_packet_t* pac
 
 % endfor
 
-/*******************************************************************************
-  Meta-Packet getters
-*******************************************************************************/
-
+//Meta packet getters
 % for field in proto.fields:
 ${field.getParamType()} ${proto.prefix}_get${field.name.capitalize()}(${proto.prefix}_packet_t* packet)
 {
@@ -243,7 +177,7 @@ ${field.getParamType()} ${proto.prefix}_get${field.name.capitalize()}(${proto.pr
 
 
 /*******************************************************************************
-  Packet binders
+  Packet Binding
 *******************************************************************************/
 % for packet in proto.packets:
 /**

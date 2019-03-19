@@ -34,7 +34,7 @@ void poly_service_register_desc(poly_service_t* pService, poly_packet_desc_t* pD
 {
   assert(pService->mDescCount < pService->mMaxDescs);
 
-  pService->mDescs[pService->mDescCount++] = pDesc;
+  pService->mPacketDescs[pService->mDescCount++] = pDesc;
 }
 
 
@@ -44,22 +44,23 @@ void poly_service_start(poly_service_t* pService, int fifoDepth)
   //find max packet size
   for(int i=0; i < pService->mDescCount; i++)
   {
-    pService->mMaxPacketSize = max(pService->mMaxPacketSize, mService->mDescs[i]->mMaxPacketSize);
+    if(pService->mPacketDescs[i]->mMaxPacketSize > pService->mMaxPacketSize)
+      pService->mMaxPacketSize = pService->mPacketDescs[i]->mMaxPacketSize;
   }
 
   //initialize interfaces
   for(int i=0; i < pService->mInterfaceCount;i++)
   {
     //reset diagnostic info
-    pService->mInterfaces[i]->mPacketsIn = 0;
-    pService->mInterfaces[i]->mPacketsOut = 0;
-    pService->mInterfaces[i]->mRetries = 0;
-    pService->mInterfaces[i]->mFailures = 0;
-    pService->mInterfaces[i]->mBitErrors = 0;
+    pService->mInterfaces[i].mPacketsIn = 0;
+    pService->mInterfaces[i].mPacketsOut = 0;
+    pService->mInterfaces[i].mRetries = 0;
+    pService->mInterfaces[i].mFailures = 0;
+    pService->mInterfaces[i].mBitErrors = 0;
 
     //set up buffers, make incoming byte buffer 2x max packet size
-    pService->mInterfaces[i]->mParseState= STATE_WAITING_FOR_HEADER;
-    pService->mInterfaces[i]->mRaw = (uint8_t*) malloc(pService->mMaxPacketSize);
+    pService->mInterfaces[i].mParseState= STATE_WAITING_FOR_HEADER;
+    pService->mInterfaces[i].mRaw = (uint8_t*) malloc(pService->mMaxPacketSize);
 
   }
 
@@ -71,12 +72,10 @@ void poly_service_start(poly_service_t* pService, int fifoDepth)
 
 void poly_service_feed(poly_service_t* pService, int interface, uint8_t* data, int len)
 {
-  poly_interface_t* iface = pService->mInterfaces[i];
+  poly_interface_t* iface = &pService->mInterfaces[interface];
 
   //make sure we stay in bounds
-  len = min(len, (pService->mMaxPacketSize - iface->mIdx));
-
-
+  //TODO
 }
 
 bool poly_service_seek_header(poly_service_t* pService, poly_interface_t* iface)
@@ -90,9 +89,10 @@ bool poly_service_seek_header(poly_service_t* pService, poly_interface_t* iface)
     //peek in next header
     fifo_peek_buf(&iface->mBytefifo, &iface->mCurrentHdr, sizeof(poly_packet_hdr_t));
 
-    id = iface->mCurrentHdr.mTypeId
+    id = iface->mCurrentHdr.mTypeId;
+
     //if packet type is valid, and length is valid for that packet type, we have a candidate
-    if((iface->mCurrentHdr.mTypeId < pService->mDescCount) && (iface->mCurrentHdr.mDataLen < pService->mDescs[iface->mCurrentHdr.mTypeId]->mMaxPacketSize))
+    if((iface->mCurrentHdr.mTypeId < pService->mDescCount) && (iface->mCurrentHdr.mDataLen < pService->mPacketDescs[iface->mCurrentHdr.mTypeId]->mMaxPacketSize))
     {
       iface->mParseState = STATE_HEADER_FOUND;
       retVal = true;
@@ -119,13 +119,13 @@ ePacketStatus poly_service_try_parse_interface(poly_service_t* pService, poly_pa
   //if we dont have at least the size of a header, it cant be valid
   while((iface->mBytefifo.mCount >= sizeof(poly_packet_hdr_t))&& (retVal == PACKET_NONE) )
   {
-    if(iface->mParseState->mParseState == STATE_WAITING_FOR_HEADER)
+    if(iface->mParseState == STATE_WAITING_FOR_HEADER)
     {
         //moves tail of fifo to next possible header
         poly_service_seek_header(pService, iface);
     }
 
-    if(iface->mParseState->mParseState == STATE_HEADER_FOUND)
+    if(iface->mParseState == STATE_HEADER_FOUND)
     {
         len = iface->mCurrentHdr.mDataLen + PACKET_METADATA_SIZE;
         //see if fifo has enough to contain the entire packet
@@ -136,10 +136,10 @@ ePacketStatus poly_service_try_parse_interface(poly_service_t* pService, poly_pa
           if(checksumComp == iface->mCurrentHdr.mCheckSum)
           {
             //Valid packet, Parse!
-            fifo_peek_buf(&iface->mBytefifo, pService->mRaw, len );
-            newPacket = new_poly_packet(pService->mDescs[iface->mCurrentHdr.mTypeId], true);
+            fifo_peek_buf(&iface->mBytefifo, iface->mRaw, len );
+            packet = new_poly_packet(pService->mPacketDescs[iface->mCurrentHdr.mTypeId], true);
 
-            retVal = poly_packet_parse_buffer(packet, packet->mDesc, pService->mRaw);
+            retVal = poly_packet_parse_buffer(packet, packet->mDesc, iface->mRaw, len);
 
             switch(retVal)
             {
@@ -148,13 +148,14 @@ ePacketStatus poly_service_try_parse_interface(poly_service_t* pService, poly_pa
                 break;
               default:
                 fifo_clear(&iface->mBytefifo, 1); //remove one byte
+                poly_packet_destroy(packet);
                 break;
             }
           }
           else
           {
             //bad checksum throw away leading byte and try again
-            iface->mParseState->mParseState == STATE_WAITING_FOR_HEADER;
+            iface->mParseState == STATE_WAITING_FOR_HEADER;
           }
         }
     }

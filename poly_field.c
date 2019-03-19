@@ -117,10 +117,10 @@ void poly_field_copy(poly_field_t* src, poly_field_t* dst)
   dst->mPresent = src->mPresent;
 }
 
-void poly_field_bind(poly_field_t* field, uint8_t* data)
+void poly_field_bind(poly_field_t* field, uint8_t* data, bool copy)
 {
   //if data is alread present, copy it first
-  if(field->mAllocated || field->mBound)
+  if((field->mAllocated || field->mBound) && copy)
   {
     memcpy(data, field->mData, field->mSize);
   }
@@ -141,9 +141,9 @@ void poly_field_set(poly_field_t* field, const uint8_t* data)
   assert(MEM_EXISTS(field));
 
   //if its a null terminated type, we can adjust size
-  if(field->mNullTerm)
+  if(field->mDesc->mNullTerm)
   {
-    field->mSize = strlen(data);
+    field->mSize = strlen((const char*)data);
   }
 
   field->mPresent =true;

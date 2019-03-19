@@ -31,25 +31,20 @@ typedef struct{
   % for field in packet.fields:
   ${field.getFieldDeclaration()}
   % endfor
-  poly_packet_t* mPacket;
-}${packet.structName};
+} ${packet.structName};
 
 % endfor
 
 typedef union{
   uint8_t mTypeId;
-  poly_packet_t* mPacket;
   union{
 % for packet in proto.packets:
     ${packet.structName}* ${packet.name.lower()};
 % endfor
 } mPayload;
-}${proto.prefix}_packet_t;
+} ${proto.prefix}_packet_t;
 
 
-/*******************************************************************************
-  Service Functions
-*******************************************************************************/
 /**
 *@brief initializes protocol service
 *@param ifaces number of interfaces to use
@@ -57,34 +52,32 @@ typedef union{
 void ${proto.prefix}_service_init(int interfaceCount);
 
 /**
+  *@brief feeds incoming bytes to the service
+  *@param data bytes to send
+  *@param len nuber of bytes to send
+  *@param iface index of interface
+  */
+void ${proto.prefix}_service_feed(uint8_t* data, int len, int iface);
+
+/**
   *@brief processes data in buffers
   */
 void ${proto.prefix}_service_process();
 
+
 /**
-  *@brief sends packet over given interface
-  *@param metaPacket packet to be sent
-  *@param iface index of interface to send on
+  *@brief sends packet over service 
   */
-void ${proto.prefix}_service_send(${proto.prefix}_packet_t* metaPacket, int iface);
+% for packet in proto.packets:
+void ${proto.prefix}_send(${packet.structName}* ${packet.name.lower());
+% endfor
 
 
+void ${proto.prefix}_packet_init(${proto.prefix}_packet_t* metaPacket, poly_packet_t* packet);
+void ${proto.prefix}_packet_teardown(${proto.prefix}_packet_t* metaPacket);
 
-/*******************************************************************************
-  Meta-Packet Functions
-*******************************************************************************/
 
-${proto.prefix}_packet_t* new_${proto.prefix}_packet(poly_packet_desc_t* desc);
-void ${proto.prefix}_init(${proto.prefix}_packet_t* metaPacket, poly_packet_t* packet);
-
-void ${proto.prefix}_teardown(${proto.prefix}_packet_t* metaPacket);
-void ${proto.prefix}_destroy(${proto.prefix}_packet_t* metaPacket);
-
-int ${proto.prefix}_pack(${proto.prefix}_packet_t* metaPacket, uint8_t* data);
-
-/*******************************************************************************
-  Meta-Packet setters
-*******************************************************************************/
+//Meta packet setters
 % for field in proto.fields:
   %if field.isArray:
 void ${proto.prefix}_set${field.name.capitalize()}(${proto.prefix}_packet_t* packet, const ${field.getParamType()} val);
@@ -93,25 +86,18 @@ void ${proto.prefix}_set${field.name.capitalize()}(${proto.prefix}_packet_t* pac
   % endif
 % endfor
 
-/*******************************************************************************
-  Meta-Packet getters
-*******************************************************************************/
+//Meta packet getters
 % for field in proto.fields:
 ${field.getParamType()} ${proto.prefix}_get${field.name.capitalize()}(${proto.prefix}_packet_t* packet);
 % endfor
 
-
-/*******************************************************************************
-  Packet binders
-*******************************************************************************/
+//Packet binders
 % for packet in proto.packets:
 void ${proto.prefix}_${packet.name.lower()}_bind(${packet.structName}* ${packet.name.lower()}, poly_packet_t* packet);
 % endfor
 
 
-/*******************************************************************************
-  Packet Handlers
-*******************************************************************************/
+
 % for packet in proto.packets:
 /*@brief Handler for ${packet.name} packets */
 uint8_t ${proto.prefix}_${packet.name.lower()}_handler(${packet.structName} * packet);
