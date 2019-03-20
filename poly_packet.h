@@ -14,17 +14,16 @@ extern "C"
 {
 #endif
 
-//macro to check if memory has been allocated or bound for packet fields
-#define MEM_EXISTS( packet) ((packet->mAllocated) || (packet->mBound))
 
-typedef enum PacketStatus {
+typedef enum ParseStatus {
   PACKET_VALID = -400,
   PACKET_INCOMPLETE,
   PACKET_BAD_CHECKSUM,
   PACKET_PARSING_ERROR,
   INVALID_PACKET_TYPE,
   PACKET_NONE
-}ePacketStatus;
+} ParseStatus_e;
+
 
 #define PACKET_METADATA_SIZE (sizeof(poly_packet_hdr_t))
 
@@ -61,8 +60,7 @@ typedef struct{
   poly_packet_desc_t* mDesc;     //prt to packet descriptor
   poly_field_t* mFields;        //array of fields contained in packet
   uint8_t mInterface;              //id of interface that packet is from/to
-  bool mAllocated;             //indicates if packet has allocated its own memory
-  bool mBound;                //indicates if packet has been bound to struct/memory
+  bool mFieldsAllocated;
 }poly_packet_t;
 
 
@@ -89,7 +87,14 @@ void poly_packet_desc_add_field(poly_packet_desc_t* desc, poly_field_desc_t* fie
   *@param allocate whether or not to allocate the memory
   *@return ptr to newly created poly_packet_t
   */
-poly_packet_t* new_poly_packet(poly_packet_desc_t* desc, bool allocate);
+poly_packet_t new_poly_packet(poly_packet_desc_t* desc, bool allocate);
+
+/**
+  *@brief initializes a poly_packet from a descriptor
+  *@param desc ptr to packet descriptor
+  *@param allocate whether or not to allocate the memory
+  */
+void poly_packet_init(poly_packet_t* packet, poly_packet_desc_t* desc, bool allocate );
 
 /**
   *@brief copies complete packet over to another packet
@@ -125,7 +130,6 @@ int poly_packet_id(uint8_t* data, int len);
 /**
   *@brief parses a packet from raw data buffer
   *@param packet ptr to packet being parsed
-  *@param packet descriptor to parsing data
   *@param data raw data to be parsed
   *@param len length of data available for parsing
   *@pre Must be bound to data struct before this is called
@@ -134,7 +138,7 @@ int poly_packet_id(uint8_t* data, int len);
   *@return PACKET_BAD_CHECKSUM if the checksum is incorrect (likely bit error)
   *@return PACKET_PARSING_ERROR if len is longer than it should be (likely missed a delimiter)
   */
-ePacketStatus poly_packet_parse_buffer(poly_packet_t* packet, poly_packet_desc_t* desc, uint8_t* data, int len);
+ParseStatus_e poly_packet_parse_buffer(poly_packet_t* packet, uint8_t* data, int len);
 
 
 /**

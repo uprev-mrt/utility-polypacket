@@ -92,6 +92,12 @@ poly_field_desc_t* new_poly_field_desc(const char* name, eFieldType type, uint32
 void poly_field_init(poly_field_t* field, poly_field_desc_t* desc, bool allocate);
 
 /**
+  *@brief frees memory from poly_field
+  *@param field ptr to field
+  */
+void poly_field_destroy(poly_field_t* field);
+
+/**
   *@brief copies complete field over to another field
   *@param src ptr to field to be copied
   *@param dst ptr to field being written
@@ -102,8 +108,23 @@ void poly_field_copy(poly_field_t* src, poly_field_t* dst);
   *@brief binds poly field to data in memory
   *@param field ptr to field
   *@param data ptr to data in memory
+  *@param overwrite indicates whether or not the allocated memory is copied over to the new location
   */
-void poly_field_bind(poly_field_t* field, uint8_t* data);
+void poly_field_bind(poly_field_t* field, uint8_t* data, bool copy);
+
+/**
+  *@brief sets data in field
+  *@param field ptr to field
+  *@param data ptr to data
+  */
+void poly_field_set(poly_field_t* field, const uint8_t* data);
+
+/**
+  *@brief copies data from field and returns pointer (for use with arrays)
+  *@param field ptr to field
+  *@returns pointer to data
+  */
+uint8_t* poly_field_get(poly_field_t* field, uint8_t* data);
 
 /**
   *@brief Parses raw data for a field

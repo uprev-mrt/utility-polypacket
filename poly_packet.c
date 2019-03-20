@@ -54,28 +54,32 @@ void poly_packet_desc_add_field(poly_packet_desc_t* desc, poly_field_desc_t* fie
   }
 }
 
-poly_packet_t* new_poly_packet(poly_packet_desc_t* desc, bool allocate)
+poly_packet_t new_poly_packet(poly_packet_desc_t* desc, bool allocate)
 {
-  poly_packet_t* newPacket = (poly_packet_t*)malloc(sizeof(poly_packet_t));
-  newPacket->mBound = false;
-  newPacket->mAllocated = false;
-  newPacket->mDesc = desc;
-  newPacket->mInterface = 0;
+  poly_packet_t newPacket; // = (poly_packet_t*)malloc(sizeof(poly_packet_t));
 
-  newPacket->mFields = (poly_field_t*) malloc(sizeof(poly_field_t) * desc->mFieldCount);
-  for(int i=0; i< desc->mFieldCount; i++)
-  {
-    poly_field_init(&newPacket->mFields[i], desc->mFields[i], allocate);
-  }
+  poly_packet_init(&newPacket, desc, allocate);
 
   return newPacket;
+}
+
+void poly_packet_init(poly_packet_t* packet, poly_packet_desc_t* desc, bool allocate )
+{
+  packet->mDesc = desc;
+  packet->mInterface = 0;
+  packet->mHeader.mTypeId = desc->mTypeId;
+
+  packet->mFields = (poly_field_t*) malloc(sizeof(poly_field_t) * desc->mFieldCount);
+  packet->mFieldsAllocated = true;
+  for(int i=0; i< desc->mFieldCount; i++)
+  {
+    poly_field_init(&packet->mFields[i], desc->mFields[i], allocate);
+  }
 }
 
 void poly_packet_copy( poly_packet_t* src, poly_packet_t* dst)
 {
   //make sure they have memory allocated/bound
-  assert(MEM_EXISTS(src));
-  assert(MEM_EXISTS(dst));
 
   assert(src->mDesc == dst->mDesc);
 
@@ -89,17 +93,14 @@ void poly_packet_copy( poly_packet_t* src, poly_packet_t* dst)
 
 void poly_packet_destroy(poly_packet_t* packet)
 {
-  if(packet->mAllocated)
+  //destroy all fields
+  for(int i=0; i < packet->mDesc->mFieldCount; i++)
   {
-    for(int i=0; i < packet->mDesc->mFieldCount; i++)
-    {
-      free(packet->mFields[i].mData);
-    }
-
-    free(packet->mFields);
+    poly_field_destroy(&packet->mFields[i]);
   }
 
-  free(packet);
+  //free fields
+  free(packet->mFields);
 }
 
 poly_field_t* poly_packet_get_field(poly_packet_t* packet, poly_field_desc_t* desc)
@@ -130,17 +131,18 @@ int poly_packet_id(uint8_t* data, int len)
 }
 
 
-ePacketStatus poly_packet_parse_buffer(poly_packet_t* packet, poly_packet_desc_t* desc, uint8_t* data, int len)
+ParseStatus_e poly_packet_parse_buffer(poly_packet_t* packet, uint8_t* data, int len)
 {
   int idx=0;                //cursor in data
   int expectedLen =0;       //length indicated in header
-
   int manifestBit =0;        //bit offset for manifest
+
+  poly_packet_desc_t* desc = packet->mDesc;
+
   uint8_t manifestByte;         //current manifest byte
 
   uint16_t checkSumComp =0; //calculated checksum
 
-  packet->mDesc = desc;     //assign descriptor to packet
 
   //packet must be at least as long as the meta data required for each packet
   if(len < PACKET_METADATA_SIZE)
@@ -205,7 +207,7 @@ ePacketStatus poly_packet_parse_buffer(poly_packet_t* packet, poly_packet_desc_t
   {
     idx+= poly_field_parse(&packet->mFields[i], &data[idx]);
 
-    if(idx >= len)
+    if(idx > len)
     {
       return PACKET_PARSING_ERROR;
     }
@@ -307,10 +309,12 @@ int poly_packet_print_json(poly_packet_t* packet, char* buf, bool printMeta)
   if(printMeta)
   {
     idx += sprintf(&buf[idx]," \"typeId\" : \"%02X\" ,", packet->mHeader.mTypeId);
-    idx += sprintf(&buf[idx]," \"token\" : \"%04X\" ,", packet->mHeader.mToken);
+    idx += sprintf(&buf[idx]," \"token\" : \%04X\" ,", packet->mHeader.mToken);
     idx += sprintf(&buf[idx]," \"checksum\" : \"%04X\" ,", packet->mHeader.mCheckSum);
-    idx += sprintf(&buf[idx]," \"len\" : \"%d\" , ", packet->mHeader.mDataLen);
+    idx += sprintf(&buf[idx]," \"len\" : %d , ", packet->mHeader.mDataLen);
   }
+
+  idx += sprintf(&buf[idx]," \"packetType\" : \"%s\" ,", packet->mDesc->mName);
 
   for(int i=0; i < packet->mDesc->mFieldCount; i++)
   {

@@ -8,6 +8,8 @@
 #include "poly_field.h"
 #include <assert.h>
 
+#define MEM_EXISTS( field) ((field->mAllocated) || (field->mBound))
+
 poly_field_desc_t* new_poly_field_desc(const char* name, eFieldType type, uint32_t len, eFieldFormat format)
 {
   poly_field_desc_t* new_desc = (poly_field_desc_t*) malloc(sizeof(poly_field_desc_t));
@@ -91,6 +93,15 @@ void poly_field_init(poly_field_t* field, poly_field_desc_t* desc, bool allocate
   }
 }
 
+void poly_field_destroy(poly_field_t* field)
+{
+  //if we allocated our own memory, free it
+  if(field->mAllocated)
+  {
+    free(field->mData);
+  }
+}
+
 void poly_field_copy(poly_field_t* src, poly_field_t* dst)
 {
   assert(dst->mBound || dst->mAllocated);
@@ -104,10 +115,47 @@ void poly_field_copy(poly_field_t* src, poly_field_t* dst)
   dst->mPresent = src->mPresent;
 }
 
-void poly_field_bind(poly_field_t* field, uint8_t* data)
+void poly_field_bind(poly_field_t* field, uint8_t* data, bool copy)
 {
+  //if data is alread present, copy it first
+  if((field->mAllocated || field->mBound) && copy)
+  {
+    memcpy(data, field->mData, field->mSize);
+  }
+
+  //if data was allocated free the old
+  if(field->mAllocated)
+  {
+    free(field->mData);
+    field->mAllocated = false;
+  }
+
   field->mData = data;
   field->mBound = true;
+}
+
+void poly_field_set(poly_field_t* field, const uint8_t* data)
+{
+  assert(MEM_EXISTS(field));
+
+  //if its a null terminated type, we can adjust size
+  if(field->mDesc->mNullTerm)
+  {
+    field->mSize = strlen((const char*)data);
+  }
+
+  field->mPresent =true;
+
+  memcpy(field->mData, data, field->mSize);
+}
+
+uint8_t* poly_field_get(poly_field_t* field, uint8_t* data)
+{
+  assert(MEM_EXISTS(field));
+
+  memcpy(data, field->mData, field->mSize);
+
+  return field->mData;
 }
 
 int poly_field_parse(poly_field_t* field, uint8_t* data)
