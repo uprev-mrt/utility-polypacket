@@ -99,7 +99,7 @@ typedef struct{
 
 
 typedef struct{
-  poly_packet_t* mPacket;
+  poly_packet_t mPacket;
   union{
     ack_packet_t* ack;
     setdata_packet_t* setdata;
@@ -141,7 +141,6 @@ void sp_service_send( int iface, sp_packet_t* metaPacket);
 *******************************************************************************/
 
 sp_packet_t* new_sp_packet(poly_packet_desc_t* desc);
-void sp_init(sp_packet_t* metaPacket, poly_packet_t* packet);
 
 void sp_teardown(sp_packet_t* metaPacket);
 void sp_destroy(sp_packet_t* metaPacket);

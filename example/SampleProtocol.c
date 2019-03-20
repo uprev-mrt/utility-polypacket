@@ -51,33 +51,43 @@ poly_service_t* SP_SERVICE;
 void sp_service_process()
 {
   static sp_packet_t metaPacket;
-  poly_packet_t* newPacket;
 
   HandlerStatus_e status = PACKET_UNHANDLED;
 
-  if(poly_service_try_parse(SP_SERVICE, newPacket) == PACKET_VALID)
+  if(poly_service_try_parse(SP_SERVICE, &metaPacket.mPacket) == PACKET_VALID)
   {
-    sp_init(&metaPacket, newPacket);
 
     //Dispatch packet
-    switch(newPacket->mDesc->mTypeId)
+    switch(metaPacket.mPacket.mDesc->mTypeId)
     {
       case PP_ACK_PACKET_ID:
+        metaPacket.mPayload.ack = (ack_packet_t*) malloc(sizeof(ack_packet_t));
+        sp_ack_bind(metaPacket.mPayload.ack, &metaPacket.mPacket, true);
         status = sp_ack_handler(metaPacket.mPayload.ack);
         break;
       case PP_SETDATA_PACKET_ID:
+        metaPacket.mPayload.setdata = (setdata_packet_t*) malloc(sizeof(setdata_packet_t));
+        sp_setdata_bind(metaPacket.mPayload.setdata, &metaPacket.mPacket, true);
         status = sp_setdata_handler(metaPacket.mPayload.setdata);
         break;
       case PP_GETDATA_PACKET_ID:
+        metaPacket.mPayload.getdata = (getdata_packet_t*) malloc(sizeof(getdata_packet_t));
+        sp_getdata_bind(metaPacket.mPayload.getdata, &metaPacket.mPacket, true);
         status = sp_getdata_handler(metaPacket.mPayload.getdata);
         break;
       case PP_RESPDATA_PACKET_ID:
+        metaPacket.mPayload.respdata = (respdata_packet_t*) malloc(sizeof(respdata_packet_t));
+        sp_respdata_bind(metaPacket.mPayload.respdata, &metaPacket.mPacket, true);
         status = sp_respdata_handler(metaPacket.mPayload.respdata);
         break;
       case PP_BLOCKREQ_PACKET_ID:
+        metaPacket.mPayload.blockreq = (blockreq_packet_t*) malloc(sizeof(blockreq_packet_t));
+        sp_blockreq_bind(metaPacket.mPayload.blockreq, &metaPacket.mPacket, true);
         status = sp_blockreq_handler(metaPacket.mPayload.blockreq);
         break;
       case PP_BLOCKRESP_PACKET_ID:
+        metaPacket.mPayload.blockresp = (blockresp_packet_t*) malloc(sizeof(blockresp_packet_t));
+        sp_blockresp_bind(metaPacket.mPayload.blockresp, &metaPacket.mPacket, true);
         status = sp_blockresp_handler(metaPacket.mPayload.blockresp);
         break;
       default:
@@ -195,77 +205,37 @@ sp_packet_t* new_sp_packet(poly_packet_desc_t* desc)
   sp_packet_t* newMetaPacket = (sp_packet_t*) malloc(sizeof(sp_packet_t));
 
   //create new unallocated packet
-  newMetaPacket->mPacket = new_poly_packet(desc, false);
+  poly_packet_init(&newMetaPacket->mPacket, desc, false);
 
-
-  switch(newMetaPacket->mPacket->mDesc->mTypeId)
+  switch(newMetaPacket->mPacket.mDesc->mTypeId)
   {
     case PP_ACK_PACKET_ID:
       newMetaPacket->mPayload.ack = (ack_packet_t*) malloc(sizeof(ack_packet_t));
-      sp_ack_bind(newMetaPacket->mPayload.ack, newMetaPacket->mPacket, false);
+      sp_ack_bind(newMetaPacket->mPayload.ack, &newMetaPacket->mPacket, false);
       break;
     case PP_SETDATA_PACKET_ID:
       newMetaPacket->mPayload.setdata = (setdata_packet_t*) malloc(sizeof(setdata_packet_t));
-      sp_setdata_bind(newMetaPacket->mPayload.setdata, newMetaPacket->mPacket, false);
+      sp_setdata_bind(newMetaPacket->mPayload.setdata, &newMetaPacket->mPacket, false);
       break;
     case PP_GETDATA_PACKET_ID:
       newMetaPacket->mPayload.getdata = (getdata_packet_t*) malloc(sizeof(getdata_packet_t));
-      sp_getdata_bind(newMetaPacket->mPayload.getdata, newMetaPacket->mPacket, false);
+      sp_getdata_bind(newMetaPacket->mPayload.getdata, &newMetaPacket->mPacket, false);
       break;
     case PP_RESPDATA_PACKET_ID:
       newMetaPacket->mPayload.respdata = (respdata_packet_t*) malloc(sizeof(respdata_packet_t));
-      sp_respdata_bind(newMetaPacket->mPayload.respdata, newMetaPacket->mPacket, false);
+      sp_respdata_bind(newMetaPacket->mPayload.respdata, &newMetaPacket->mPacket, false);
       break;
     case PP_BLOCKREQ_PACKET_ID:
       newMetaPacket->mPayload.blockreq = (blockreq_packet_t*) malloc(sizeof(blockreq_packet_t));
-      sp_blockreq_bind(newMetaPacket->mPayload.blockreq, newMetaPacket->mPacket, false);
+      sp_blockreq_bind(newMetaPacket->mPayload.blockreq, &newMetaPacket->mPacket, false);
       break;
     case PP_BLOCKRESP_PACKET_ID:
       newMetaPacket->mPayload.blockresp = (blockresp_packet_t*) malloc(sizeof(blockresp_packet_t));
-      sp_blockresp_bind(newMetaPacket->mPayload.blockresp, newMetaPacket->mPacket, false);
+      sp_blockresp_bind(newMetaPacket->mPayload.blockresp, &newMetaPacket->mPacket, false);
       break;
   }
 
   return newMetaPacket;
-}
-
-/**
-  *@brief initializes meta packet from previously parsed poly_packet_t
-  *@param metaPacket ptr to metaPacket
-  *@param packet ptr to packet
-  */
-void sp_init(sp_packet_t* metaPacket, poly_packet_t* packet)
-{
-  //set packet
-  metaPacket->mPacket = packet;
-
-  switch(metaPacket->mPacket->mDesc->mTypeId)
-  {
-    case PP_ACK_PACKET_ID:
-      metaPacket->mPayload.ack = (ack_packet_t*) malloc(sizeof(ack_packet_t));
-      sp_ack_bind(metaPacket->mPayload.ack, metaPacket->mPacket, true);
-      break;
-    case PP_SETDATA_PACKET_ID:
-      metaPacket->mPayload.setdata = (setdata_packet_t*) malloc(sizeof(setdata_packet_t));
-      sp_setdata_bind(metaPacket->mPayload.setdata, metaPacket->mPacket, true);
-      break;
-    case PP_GETDATA_PACKET_ID:
-      metaPacket->mPayload.getdata = (getdata_packet_t*) malloc(sizeof(getdata_packet_t));
-      sp_getdata_bind(metaPacket->mPayload.getdata, metaPacket->mPacket, true);
-      break;
-    case PP_RESPDATA_PACKET_ID:
-      metaPacket->mPayload.respdata = (respdata_packet_t*) malloc(sizeof(respdata_packet_t));
-      sp_respdata_bind(metaPacket->mPayload.respdata, metaPacket->mPacket, true);
-      break;
-    case PP_BLOCKREQ_PACKET_ID:
-      metaPacket->mPayload.blockreq = (blockreq_packet_t*) malloc(sizeof(blockreq_packet_t));
-      sp_blockreq_bind(metaPacket->mPayload.blockreq, metaPacket->mPacket, true);
-      break;
-    case PP_BLOCKRESP_PACKET_ID:
-      metaPacket->mPayload.blockresp = (blockresp_packet_t*) malloc(sizeof(blockresp_packet_t));
-      sp_blockresp_bind(metaPacket->mPayload.blockresp, metaPacket->mPacket, true);
-      break;
-  }
 }
 
 /**
@@ -274,7 +244,7 @@ void sp_init(sp_packet_t* metaPacket, poly_packet_t* packet)
   */
 void sp_teardown(sp_packet_t* metaPacket)
 {
-  switch(metaPacket->mPacket->mDesc->mTypeId)
+  switch(metaPacket->mPacket.mDesc->mTypeId)
   {
     case PP_ACK_PACKET_ID:
     free(metaPacket->mPayload.ack);
@@ -296,9 +266,7 @@ void sp_teardown(sp_packet_t* metaPacket)
     break;
   }
 
-  assert(metaPacket->mPacket);
-
-  poly_packet_destroy(metaPacket->mPacket);
+  poly_packet_destroy(&metaPacket->mPacket);
 }
 
 /**
@@ -316,17 +284,17 @@ void sp_destroy(sp_packet_t* metaPacket)
 
 int sp_pack(sp_packet_t* metaPacket, uint8_t* data)
 {
-  return poly_packet_pack(metaPacket->mPacket, data);
+  return poly_packet_pack(&metaPacket->mPacket, data);
 }
 
 ParseStatus_e sp_parse(sp_packet_t* metaPacket, uint8_t* data, int len)
 {
-  return poly_packet_parse_buffer(metaPacket->mPacket, data, len);
+  return poly_packet_parse_buffer(&metaPacket->mPacket, data, len);
 }
 
 int sp_print_json(sp_packet_t* metaPacket, char* buf)
 {
-  return poly_packet_print_json(metaPacket->mPacket, buf, false);
+  return poly_packet_print_json(&metaPacket->mPacket, buf, false);
 }
 
 
@@ -338,55 +306,55 @@ int sp_print_json(sp_packet_t* metaPacket, char* buf)
 
 void sp_setSrc(sp_packet_t* packet, uint16_t val)
 {
-  poly_field_t* field = poly_packet_get_field(packet->mPacket, PP_SRC_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, PP_SRC_FIELD);
   poly_field_set(field,( const uint8_t*) &val);
 }
 
 void sp_setDst(sp_packet_t* packet, uint16_t val)
 {
-  poly_field_t* field = poly_packet_get_field(packet->mPacket, PP_DST_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, PP_DST_FIELD);
   poly_field_set(field,( const uint8_t*) &val);
 }
 
 void sp_setCmd(sp_packet_t* packet, uint8_t val)
 {
-  poly_field_t* field = poly_packet_get_field(packet->mPacket, PP_CMD_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, PP_CMD_FIELD);
   poly_field_set(field,( const uint8_t*) &val);
 }
 
 void sp_setSensora(sp_packet_t* packet, int16_t val)
 {
-  poly_field_t* field = poly_packet_get_field(packet->mPacket, PP_SENSORA_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, PP_SENSORA_FIELD);
   poly_field_set(field,( const uint8_t*) &val);
 }
 
 void sp_setSensorb(sp_packet_t* packet, int val)
 {
-  poly_field_t* field = poly_packet_get_field(packet->mPacket, PP_SENSORB_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, PP_SENSORB_FIELD);
   poly_field_set(field,( const uint8_t*) &val);
 }
 
 void sp_setSensorname(sp_packet_t* packet, const char* val)
 {
-  poly_field_t* field = poly_packet_get_field(packet->mPacket, PP_SENSORNAME_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, PP_SENSORNAME_FIELD);
   poly_field_set(field,( const uint8_t*) val);
 }
 
 void sp_setBlockoffset(sp_packet_t* packet, uint32_t val)
 {
-  poly_field_t* field = poly_packet_get_field(packet->mPacket, PP_BLOCKOFFSET_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, PP_BLOCKOFFSET_FIELD);
   poly_field_set(field,( const uint8_t*) &val);
 }
 
 void sp_setBlocksize(sp_packet_t* packet, uint32_t val)
 {
-  poly_field_t* field = poly_packet_get_field(packet->mPacket, PP_BLOCKSIZE_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, PP_BLOCKSIZE_FIELD);
   poly_field_set(field,( const uint8_t*) &val);
 }
 
 void sp_setBlockdata(sp_packet_t* packet, const uint8_t* val)
 {
-  poly_field_t* field = poly_packet_get_field(packet->mPacket, PP_BLOCKDATA_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, PP_BLOCKDATA_FIELD);
   poly_field_set(field,( const uint8_t*) val);
 }
 
@@ -398,7 +366,7 @@ void sp_setBlockdata(sp_packet_t* packet, const uint8_t* val)
 uint16_t sp_getSrc(sp_packet_t* packet)
 {
   uint16_t val;
-  poly_field_t* field = poly_packet_get_field(packet->mPacket, PP_SRC_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, PP_SRC_FIELD);
   poly_field_get(field,(uint8_t*) &val);
   return val;
 }
@@ -406,7 +374,7 @@ uint16_t sp_getSrc(sp_packet_t* packet)
 uint16_t sp_getDst(sp_packet_t* packet)
 {
   uint16_t val;
-  poly_field_t* field = poly_packet_get_field(packet->mPacket, PP_DST_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, PP_DST_FIELD);
   poly_field_get(field,(uint8_t*) &val);
   return val;
 }
@@ -414,7 +382,7 @@ uint16_t sp_getDst(sp_packet_t* packet)
 uint8_t sp_getCmd(sp_packet_t* packet)
 {
   uint8_t val;
-  poly_field_t* field = poly_packet_get_field(packet->mPacket, PP_CMD_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, PP_CMD_FIELD);
   poly_field_get(field,(uint8_t*) &val);
   return val;
 }
@@ -422,7 +390,7 @@ uint8_t sp_getCmd(sp_packet_t* packet)
 int16_t sp_getSensora(sp_packet_t* packet)
 {
   int16_t val;
-  poly_field_t* field = poly_packet_get_field(packet->mPacket, PP_SENSORA_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, PP_SENSORA_FIELD);
   poly_field_get(field,(uint8_t*) &val);
   return val;
 }
@@ -430,7 +398,7 @@ int16_t sp_getSensora(sp_packet_t* packet)
 int sp_getSensorb(sp_packet_t* packet)
 {
   int val;
-  poly_field_t* field = poly_packet_get_field(packet->mPacket, PP_SENSORB_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, PP_SENSORB_FIELD);
   poly_field_get(field,(uint8_t*) &val);
   return val;
 }
@@ -438,7 +406,7 @@ int sp_getSensorb(sp_packet_t* packet)
 char* sp_getSensorname(sp_packet_t* packet)
 {
   char* val;
-  poly_field_t* field = poly_packet_get_field(packet->mPacket, PP_SENSORNAME_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, PP_SENSORNAME_FIELD);
   val = (char*)poly_field_get(field, (uint8_t*)val);
   return val;
 }
@@ -446,7 +414,7 @@ char* sp_getSensorname(sp_packet_t* packet)
 uint32_t sp_getBlockoffset(sp_packet_t* packet)
 {
   uint32_t val;
-  poly_field_t* field = poly_packet_get_field(packet->mPacket, PP_BLOCKOFFSET_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, PP_BLOCKOFFSET_FIELD);
   poly_field_get(field,(uint8_t*) &val);
   return val;
 }
@@ -454,7 +422,7 @@ uint32_t sp_getBlockoffset(sp_packet_t* packet)
 uint32_t sp_getBlocksize(sp_packet_t* packet)
 {
   uint32_t val;
-  poly_field_t* field = poly_packet_get_field(packet->mPacket, PP_BLOCKSIZE_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, PP_BLOCKSIZE_FIELD);
   poly_field_get(field,(uint8_t*) &val);
   return val;
 }
@@ -462,7 +430,7 @@ uint32_t sp_getBlocksize(sp_packet_t* packet)
 uint8_t* sp_getBlockdata(sp_packet_t* packet)
 {
   uint8_t* val;
-  poly_field_t* field = poly_packet_get_field(packet->mPacket, PP_BLOCKDATA_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, PP_BLOCKDATA_FIELD);
   val = (uint8_t*)poly_field_get(field, (uint8_t*)val);
   return val;
 }
@@ -579,7 +547,7 @@ void sp_blockresp_bind(blockresp_packet_t* blockresp, poly_packet_t* packet, boo
   *@param packet ptr to ack_packet_t  containing packet
   *@return handling status
   */
-HandlerStatus_e sp_ack_handler(ack_packet_t * packet)
+__attribute__((weak)) HandlerStatus_e sp_ack_handler(ack_packet_t * packet)
 {
   /* NOTE : This function should not be modified, when the callback is needed,
           sp_ack_handler  should be implemented in the user file
@@ -591,7 +559,7 @@ HandlerStatus_e sp_ack_handler(ack_packet_t * packet)
   *@param packet ptr to setdata_packet_t  containing packet
   *@return handling status
   */
-HandlerStatus_e sp_setdata_handler(setdata_packet_t * packet)
+__attribute__((weak)) HandlerStatus_e sp_setdata_handler(setdata_packet_t * packet)
 {
   /* NOTE : This function should not be modified, when the callback is needed,
           sp_setdata_handler  should be implemented in the user file
@@ -603,7 +571,7 @@ HandlerStatus_e sp_setdata_handler(setdata_packet_t * packet)
   *@param packet ptr to getdata_packet_t  containing packet
   *@return handling status
   */
-HandlerStatus_e sp_getdata_handler(getdata_packet_t * packet)
+__attribute__((weak)) HandlerStatus_e sp_getdata_handler(getdata_packet_t * packet)
 {
   /* NOTE : This function should not be modified, when the callback is needed,
           sp_getdata_handler  should be implemented in the user file
@@ -615,7 +583,7 @@ HandlerStatus_e sp_getdata_handler(getdata_packet_t * packet)
   *@param packet ptr to respdata_packet_t  containing packet
   *@return handling status
   */
-HandlerStatus_e sp_respdata_handler(respdata_packet_t * packet)
+__attribute__((weak)) HandlerStatus_e sp_respdata_handler(respdata_packet_t * packet)
 {
   /* NOTE : This function should not be modified, when the callback is needed,
           sp_respdata_handler  should be implemented in the user file
@@ -627,7 +595,7 @@ HandlerStatus_e sp_respdata_handler(respdata_packet_t * packet)
   *@param packet ptr to blockreq_packet_t  containing packet
   *@return handling status
   */
-HandlerStatus_e sp_blockreq_handler(blockreq_packet_t * packet)
+__attribute__((weak)) HandlerStatus_e sp_blockreq_handler(blockreq_packet_t * packet)
 {
   /* NOTE : This function should not be modified, when the callback is needed,
           sp_blockreq_handler  should be implemented in the user file
@@ -639,7 +607,7 @@ HandlerStatus_e sp_blockreq_handler(blockreq_packet_t * packet)
   *@param packet ptr to blockresp_packet_t  containing packet
   *@return handling status
   */
-HandlerStatus_e sp_blockresp_handler(blockresp_packet_t * packet)
+__attribute__((weak)) HandlerStatus_e sp_blockresp_handler(blockresp_packet_t * packet)
 {
   /* NOTE : This function should not be modified, when the callback is needed,
           sp_blockresp_handler  should be implemented in the user file
@@ -652,7 +620,7 @@ HandlerStatus_e sp_blockresp_handler(blockresp_packet_t * packet)
   *@param metaPacket ptr to sp_packet_t containing packet
   *@return handling status
   */
-HandlerStatus_e sp_default_handler( sp_packet_t * metaPacket)
+__attribute__((weak)) HandlerStatus_e sp_default_handler( sp_packet_t * metaPacket)
 {
   /* NOTE : This function should not be modified, when the callback is needed,
           sp_default_handler  should be implemented in the user file

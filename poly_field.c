@@ -100,8 +100,6 @@ void poly_field_destroy(poly_field_t* field)
   {
     free(field->mData);
   }
-
-  free(field);
 }
 
 void poly_field_copy(poly_field_t* src, poly_field_t* dst)

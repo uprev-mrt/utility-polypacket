@@ -39,19 +39,19 @@ poly_service_t* ${proto.service()};
 void ${proto.prefix}_service_process()
 {
   static ${proto.prefix}_packet_t metaPacket;
-  poly_packet_t* newPacket;
 
   HandlerStatus_e status = PACKET_UNHANDLED;
 
-  if(poly_service_try_parse(${proto.service()}, newPacket) == PACKET_VALID)
+  if(poly_service_try_parse(${proto.service()}, &metaPacket.mPacket) == PACKET_VALID)
   {
-    ${proto.prefix}_init(&metaPacket, newPacket);
 
     //Dispatch packet
-    switch(newPacket->mDesc->mTypeId)
+    switch(metaPacket.mPacket.mDesc->mTypeId)
     {
   % for packet in proto.packets:
       case ${packet.globalName}_ID:
+        metaPacket.mPayload.${packet.name.lower()} = (${packet.structName}*) malloc(sizeof(${packet.structName}));
+        ${proto.prefix}_${packet.name.lower()}_bind(metaPacket.mPayload.${packet.name.lower()}, &metaPacket.mPacket, true);
         status = ${proto.prefix}_${packet.name.lower()}_handler(metaPacket.mPayload.${packet.name.lower()});
         break;
   % endfor
@@ -134,15 +134,14 @@ ${proto.prefix}_packet_t* new_${proto.prefix}_packet(poly_packet_desc_t* desc)
   ${proto.prefix}_packet_t* newMetaPacket = (${proto.prefix}_packet_t*) malloc(sizeof(${proto.prefix}_packet_t));
 
   //create new unallocated packet
-  newMetaPacket->mPacket = new_poly_packet(desc, false);
+  poly_packet_init(&newMetaPacket->mPacket, desc, false);
 
-
-  switch(newMetaPacket->mPacket->mDesc->mTypeId)
+  switch(newMetaPacket->mPacket.mDesc->mTypeId)
   {
 % for packet in proto.packets:
     case ${packet.globalName}_ID:
       newMetaPacket->mPayload.${packet.name.lower()} = (${packet.structName}*) malloc(sizeof(${packet.structName}));
-      ${proto.prefix}_${packet.name.lower()}_bind(newMetaPacket->mPayload.${packet.name.lower()}, newMetaPacket->mPacket, false);
+      ${proto.prefix}_${packet.name.lower()}_bind(newMetaPacket->mPayload.${packet.name.lower()}, &newMetaPacket->mPacket, false);
       break;
 % endfor
   }
@@ -151,33 +150,12 @@ ${proto.prefix}_packet_t* new_${proto.prefix}_packet(poly_packet_desc_t* desc)
 }
 
 /**
-  *@brief initializes meta packet from previously parsed poly_packet_t
-  *@param metaPacket ptr to metaPacket
-  *@param packet ptr to packet
-  */
-void ${proto.prefix}_init(${proto.prefix}_packet_t* metaPacket, poly_packet_t* packet)
-{
-  //set packet
-  metaPacket->mPacket = packet;
-
-  switch(metaPacket->mPacket->mDesc->mTypeId)
-  {
-% for packet in proto.packets:
-    case ${packet.globalName}_ID:
-      metaPacket->mPayload.${packet.name.lower()} = (${packet.structName}*) malloc(sizeof(${packet.structName}));
-      ${proto.prefix}_${packet.name.lower()}_bind(metaPacket->mPayload.${packet.name.lower()}, metaPacket->mPacket, true);
-      break;
-% endfor
-  }
-}
-
-/**
   *@brief reset mega packet to a default state by freeing memory of payload
   *@param "metaPacket ptr to metaPacket
   */
 void ${proto.prefix}_teardown(${proto.prefix}_packet_t* metaPacket)
 {
-  switch(metaPacket->mPacket->mDesc->mTypeId)
+  switch(metaPacket->mPacket.mDesc->mTypeId)
   {
 % for packet in proto.packets:
     case ${packet.globalName}_ID:
@@ -186,9 +164,7 @@ void ${proto.prefix}_teardown(${proto.prefix}_packet_t* metaPacket)
 % endfor
   }
 
-  assert(metaPacket->mPacket);
-
-  poly_packet_destroy(metaPacket->mPacket);
+  poly_packet_destroy(&metaPacket->mPacket);
 }
 
 /**
@@ -206,17 +182,17 @@ void ${proto.prefix}_destroy(${proto.prefix}_packet_t* metaPacket)
 
 int ${proto.prefix}_pack(${proto.prefix}_packet_t* metaPacket, uint8_t* data)
 {
-  return poly_packet_pack(metaPacket->mPacket, data);
+  return poly_packet_pack(&metaPacket->mPacket, data);
 }
 
 ParseStatus_e ${proto.prefix}_parse(${proto.prefix}_packet_t* metaPacket, uint8_t* data, int len)
 {
-  return poly_packet_parse_buffer(metaPacket->mPacket, data, len);
+  return poly_packet_parse_buffer(&metaPacket->mPacket, data, len);
 }
 
 int ${proto.prefix}_print_json(${proto.prefix}_packet_t* metaPacket, char* buf)
 {
-  return poly_packet_print_json(metaPacket->mPacket, buf, false);
+  return poly_packet_print_json(&metaPacket->mPacket, buf, false);
 }
 
 
@@ -233,7 +209,7 @@ void ${proto.prefix}_set${field.name.capitalize()}(${proto.prefix}_packet_t* pac
 void ${proto.prefix}_set${field.name.capitalize()}(${proto.prefix}_packet_t* packet, ${field.getParamType()} val)
 %endif
 {
-  poly_field_t* field = poly_packet_get_field(packet->mPacket, ${field.globalName});
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, ${field.globalName});
 %if field.isArray:
   poly_field_set(field,( const uint8_t*) val);
 % else:
@@ -251,7 +227,7 @@ void ${proto.prefix}_set${field.name.capitalize()}(${proto.prefix}_packet_t* pac
 ${field.getParamType()} ${proto.prefix}_get${field.name.capitalize()}(${proto.prefix}_packet_t* packet)
 {
   ${field.getParamType()} val;
-  poly_field_t* field = poly_packet_get_field(packet->mPacket, ${field.globalName});
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, ${field.globalName});
 %if field.isArray:
   val = (${field.getParamType()})poly_field_get(field, (uint8_t*)val);
 % else:
@@ -295,7 +271,7 @@ void ${proto.prefix}_${packet.name.lower()}_bind(${packet.structName}* ${packet.
   *@param packet ptr to ${packet.structName}  containing packet
   *@return handling status
   */
-HandlerStatus_e ${proto.prefix}_${packet.name.lower()}_handler(${packet.structName} * packet)
+__attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.name.lower()}_handler(${packet.structName} * packet)
 {
   /* NOTE : This function should not be modified, when the callback is needed,
           ${proto.prefix}_${packet.name.lower()}_handler  should be implemented in the user file
@@ -309,7 +285,7 @@ HandlerStatus_e ${proto.prefix}_${packet.name.lower()}_handler(${packet.structNa
   *@param metaPacket ptr to ${proto.prefix}_packet_t containing packet
   *@return handling status
   */
-HandlerStatus_e ${proto.prefix}_default_handler( ${proto.prefix}_packet_t * metaPacket)
+__attribute__((weak)) HandlerStatus_e ${proto.prefix}_default_handler( ${proto.prefix}_packet_t * metaPacket)
 {
   /* NOTE : This function should not be modified, when the callback is needed,
           ${proto.prefix}_default_handler  should be implemented in the user file

@@ -70,7 +70,7 @@ typedef struct{
   *@param maxFields max number of fields in packet descriptor
   *@return ptr to new packet descriptor
   */
-poly_packet_desc_t new_poly_packet_desc(const char* name , int maxFields);
+poly_packet_desc_t* new_poly_packet_desc(const char* name , int maxFields);
 
 /**
   *@brief adds field descriptor to packet descriptor
@@ -87,7 +87,14 @@ void poly_packet_desc_add_field(poly_packet_desc_t* desc, poly_field_desc_t* fie
   *@param allocate whether or not to allocate the memory
   *@return ptr to newly created poly_packet_t
   */
-poly_packet_t* new_poly_packet(poly_packet_desc_t* desc, bool allocate);
+poly_packet_t new_poly_packet(poly_packet_desc_t* desc, bool allocate);
+
+/**
+  *@brief initializes a poly_packet from a descriptor
+  *@param desc ptr to packet descriptor
+  *@param allocate whether or not to allocate the memory
+  */
+void poly_packet_init(poly_packet_t* packet, poly_packet_desc_t* desc, bool allocate );
 
 /**
   *@brief copies complete packet over to another packet

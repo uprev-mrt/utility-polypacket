@@ -131,7 +131,7 @@ bool poly_service_seek_header(poly_service_t* pService, poly_interface_t* iface)
   *@return PACKET_BAD_CHECKSUM if the checksum is incorrect (likely bit error)
   *@return PACKET_PARSING_ERROR if len is longer than it should be (likely missed a delimiter)
   */
-ParseStatus_e poly_service_try_parse_interface(poly_service_t* pService, poly_packet_t** packet,  int interface);
+ParseStatus_e poly_service_try_parse_interface(poly_service_t* pService, poly_packet_t* packet,  int interface);
 
 /**
   *@brief parses packet from data buffer
@@ -140,7 +140,7 @@ ParseStatus_e poly_service_try_parse_interface(poly_service_t* pService, poly_pa
   *@return PACKET_VALID if packet is ok
   *@return PACKET_NONE is no valid packets are found
   */
-ParseStatus_e poly_service_try_parse(poly_service_t* pService, poly_packet_t** packet);
+ParseStatus_e poly_service_try_parse(poly_service_t* pService, poly_packet_t* packet);
 
 
 

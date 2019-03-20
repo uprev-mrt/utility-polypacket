@@ -5,6 +5,15 @@ uint8_t buffer[1024];
 char printBuf[1024];
 int len;
 
+HandlerStatus_e sp_setdata_handler(setdata_packet_t * packet)
+{
+  /* NOTE : This function should not be modified, when the callback is needed,
+          sp_setdata_handler  should be implemented in the user file
+  */
+  printf("handled!\n");
+  return PACKET_UNHANDLED;
+}
+
 int main()
 {
   printf("\nBuilding Test packet C++\n\n*******************************\n\n");

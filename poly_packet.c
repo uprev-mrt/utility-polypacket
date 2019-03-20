@@ -54,21 +54,27 @@ void poly_packet_desc_add_field(poly_packet_desc_t* desc, poly_field_desc_t* fie
   }
 }
 
-poly_packet_t* new_poly_packet(poly_packet_desc_t* desc, bool allocate)
+poly_packet_t new_poly_packet(poly_packet_desc_t* desc, bool allocate)
 {
-  poly_packet_t* newPacket = (poly_packet_t*)malloc(sizeof(poly_packet_t));
+  poly_packet_t newPacket; // = (poly_packet_t*)malloc(sizeof(poly_packet_t));
 
-  newPacket->mDesc = desc;
-  newPacket->mInterface = 0;
-  newPacket->mHeader.mTypeId = desc->mTypeId;
-
-  newPacket->mFields = (poly_field_t*) malloc(sizeof(poly_field_t) * desc->mFieldCount);
-  for(int i=0; i< desc->mFieldCount; i++)
-  {
-    poly_field_init(&newPacket->mFields[i], desc->mFields[i], allocate);
-  }
+  poly_packet_init(&newPacket, desc, allocate);
 
   return newPacket;
+}
+
+void poly_packet_init(poly_packet_t* packet, poly_packet_desc_t* desc, bool allocate )
+{
+  packet->mDesc = desc;
+  packet->mInterface = 0;
+  packet->mHeader.mTypeId = desc->mTypeId;
+
+  packet->mFields = (poly_field_t*) malloc(sizeof(poly_field_t) * desc->mFieldCount);
+  packet->mFieldsAllocated = true;
+  for(int i=0; i< desc->mFieldCount; i++)
+  {
+    poly_field_init(&packet->mFields[i], desc->mFields[i], allocate);
+  }
 }
 
 void poly_packet_copy( poly_packet_t* src, poly_packet_t* dst)
@@ -93,9 +99,8 @@ void poly_packet_destroy(poly_packet_t* packet)
     poly_field_destroy(&packet->mFields[i]);
   }
 
-
-  //free packet
-  free(packet);
+  //free fields
+  free(packet->mFields);
 }
 
 poly_field_t* poly_packet_get_field(poly_packet_t* packet, poly_field_desc_t* desc)

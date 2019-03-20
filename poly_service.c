@@ -143,7 +143,8 @@ ParseStatus_e poly_service_try_parse_interface(poly_service_t* pService, poly_pa
             //Valid packet, Parse!
             fifo_peek_buf(&iface->mBytefifo, iface->mRaw, len );
 
-            packet = new_poly_packet(pService->mPacketDescs[iface->mCurrentHdr.mTypeId], true);
+            poly_packet_init(packet, pService->mPacketDescs[iface->mCurrentHdr.mTypeId] ,true);
+            
             packet->mInterface = interface;
 
             retVal = poly_packet_parse_buffer(packet, iface->mRaw, len);

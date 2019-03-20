@@ -36,7 +36,7 @@ typedef struct{
 % endfor
 
 typedef struct{
-  poly_packet_t* mPacket;
+  poly_packet_t mPacket;
   union{
 % for packet in proto.packets:
     ${packet.structName}* ${packet.name.lower()};
@@ -75,7 +75,6 @@ void ${proto.prefix}_service_send( int iface, ${proto.prefix}_packet_t* metaPack
 *******************************************************************************/
 
 ${proto.prefix}_packet_t* new_${proto.prefix}_packet(poly_packet_desc_t* desc);
-void ${proto.prefix}_init(${proto.prefix}_packet_t* metaPacket, poly_packet_t* packet);
 
 void ${proto.prefix}_teardown(${proto.prefix}_packet_t* metaPacket);
 void ${proto.prefix}_destroy(${proto.prefix}_packet_t* metaPacket);
