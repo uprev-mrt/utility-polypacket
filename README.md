@@ -4,7 +4,10 @@ Poly Packet is backend and code generation tool for creating messaging protocols
 
 ## Protocol Generation
 
-Protocols are generated using XML. The messaging structure is made up of two type:
+Protocols are generated using XML. The messaging structure is made up of two types:
+
+* Fields
+* Packets
 
 ## Fields
  A field is a data object within a message
@@ -41,6 +44,7 @@ within the packet we reference Fields which have already been declared in the Fi
 > **name**: The name of the field<br/>
 > **req**: (optional)  makes the field a requirement for this packet type <br/>
 > **desc**: (optional) description of this field for this packet type, will override fields description in the documentation for this packet type only
+
 
 ## Example:
 
@@ -96,4 +100,72 @@ The XML set up 3 Fields:
 **name** - Friendly name of node <br/>
 **light** - light value of node <br/>
 
-Then it describes all of the message type:
+## Using Poly Packet
+
+To use poly packet, write your xml to define the fields and packets in your protocol. The use the make_protocol.py python script to generate the source code.
+>the mako module is required (pip install mako)
+```
+python3 make_protocol.py -i sample_protocol.xml -o ../example -c
+```
+* -i is for input file, this will be the xml file used
+* -o is the output directory, this is where the code and documentation will be generated
+* -c tells the script to generate pure C code for embedded
+
+Code Example:
+```
+#include "SampleProtocol.h"
+
+uint8_t buffer[1024];
+char printBuf[1024];
+
+
+//Handlers for packets are declared weak in service
+HandlerStatus_e sp_setdata_handler(setdata_packet_t * packet)
+{
+  // do something
+  pp_print_json(msg, printBuf);
+  sprintf("Handled: %s",printBuf);
+  return PACKET_HANDLED;
+}
+
+//mock uart receive handler
+void platform_uart_handler(uint8_t* data ,int len)
+{
+  pp_service_feed(data, len);
+}
+
+//mock function to mimic sending data over uart
+void platform_uart_send(uint8_t* data, int len)
+{
+
+}
+
+int main()
+{
+  pp_service_init(1); //initialize the service with 1 interface
+
+  pp_packet_t* msg = new_sp_packet(PP_SETDATA_PACKET);  //creates a new message (must destroyed when done)
+
+  //set values in message
+  pp_setSrc(msg,0xABCD );
+  pp_setDst(msg,0xCDEF);
+  pp_setSensora(msg,32500);
+  pp_setSensorb(msg,898989);
+  pp_setSensorname(msg, "This is my test string");
+
+  len = pp_pack(msg, buffer); //back message to byts array
+
+  platform_uart_send(buffer, len);
+
+
+  pp_destroy(msg); //destroy when done
+
+
+  while(1)
+  {
+    pp_service_process();
+  }
+
+  return 0;
+}
+```

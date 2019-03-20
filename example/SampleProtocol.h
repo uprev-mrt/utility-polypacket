@@ -10,32 +10,37 @@
 ***********************************************************/
 #include "Utilities/PolyPacket/poly_service.h"
 
+//Define basic function macros
+#define sp_print_json(msg,buf) poly_packet_print_json(msg->pPacket, buf, false)
+#define sp_parse(msg,buf,len) poly_packet_parse_buffer(msg->pPacket, buf, len)
+#define sp_pack(msg, buf) poly_packet_pack(msg->pPacket, buf)
+#define sp_send(iface, msg) sp_service_send(iface, msg->pPacket)
 
 //Declare extern packet descriptors
 extern poly_packet_desc_t* PP_ACK_PACKET;
-extern poly_packet_desc_t* PP_SETDATA_PACKET;
-extern poly_packet_desc_t* PP_GETDATA_PACKET;
-extern poly_packet_desc_t* PP_RESPDATA_PACKET;
-extern poly_packet_desc_t* PP_BLOCKREQ_PACKET;
-extern poly_packet_desc_t* PP_BLOCKRESP_PACKET;
+extern poly_packet_desc_t* SP_SETDATA_PACKET;
+extern poly_packet_desc_t* SP_GETDATA_PACKET;
+extern poly_packet_desc_t* SP_RESPDATA_PACKET;
+extern poly_packet_desc_t* SP_BLOCKREQ_PACKET;
+extern poly_packet_desc_t* SP_BLOCKRESP_PACKET;
 
 
 //Declare extern field descriptors
-extern poly_field_desc_t* PP_SRC_FIELD;
-extern poly_field_desc_t* PP_DST_FIELD;
-extern poly_field_desc_t* PP_CMD_FIELD;
-extern poly_field_desc_t* PP_SENSORA_FIELD;
-extern poly_field_desc_t* PP_SENSORB_FIELD;
-extern poly_field_desc_t* PP_SENSORNAME_FIELD;
-extern poly_field_desc_t* PP_BLOCKOFFSET_FIELD;
-extern poly_field_desc_t* PP_BLOCKSIZE_FIELD;
-extern poly_field_desc_t* PP_BLOCKDATA_FIELD;
+extern poly_field_desc_t* SP_SRC_FIELD;
+extern poly_field_desc_t* SP_DST_FIELD;
+extern poly_field_desc_t* SP_CMD_FIELD;
+extern poly_field_desc_t* SP_SENSORA_FIELD;
+extern poly_field_desc_t* SP_SENSORB_FIELD;
+extern poly_field_desc_t* SP_SENSORNAME_FIELD;
+extern poly_field_desc_t* SP_BLOCKOFFSET_FIELD;
+extern poly_field_desc_t* SP_BLOCKSIZE_FIELD;
+extern poly_field_desc_t* SP_BLOCKDATA_FIELD;
 
 /*
  *@brief 
  */
 typedef struct{
-  poly_packet_t* mPacket;
+  poly_packet_t* pPacket;
 }ack_packet_t;
 
 /*
@@ -47,7 +52,7 @@ typedef struct{
   int16_t mSensora;	//Value of Sensor A
   int mSensorb;	//Value of Sensor B
   char mSensorname[32];	//Name of sensor
-  poly_packet_t* mPacket;
+  poly_packet_t* pPacket;
 }setdata_packet_t;
 
 /*
@@ -59,7 +64,7 @@ typedef struct{
   int16_t mSensora;	//Value of Sensor A
   int mSensorb;	//Value of Sensor B
   char mSensorname[32];	//Name of sensor
-  poly_packet_t* mPacket;
+  poly_packet_t* pPacket;
 }getdata_packet_t;
 
 /*
@@ -71,7 +76,7 @@ typedef struct{
   int16_t mSensora;	//Value of Sensor A
   int mSensorb;	//Value of Sensor B
   char mSensorname[32];	//Name of sensor
-  poly_packet_t* mPacket;
+  poly_packet_t* pPacket;
 }respdata_packet_t;
 
 /*
@@ -82,7 +87,7 @@ typedef struct{
   uint16_t mDst;	//Desitination address of message
   uint32_t mBlockoffset;	//Offset of block being requested
   uint32_t mBlocksize;	//Size of block being requested 
-  poly_packet_t* mPacket;
+  poly_packet_t* pPacket;
 }blockreq_packet_t;
 
 /*
@@ -94,12 +99,13 @@ typedef struct{
   uint32_t mBlockoffset;	//Offset of block in memory
   uint32_t mBlocksize;	//size of memory block
   uint8_t mBlockdata[64];	//actual data from memory
-  poly_packet_t* mPacket;
+  poly_packet_t* pPacket;
 }blockresp_packet_t;
 
 
 typedef struct{
   poly_packet_t mPacket;
+  poly_packet_t* pPacket;
   union{
     ack_packet_t* ack;
     setdata_packet_t* setdata;
@@ -125,6 +131,13 @@ void sp_service_init(int interfaceCount);
   */
 void sp_service_process();
 
+/**
+  *@brief sends packet over given interface
+  *@param metaPacket packet to be sent
+  *@param iface index of interface to send on
+  */
+void sp_service_register_tx( int iface, poly_tx_callback txCallBack);
+
 void sp_service_feed(int iface, uint8_t* data, int len);
 
 /**
@@ -132,7 +145,9 @@ void sp_service_feed(int iface, uint8_t* data, int len);
   *@param metaPacket packet to be sent
   *@param iface index of interface to send on
   */
-void sp_service_send( int iface, sp_packet_t* metaPacket);
+ParseStatus_e sp_service_send( int iface, poly_packet_t* packet);
+
+
 
 
 
@@ -145,9 +160,6 @@ sp_packet_t* new_sp_packet(poly_packet_desc_t* desc);
 void sp_teardown(sp_packet_t* metaPacket);
 void sp_destroy(sp_packet_t* metaPacket);
 
-int sp_pack(sp_packet_t* metaPacket, uint8_t* data);
-ParseStatus_e sp_parse(sp_packet_t* metaPacket, uint8_t* data, int len);
-int sp_print_json(sp_packet_t* metaPacket, char* buf);
 
 /*******************************************************************************
   Meta-Packet setters

@@ -11,6 +11,8 @@
 #include "Utilities/PolyPacket/poly_field.h"
 #include "Utilities/PolyPacket/poly_packet.h"
 
+#define {proto.prefix}_print_json(msg,buf) poly_packet_print_json(msg->mPacket, buf) 
+
 
 //Declare extern packet descriptors
 % for packet in proto.packets:
@@ -66,7 +68,7 @@ void ${proto.prefix}_service_process();
 
 
 /**
-  *@brief sends packet over service 
+  *@brief sends packet over service
   */
 % for packet in proto.packets:
 void ${proto.prefix}_send(${packet.structName}* ${packet.name.lower());

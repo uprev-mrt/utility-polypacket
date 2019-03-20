@@ -10,6 +10,11 @@
 ***********************************************************/
 #include "Utilities/PolyPacket/poly_service.h"
 
+//Define basic function macros
+#define ${proto.prefix}_print_json(msg,buf) poly_packet_print_json(msg->pPacket, buf, false)
+#define ${proto.prefix}_parse(msg,buf,len) poly_packet_parse_buffer(msg->pPacket, buf, len)
+#define ${proto.prefix}_pack(msg, buf) poly_packet_pack(msg->pPacket, buf)
+#define ${proto.prefix}_send(iface, msg) ${proto.prefix}_service_send(iface, msg->pPacket)
 
 //Declare extern packet descriptors
 % for packet in proto.packets:
@@ -30,13 +35,14 @@ typedef struct{
   % for field in packet.fields:
   ${field.getFieldDeclaration()}
   % endfor
-  poly_packet_t* mPacket;
+  poly_packet_t* pPacket;
 }${packet.structName};
 
 % endfor
 
 typedef struct{
   poly_packet_t mPacket;
+  poly_packet_t* pPacket;
   union{
 % for packet in proto.packets:
     ${packet.structName}* ${packet.name.lower()};
@@ -59,6 +65,13 @@ void ${proto.prefix}_service_init(int interfaceCount);
   */
 void ${proto.prefix}_service_process();
 
+/**
+  *@brief sends packet over given interface
+  *@param metaPacket packet to be sent
+  *@param iface index of interface to send on
+  */
+void ${proto.prefix}_service_register_tx( int iface, poly_tx_callback txCallBack);
+
 void ${proto.prefix}_service_feed(int iface, uint8_t* data, int len);
 
 /**
@@ -66,7 +79,9 @@ void ${proto.prefix}_service_feed(int iface, uint8_t* data, int len);
   *@param metaPacket packet to be sent
   *@param iface index of interface to send on
   */
-void ${proto.prefix}_service_send( int iface, ${proto.prefix}_packet_t* metaPacket);
+ParseStatus_e ${proto.prefix}_service_send( int iface, poly_packet_t* packet);
+
+
 
 
 
@@ -79,9 +94,6 @@ ${proto.prefix}_packet_t* new_${proto.prefix}_packet(poly_packet_desc_t* desc);
 void ${proto.prefix}_teardown(${proto.prefix}_packet_t* metaPacket);
 void ${proto.prefix}_destroy(${proto.prefix}_packet_t* metaPacket);
 
-int ${proto.prefix}_pack(${proto.prefix}_packet_t* metaPacket, uint8_t* data);
-ParseStatus_e ${proto.prefix}_parse(${proto.prefix}_packet_t* metaPacket, uint8_t* data, int len);
-int ${proto.prefix}_print_json(${proto.prefix}_packet_t* metaPacket, char* buf);
 
 /*******************************************************************************
   Meta-Packet setters

@@ -39,6 +39,14 @@ void poly_service_register_desc(poly_service_t* pService, poly_packet_desc_t* pD
   pService->mPacketDescs[pService->mDescCount++] = pDesc;
 }
 
+void poly_service_register_tx_callback(poly_service_t* pService, int interface, poly_tx_callback callback)
+{
+  assert(interface < pService->mInterfaceCount);
+
+  pService->mInterfaces[interface].f_TxCallBack = callback;
+  pService->mInterfaces[interface].mHasCallBack = true;
+}
+
 
 void poly_service_start(poly_service_t* pService, int fifoDepth)
 {
@@ -144,7 +152,7 @@ ParseStatus_e poly_service_try_parse_interface(poly_service_t* pService, poly_pa
             fifo_peek_buf(&iface->mBytefifo, iface->mRaw, len );
 
             poly_packet_init(packet, pService->mPacketDescs[iface->mCurrentHdr.mTypeId] ,true);
-            
+
             packet->mInterface = interface;
 
             retVal = poly_packet_parse_buffer(packet, iface->mRaw, len);
@@ -186,4 +194,17 @@ ParseStatus_e poly_service_try_parse(poly_service_t* pService, poly_packet_t* pa
   }
 
   return retVal;
+}
+
+ParseStatus_e poly_service_send(poly_service_t* pService, int interface,  poly_packet_t* packet)
+{
+  assert(interface < pService->mInterfaceCount);
+  if(!pService->mInterfaces[interface].mHasCallBack)
+    return PACKET_UNHANDLED;
+
+  uint8_t data[packet->mDesc->mMaxPacketSize];
+  int len = poly_packet_pack(packet, data);
+
+  pService->mInterfaces[interface].f_TxCallBack(data, len);
+
 }

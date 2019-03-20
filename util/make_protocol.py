@@ -119,6 +119,9 @@ class fieldDesc:
         self.desc = ""
         self.memberName = "m"+ self.name.capitalize()
 
+    def setPrefix(self, prefix):
+        self.globalName = prefix.upper()+"_"+self.name.upper()+"_FIELD"
+
     def getFieldDeclaration(self):
         output = io.StringIO()
         output.write("{0} {1}".format(self.cType, self.memberName))
@@ -149,6 +152,9 @@ class packetDesc:
         self.requests = {}
         self.standard = False
         self.structName = name.lower() + '_packet_t'
+
+    def setPrefix(self, prefix):
+        self.globalName = prefix.upper()+"_"+self.name.upper()+"_PACKET"
 
     def addField(self, field):
         field.id = self.fieldCount
@@ -273,7 +279,7 @@ class protocolDesc:
         self.packets = []
         self.packetIdx ={}
         self.packetId =0
-        self.prefix = name;
+        self.prefix = "pp";
 
     def service(self):
         return self.prefix.upper() +'_SERVICE'
@@ -334,6 +340,7 @@ def parseXML(xmlfile):
 
 
         newField = fieldDesc(name, strType, arrayLen)
+        newField.setPrefix(protocol.prefix)
 
         if('format' in field.attrib):
             format = field.attrib['format'].lower()
@@ -356,6 +363,7 @@ def parseXML(xmlfile):
         name = packet.attrib['name']
         desc =""
         newPacket = packetDesc(name)
+        newPacket.setPrefix(protocol.prefix)
 
         if(name in protocol.packetIdx):
             print( 'ERROR Duplicate Packet Name!: ' + name)

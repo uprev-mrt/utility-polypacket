@@ -24,8 +24,6 @@ extern "C"
 {
 #endif
 
-typedef void (*poly_rx_callback)(poly_packet_t* packet, int iface);
-
 typedef enum ServiceParseState {
   STATE_WAITING_FOR_HEADER,
   STATE_HEADER_FOUND,
@@ -37,6 +35,8 @@ typedef enum HandlerStatus {
   PACKET_IGNORED,
   PACKET_UNHANDLED
 } HandlerStatus_e;
+
+typedef void (*poly_tx_callback)(uint8_t* data , int len);
 
 
 typedef struct{
@@ -54,7 +54,8 @@ typedef struct{
   int mRetries;       //total number of packet retries (no ack)
   int mFailures;      //total number of packets that failed (hit max retries )
   int mBitErrors;     //total number of bit errors (bad packet parse)
-  poly_rx_callback mCallback;
+  poly_tx_callback f_TxCallBack;
+  bool mHasCallBack;
 }poly_interface_t;
 
 /**
@@ -88,12 +89,12 @@ poly_service_t* new_poly_service(int maxDescs, int interfaceCount);
 void poly_service_register_desc(poly_service_t* pService, poly_packet_desc_t* pDesc);
 
 /**
-  *@brief registers a packet received callback for a given interface
+  *@brief registers a tx callback for an interface, used to send messages
   *@param pService ptr to poly service
   *@param interface index of interface to register callback with
   *@post callback callback function
   */
-void poly_service_register_rx_callback(poly_service_t* pService, int interface, poly_rx_callback* callback);
+void poly_service_register_tx_callback(poly_service_t* pService, int interface, poly_tx_callback callback);
 
 /**
   *@brief Starts the service with a given number of interfaces
@@ -141,6 +142,15 @@ ParseStatus_e poly_service_try_parse_interface(poly_service_t* pService, poly_pa
   *@return PACKET_NONE is no valid packets are found
   */
 ParseStatus_e poly_service_try_parse(poly_service_t* pService, poly_packet_t* packet);
+
+/**
+  *@brief sends a packet over a give interface
+  *@param "Param description"
+  *@pre "Pre-conditions"
+  *@post "Post-conditions"
+  *@return "Return of the function"
+  */
+ParseStatus_e poly_service_send(poly_service_t* pService, int interface,  poly_packet_t* packet);
 
 
 

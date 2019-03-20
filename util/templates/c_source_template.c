@@ -39,6 +39,7 @@ poly_service_t* ${proto.service()};
 void ${proto.prefix}_service_process()
 {
   static ${proto.prefix}_packet_t metaPacket;
+  metaPacket.pPacket = &metaPacket.mPacket;
 
   HandlerStatus_e status = PACKET_UNHANDLED;
 
@@ -68,6 +69,11 @@ void ${proto.prefix}_service_process()
     ${proto.prefix}_teardown(&metaPacket);
   }
 
+}
+
+void ${proto.prefix}_service_register_tx( int iface, poly_tx_callback txCallBack)
+{
+  poly_service_register_tx_callback(${proto.service()}, iface,txCallBack);
 }
 
 /*******************************************************************************
@@ -114,9 +120,9 @@ void ${proto.prefix}_service_feed(int iface, uint8_t* data, int len)
   poly_service_feed(${proto.service()},iface,data,len);
 }
 
-void ${proto.prefix}_service_send(int iface, ${proto.prefix}_packet_t* metaPacket)
+ParseStatus_e ${proto.prefix}_service_send(int iface, poly_packet_t* packet)
 {
-
+  return poly_service_send(${proto.service()}, iface, packet);
 }
 
 /*******************************************************************************
@@ -135,6 +141,7 @@ ${proto.prefix}_packet_t* new_${proto.prefix}_packet(poly_packet_desc_t* desc)
 
   //create new unallocated packet
   poly_packet_init(&newMetaPacket->mPacket, desc, false);
+  newMetaPacket->pPacket = &newMetaPacket->mPacket;
 
   switch(newMetaPacket->mPacket.mDesc->mTypeId)
   {
@@ -179,22 +186,6 @@ void ${proto.prefix}_destroy(${proto.prefix}_packet_t* metaPacket)
   //free memory
   free(metaPacket);
 }
-
-int ${proto.prefix}_pack(${proto.prefix}_packet_t* metaPacket, uint8_t* data)
-{
-  return poly_packet_pack(&metaPacket->mPacket, data);
-}
-
-ParseStatus_e ${proto.prefix}_parse(${proto.prefix}_packet_t* metaPacket, uint8_t* data, int len)
-{
-  return poly_packet_parse_buffer(&metaPacket->mPacket, data, len);
-}
-
-int ${proto.prefix}_print_json(${proto.prefix}_packet_t* metaPacket, char* buf)
-{
-  return poly_packet_print_json(&metaPacket->mPacket, buf, false);
-}
-
 
 /*******************************************************************************
 
@@ -250,7 +241,7 @@ ${field.getParamType()} ${proto.prefix}_get${field.name.capitalize()}(${proto.pr
   */
 void ${proto.prefix}_${packet.name.lower()}_bind(${packet.structName}* ${packet.name.lower()}, poly_packet_t* packet, bool copy)
 {
-  ${packet.name.lower()}->mPacket = packet;
+  ${packet.name.lower()}->pPacket = packet;
 
 % for field in packet.fields:
   poly_field_bind( poly_packet_get_field(packet, ${field.globalName}), (uint8_t*) &${packet.name.lower()}->${field.memberName}, copy);
