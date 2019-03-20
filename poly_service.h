@@ -30,6 +30,7 @@ typedef enum ServiceParseState {
 }ServiceParseState_e;
 
 typedef enum HandlerStatus {
+  PACKET_SENT,
   PACKET_HANDLED,
   PACKET_ROUTED,
   PACKET_IGNORED,

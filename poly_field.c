@@ -179,13 +179,13 @@ int poly_field_print_json(poly_field_t* field, char* buf)
   int elementCount;
   int idx =0;
 
-  idx+= sprintf(&buf[idx],"\"%s\" : ", field->mDesc->mName);
+  idx+= MRT_SPRINTF(&buf[idx],"\"%s\" : ", field->mDesc->mName);
 
 
   //for ascii format we just print the char string
   if(field->mDesc->mFormat == FORMAT_ASCII)
   {
-    idx+= sprintf(&buf[idx],"\"%s\"", field->mData);
+    idx+= MRT_SPRINTF(&buf[idx],"\"%s\"", field->mData);
   }
   //for other formats we have to specialize the printing
   else
@@ -200,18 +200,18 @@ int poly_field_print_json(poly_field_t* field, char* buf)
     //If field is an array, print as JSON array
     else
     {
-      idx+= sprintf(&buf[idx],"[ ");
+      idx+= MRT_SPRINTF(&buf[idx],"[ ");
 
       for(int i=0; i < elementCount; i++)
       {
         //add before all but the first
         if(i != 0)
-          idx+= sprintf(&buf[idx],",");
+          idx+= MRT_SPRINTF(&buf[idx],",");
 
         idx+= poly_field_print_val(field, i, &buf[idx]);
       }
 
-      idx+= sprintf(&buf[idx]," ]");
+      idx+= MRT_SPRINTF(&buf[idx]," ]");
     }
   }
   return idx;
@@ -227,35 +227,35 @@ int poly_field_print_val(poly_field_t* field, int element, char* buf)
     {
       case TYPE_UINT8:
       case TYPE_CHAR:
-        idx+= sprintf(&buf[idx], "%u", *(uint8_t*)pData);
+        idx+= MRT_SPRINTF(&buf[idx], "%u", *(uint8_t*)pData);
         break;
       case TYPE_UINT16:
-        idx+= sprintf(&buf[idx], "%u", *(uint16_t*)pData);
+        idx+= MRT_SPRINTF(&buf[idx], "%u", *(uint16_t*)pData);
         break;
       case TYPE_UINT32:
-        idx+= sprintf(&buf[idx], "%u", *(uint32_t*)pData);
+        idx+= MRT_SPRINTF(&buf[idx], "%u", *(uint32_t*)pData);
         break;
       case TYPE_UINT64:
-        idx+= sprintf(&buf[idx], "%u", *(uint64_t*)pData);
+        idx+= MRT_SPRINTF(&buf[idx], "%u", *(uint64_t*)pData);
         break;
       case TYPE_INT8:
-        idx+= sprintf(&buf[idx], "%i", *(int8_t*)pData);
+        idx+= MRT_SPRINTF(&buf[idx], "%i", *(int8_t*)pData);
         break;
       case TYPE_INT16:
-        idx+= sprintf(&buf[idx], "%i", *(int16_t*)pData);
+        idx+= MRT_SPRINTF(&buf[idx], "%i", *(int16_t*)pData);
         break;
       case TYPE_INT32:
       case TYPE_INT:
-        idx+= sprintf(&buf[idx], "%i", *(int32_t*)pData);
+        idx+= MRT_SPRINTF(&buf[idx], "%i", *(int32_t*)pData);
         break;
       case TYPE_INT64:
-        idx+= sprintf(&buf[idx], "%i", *(int64_t*)pData);
+        idx+= MRT_SPRINTF(&buf[idx], "%i", *(int64_t*)pData);
         break;
       case TYPE_FLOAT:
-        idx+= sprintf(&buf[idx], "%f", *(float*)pData);
+        idx+= MRT_SPRINTF(&buf[idx], "%f", *(float*)pData);
         break;
       case TYPE_DOUBLE:
-        idx+= sprintf(&buf[idx], "%f", *(double*)pData);
+        idx+= MRT_SPRINTF(&buf[idx], "%f", *(double*)pData);
         break;
       default:
         break;
@@ -263,12 +263,12 @@ int poly_field_print_val(poly_field_t* field, int element, char* buf)
   }
   else if(field->mDesc->mFormat == FORMAT_HEX)
   {
-    idx+= sprintf(&buf[idx], "\"x");
+    idx+= MRT_SPRINTF(&buf[idx], "\"x");
     for(int i=0; i < field->mDesc->mObjSize; i++)
     {
-      idx+= sprintf(&buf[idx], "%02X", pData[i]);
+      idx+= MRT_SPRINTF(&buf[idx], "%02X", pData[i]);
     }
-    idx+= sprintf(&buf[idx], "\"");
+    idx+= MRT_SPRINTF(&buf[idx], "\"");
   }
 
   return idx;

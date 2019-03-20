@@ -170,7 +170,7 @@ ParseStatus_e poly_service_try_parse_interface(poly_service_t* pService, poly_pa
           else
           {
             //bad checksum throw away leading byte and try again
-            iface->mParseState == STATE_WAITING_FOR_HEADER;
+            iface->mParseState = STATE_WAITING_FOR_HEADER;
           }
         }
     }

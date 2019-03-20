@@ -304,17 +304,17 @@ int poly_packet_print_json(poly_packet_t* packet, char* buf, bool printMeta)
   poly_field_t* field;
   bool first = true;
 
-  idx+= sprintf(&buf[idx],"{");
+  idx+= MRT_SPRINTF(&buf[idx],"{");
 
   if(printMeta)
   {
-    idx += sprintf(&buf[idx]," \"typeId\" : \"%02X\" ,", packet->mHeader.mTypeId);
-    idx += sprintf(&buf[idx]," \"token\" : \%04X\" ,", packet->mHeader.mToken);
-    idx += sprintf(&buf[idx]," \"checksum\" : \"%04X\" ,", packet->mHeader.mCheckSum);
-    idx += sprintf(&buf[idx]," \"len\" : %d , ", packet->mHeader.mDataLen);
+    idx += MRT_SPRINTF(&buf[idx]," \"typeId\" : \"%02X\" ,", packet->mHeader.mTypeId);
+    idx += MRT_SPRINTF(&buf[idx]," \"token\" : \%04X\" ,", packet->mHeader.mToken);
+    idx += MRT_SPRINTF(&buf[idx]," \"checksum\" : \"%04X\" ,", packet->mHeader.mCheckSum);
+    idx += MRT_SPRINTF(&buf[idx]," \"len\" : %d , ", packet->mHeader.mDataLen);
   }
 
-  idx += sprintf(&buf[idx]," \"packetType\" : \"%s\" ,", packet->mDesc->mName);
+  idx += MRT_SPRINTF(&buf[idx]," \"packetType\" : \"%s\" ,", packet->mDesc->mName);
 
   for(int i=0; i < packet->mDesc->mFieldCount; i++)
   {
@@ -323,7 +323,7 @@ int poly_packet_print_json(poly_packet_t* packet, char* buf, bool printMeta)
     if(field->mPresent)
     {
       if(!first)
-        idx+= sprintf(&buf[idx]," , ");
+        idx+= MRT_SPRINTF(&buf[idx]," , ");
 
       idx+= poly_field_print_json(field, &buf[idx]);
 
@@ -332,7 +332,7 @@ int poly_packet_print_json(poly_packet_t* packet, char* buf, bool printMeta)
 
   }
 
-  idx+= sprintf(&buf[idx],"}");
+  idx+= MRT_SPRINTF(&buf[idx],"}");
 
   return idx;
 }

@@ -12,6 +12,10 @@
 #include <string.h>
 #include <stdio.h>
 
+#ifndef MRT_SPRINTF
+#define MRT_SPRINTF(f_, ...) sprintf((f_), __VA_ARGS__)
+#endif
+
 typedef enum FieldType {
   TYPE_UINT8,
   TYPE_UINT16,
