@@ -79,7 +79,7 @@ void ${proto.prefix}_service_feed(int iface, uint8_t* data, int len);
   *@param metaPacket packet to be sent
   *@param iface index of interface to send on
   */
-ParseStatus_e ${proto.prefix}_service_send( int iface, poly_packet_t* packet);
+HandlerStatus_e ${proto.prefix}_service_send( int iface, poly_packet_t* packet);
 
 
 

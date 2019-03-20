@@ -83,12 +83,11 @@ void poly_service_start(poly_service_t* pService, int fifoDepth)
 
 void poly_service_feed(poly_service_t* pService, int interface, uint8_t* data, int len)
 {
+  assert(interface < pService->mInterfaceCount);
+
   poly_interface_t* iface = &pService->mInterfaces[interface];
 
-  //make sure we stay in bounds
-
   fifo_push_buf(&iface->mBytefifo, data, len);
-
 }
 
 bool poly_service_seek_header(poly_service_t* pService, poly_interface_t* iface)
@@ -198,13 +197,14 @@ ParseStatus_e poly_service_try_parse(poly_service_t* pService, poly_packet_t* pa
 
 ParseStatus_e poly_service_send(poly_service_t* pService, int interface,  poly_packet_t* packet)
 {
-  assert(interface < pService->mInterfaceCount);
-  if(!pService->mInterfaces[interface].mHasCallBack)
-    return PACKET_UNHANDLED;
+  ParseStatus_e status = PACKET_UNHANDLED;
+   assert(interface < pService->mInterfaceCount);
+   if(!pService->mInterfaces[interface].mHasCallBack)
+   return PACKET_UNHANDLED;
 
-  uint8_t data[packet->mDesc->mMaxPacketSize];
-  int len = poly_packet_pack(packet, data);
+   uint8_t data[packet->mDesc->mMaxPacketSize];
+   int len = poly_packet_pack(packet, data);
 
-  pService->mInterfaces[interface].f_TxCallBack(data, len);
-
+   status = pService->mInterfaces[interface].f_TxCallBack(data, len);
+  return status;
 }

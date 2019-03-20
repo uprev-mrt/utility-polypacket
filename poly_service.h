@@ -36,7 +36,7 @@ typedef enum HandlerStatus {
   PACKET_UNHANDLED
 } HandlerStatus_e;
 
-typedef void (*poly_tx_callback)(uint8_t* data , int len);
+typedef HandlerStatus_e (*poly_tx_callback)(uint8_t* data , int len);
 
 
 typedef struct{

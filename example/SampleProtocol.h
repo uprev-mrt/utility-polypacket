@@ -145,7 +145,7 @@ void sp_service_feed(int iface, uint8_t* data, int len);
   *@param metaPacket packet to be sent
   *@param iface index of interface to send on
   */
-ParseStatus_e sp_service_send( int iface, poly_packet_t* packet);
+HandlerStatus_e sp_service_send( int iface, poly_packet_t* packet);
 
 
 

@@ -111,12 +111,15 @@ python3 make_protocol.py -i sample_protocol.xml -o ../example -c
 * -o is the output directory, this is where the code and documentation will be generated
 * -c tells the script to generate pure C code for embedded
 
+>all functions will start with the prefix 'pp'. but the 'prefix' attribute can be used in the xml to set a different prefix. this allows the use of multiple services/protocols in a single project without conflict
+
 Code Example:
 ```
 #include "SampleProtocol.h"
 
 uint8_t buffer[1024];
 char printBuf[1024];
+
 
 
 //Handlers for packets are declared weak in service
@@ -131,7 +134,7 @@ HandlerStatus_e sp_setdata_handler(setdata_packet_t * packet)
 //mock uart receive handler
 void platform_uart_handler(uint8_t* data ,int len)
 {
-  pp_service_feed(data, len);
+  pp_service_feed(0, data, len); // feed received byte into interface 0 of service
 }
 
 //mock function to mimic sending data over uart
@@ -153,9 +156,10 @@ int main()
   pp_setSensorb(msg,898989);
   pp_setSensorname(msg, "This is my test string");
 
-  len = pp_pack(msg, buffer); //back message to byts array
+  pp_service_register_tx(0, &platform_uart_send ); // register sending function
 
-  platform_uart_send(buffer, len);
+
+  pp_send(0,msg); // Send message over interface 0
 
 
   pp_destroy(msg); //destroy when done
@@ -167,5 +171,67 @@ int main()
   }
 
   return 0;
+}
+```
+
+This example shows how to use the code to create a service. The service is initialized with 1 interface:
+
+### Initializing service
+
+```
+pp_service_init(1); //initialize the service with 1 interface
+```
+For devices where multiple hardware ports are being used by the same protocol, you can use more interfaces
+
+---
+### Creating a message
+
+This creates a new message with the packet type 'SetData' defined in our xml
+```
+pp_packet_t* msg = new_sp_packet(PP_SETDATA_PACKET);
+```
+
+next we set fields in the message
+
+```
+pp_setSrc(msg,0xABCD );
+pp_setDst(msg,0xCDEF);
+```
+
+---
+### Register Tx functions
+
+For each interface we can register a send function this allows us to automate things like acknowledgements
+
+```
+pp_service_register_tx(0, &platform_uart_send ); // register sending function
+```
+once we have registered a callback for an interface, we can send messages to it
+```
+pp_send(0,msg)
+```
+
+---
+
+### Receive Handlers
+The generated service creates a handler for each packet type, they are created with weak attributes, so they can be overridden by just declaring them again in our code.
+
+The following is our handler for 'SetData' type packets
+
+```
+HandlerStatus_e sp_setdata_handler(setdata_packet_t * packet)
+{
+  //do something with received packet
+}
+```
+
+### Process
+
+The service is meant to be run on many platforms, so it does not have built in threading/tasking. For it to continue handling messages, we have to call its process function either in a thread/task or in our super-loop
+
+```
+while(1)
+{
+  pp_service_process();
 }
 ```

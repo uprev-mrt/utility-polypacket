@@ -120,7 +120,7 @@ void ${proto.prefix}_service_feed(int iface, uint8_t* data, int len)
   poly_service_feed(${proto.service()},iface,data,len);
 }
 
-ParseStatus_e ${proto.prefix}_service_send(int iface, poly_packet_t* packet)
+HandlerStatus_e ${proto.prefix}_service_send(int iface, poly_packet_t* packet)
 {
   return poly_service_send(${proto.service()}, iface, packet);
 }

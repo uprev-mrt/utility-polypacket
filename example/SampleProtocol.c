@@ -191,7 +191,7 @@ void sp_service_feed(int iface, uint8_t* data, int len)
   poly_service_feed(SP_SERVICE,iface,data,len);
 }
 
-ParseStatus_e sp_service_send(int iface, poly_packet_t* packet)
+HandlerStatus_e sp_service_send(int iface, poly_packet_t* packet)
 {
   return poly_service_send(SP_SERVICE, iface, packet);
 }

@@ -5,53 +5,83 @@ uint8_t buffer[1024];
 char printBuf[1024];
 int len;
 
+#define UART 0
+
+/*  Handler function for 'SetData' messages
+ *  This is created by the service and declared '__weak__' so we just have to provide our own function to override
+ */
 HandlerStatus_e sp_setdata_handler(setdata_packet_t * packet)
 {
-  /* NOTE : This function should not be modified, when the callback is needed,
-          sp_setdata_handler  should be implemented in the user file
-  */
-  sp_print_json(packet, printBuf);
 
+  //convert the message to a json string
+  sp_print_json(packet, printBuf);
   printf("handled! = %s\n", printBuf);
-  return PACKET_UNHANDLED;
+
+  return PACKET_HANDLED;
 }
 
-void sendUart(uint8_t* data, int len)
+//Function to mock uart_tx on mcu
+HandlerStatus_e mock_uart_send(uint8_t* data, int len)
 {
   printf("message sent!\n");
+  return PACKET_HANDLED;
 }
+
+//Function mocking uart_rx on mcu
+void mock_uart_receive(uint8_t* data, int len)
+{
+  printf("message Recieved!\n");
+  //when we receive data, we 'Feed' it to the service for parsing
+  sp_service_feed(UART,data,len);
+}
+
 
 int main()
 {
-  printf("\nBuilding Test packet C++\n\n*******************************\n\n");
-  sp_service_init(2);
+  /*initialize service with 1 interface
+   * In this case we are just mocking on UART interface
+   */
+  sp_service_init(1);
 
+  /*register a TX function for the interface
+   */
+  sp_service_register_tx(UART, &mock_uart_send);
+
+
+  //create a new message
   sp_packet_t* msg = new_sp_packet(SP_SETDATA_PACKET);
-  sp_packet_t* msgb = new_sp_packet(SP_SETDATA_PACKET);
 
+  //Set the fields in the message
   sp_setSrc(msg,0xABCD );
   sp_setDst(msg,0xCDEF);
   sp_setSensora(msg,32500);
   sp_setSensorb(msg,898989);
   sp_setSensorname(msg, "This is my test string");
 
-  sp_service_register_tx(0, &sendUart);
+  //send data over the UART interface
+  //sp_send(UART,msg);
 
-  len = sp_pack(msg, buffer);
+  int len = sp_pack(msg,buffer);
+
+  for(int i=0 ; i < len; i++)
+  {
+    printf(" %02X", buffer[i]);
+  }
+  printf("\n" );
+
+  sp_send(UART,msg);
 
 
-  int tp = sp_parse(msgb, buffer, len);
+  sp_service_feed(UART,buffer,len);
 
-  sp_print_json(msgb, printBuf);
-
-  printf("Feeding = %s\n", printBuf);
-  sp_service_feed(0,buffer,len);
-
-  sp_send(0,msg);
+  sp_destroy(msg);
 
   sp_service_process();
 
-
+  while(1)
+  {
+    sp_service_process();
+  }
 
   return 0;
 }
