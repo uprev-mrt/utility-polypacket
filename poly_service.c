@@ -5,6 +5,8 @@
   *@date 02/19/"2019
   */
 
+
+
 #include "poly_service.h"
 #include <assert.h>
 
@@ -188,13 +190,3 @@ ePacketStatus poly_service_try_parse(poly_service_t* pService, poly_packet_t* pa
 
   return PACKET_NONE;
 }
-
-
-
-
-
-
-
-#ifdef __cplusplus
-}
-#endif
