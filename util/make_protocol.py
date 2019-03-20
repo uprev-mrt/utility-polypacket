@@ -36,7 +36,7 @@ sizeDict = {
     "uint64" : 8,
     "int" : 4,
     "float": 4,
-    "double": 8
+    "double": 8,
 }
 
 cNameDict = {
@@ -84,21 +84,39 @@ def crc(fileName):
 
 
 class fieldDesc:
-    def __init__(self, name, type, len):
+    def __init__(self, name, strType):
+        self.enums = []
+        self.arrayLen = 1
+        self.isEnum = False;
 
-        self.type = type.lower().replace('_t','')
+        m = re.search('\[([0-9]*)\]', strType)
+        if(m):
+            if(m.group(1) != ''):
+                self.arrayLen = int(m.group(1))
+            strType = strType[0:m.start()]
+
+        #check if its an enum
+        m = re.search('enum\[(.*)\]', strType)
+        if(m):
+            strEnums = m.group(1)
+            if(strEnums != ''):
+                self.enums = [x.strip() for x in strEnums.split(',')]
+                self.isEnum = True
+            strType = 'uint8'
+
+
+
+        self.type = strType.lower().replace('_t','')
 
         if not (self.type in cNameDict):
             print( "INVALID DATA TYPE!:  " + type)
 
-        self.size = sizeDict[self.type] * len
+        self.size = sizeDict[self.type] * self.arrayLen
         self.cType = cNameDict[self.type]
         self.cppType = self.cType
 
         self.isString = False
         self.isArray = False
-
-        self.arrayLen=len
 
         if(self.arrayLen > 1):
             self.isArray = True
@@ -293,6 +311,7 @@ class protocolDesc:
 
     def addPacket(self,packet):
         packet.packetId = self.packetId
+        packet.setPrefix(self.prefix)
         self.packets.append(packet)
         self.packetIdx[packet.name] = self.packetId
         self.packetId+=1
@@ -315,7 +334,6 @@ def parseXML(xmlfile):
     # create empty list for Fields
     protocol = protocolDesc(root.attrib['name'])
 
-    addStandardPackets(protocol)
 
     if('desc' in root.attrib):
         protocol.desc = root.attrib['desc']
@@ -323,6 +341,7 @@ def parseXML(xmlfile):
     if('prefix' in root.attrib):
         protocol.prefix = root.attrib['prefix']
 
+    addStandardPackets(protocol)
 
     #parse out fields
     for field in root.findall('./Fields/Field'):
@@ -330,16 +349,8 @@ def parseXML(xmlfile):
         name = field.attrib['name']
         strType = field.attrib['type'];
 
-        arrayLen = 1
-        #see if its an array
-        m = re.search('\[([0-9]*)\]', strType)
-        if(m):
-            if(m.group(1) != ''):
-                arrayLen = int(m.group(1))
-            strType = strType[0:m.start()]
 
-
-        newField = fieldDesc(name, strType, arrayLen)
+        newField = fieldDesc(name, strType)
         newField.setPrefix(protocol.prefix)
 
         if('format' in field.attrib):

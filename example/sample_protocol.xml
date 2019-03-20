@@ -7,7 +7,7 @@
     <!--Common -->
     <Field name="src" type="uint16_t" format="hex" desc="Source address of message" />
     <Field name="dst" type="uint16_t" format="hex" desc="Desitination address of message"/>
-    <Field name="cmd" type="uint8_t" format="hex" />
+    <Field name="cmd" type="enum[test, send, stop]" format="hex" />
 
     <!-- SensorData -->
     <Field name="sensorA" type="int16" format="dec" desc="Value of Sensor A"/>

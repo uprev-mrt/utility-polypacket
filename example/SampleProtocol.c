@@ -14,7 +14,7 @@
 
 
 //Define packet IDs
-#define  PP_ACK_PACKET_ID 0
+#define  SP_ACK_PACKET_ID 0
 #define  SP_SETDATA_PACKET_ID 1
 #define  SP_GETDATA_PACKET_ID 2
 #define  SP_RESPDATA_PACKET_ID 3
@@ -23,7 +23,7 @@
 
 
 //Global descriptors
-poly_packet_desc_t* PP_ACK_PACKET;
+poly_packet_desc_t* SP_ACK_PACKET;
 poly_packet_desc_t* SP_SETDATA_PACKET;
 poly_packet_desc_t* SP_GETDATA_PACKET;
 poly_packet_desc_t* SP_RESPDATA_PACKET;
@@ -61,7 +61,7 @@ void sp_service_process()
     //Dispatch packet
     switch(metaPacket.mPacket.mDesc->mTypeId)
     {
-      case PP_ACK_PACKET_ID:
+      case SP_ACK_PACKET_ID:
         metaPacket.mPayload.ack = (ack_packet_t*) malloc(sizeof(ack_packet_t));
         sp_ack_bind(metaPacket.mPayload.ack, &metaPacket.mPacket, true);
         status = sp_ack_handler(metaPacket.mPayload.ack);
@@ -125,7 +125,7 @@ void sp_service_init(int interfaceCount)
   SP_SERVICE = new_poly_service(6, interfaceCount);
 
   //Build Packet Descriptors
-  PP_ACK_PACKET = new_poly_packet_desc("ack", 0);
+  SP_ACK_PACKET = new_poly_packet_desc("ack", 0);
   SP_SETDATA_PACKET = new_poly_packet_desc("SetData", 5);
   SP_GETDATA_PACKET = new_poly_packet_desc("GetData", 5);
   SP_RESPDATA_PACKET = new_poly_packet_desc("RespData", 5);
@@ -175,7 +175,7 @@ void sp_service_init(int interfaceCount)
   poly_packet_desc_add_field(SP_BLOCKRESP_PACKET , SP_BLOCKDATA_FIELD , true );
 
   //Register packet descriptors with the service
-  poly_service_register_desc(SP_SERVICE, PP_ACK_PACKET);
+  poly_service_register_desc(SP_SERVICE, SP_ACK_PACKET);
   poly_service_register_desc(SP_SERVICE, SP_SETDATA_PACKET);
   poly_service_register_desc(SP_SERVICE, SP_GETDATA_PACKET);
   poly_service_register_desc(SP_SERVICE, SP_RESPDATA_PACKET);
@@ -216,7 +216,7 @@ sp_packet_t* new_sp_packet(poly_packet_desc_t* desc)
 
   switch(newMetaPacket->mPacket.mDesc->mTypeId)
   {
-    case PP_ACK_PACKET_ID:
+    case SP_ACK_PACKET_ID:
       newMetaPacket->mPayload.ack = (ack_packet_t*) malloc(sizeof(ack_packet_t));
       sp_ack_bind(newMetaPacket->mPayload.ack, &newMetaPacket->mPacket, false);
       break;
@@ -253,7 +253,7 @@ void sp_teardown(sp_packet_t* metaPacket)
 {
   switch(metaPacket->mPacket.mDesc->mTypeId)
   {
-    case PP_ACK_PACKET_ID:
+    case SP_ACK_PACKET_ID:
     free(metaPacket->mPayload.ack);
     break;
     case SP_SETDATA_PACKET_ID:

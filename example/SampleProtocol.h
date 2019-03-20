@@ -16,8 +16,17 @@
 #define sp_pack(msg, buf) poly_packet_pack(msg->pPacket, buf)
 #define sp_send(iface, msg) sp_service_send(iface, msg->pPacket)
 
+typedef enum{
+  SP_CMD_TEST,
+  SP_CMD_SEND,
+  SP_CMD_STOP,
+  SP_CMD_MAX_LIMIT
+} sp_cmd_e;
+
+
+
 //Declare extern packet descriptors
-extern poly_packet_desc_t* PP_ACK_PACKET;
+extern poly_packet_desc_t* SP_ACK_PACKET;
 extern poly_packet_desc_t* SP_SETDATA_PACKET;
 extern poly_packet_desc_t* SP_GETDATA_PACKET;
 extern poly_packet_desc_t* SP_RESPDATA_PACKET;
@@ -37,7 +46,7 @@ extern poly_field_desc_t* SP_BLOCKSIZE_FIELD;
 extern poly_field_desc_t* SP_BLOCKDATA_FIELD;
 
 /*
- *@brief 
+ *@brief
  */
 typedef struct{
   poly_packet_t* pPacket;
@@ -86,7 +95,7 @@ typedef struct{
   uint16_t mSrc;	//Source address of message
   uint16_t mDst;	//Desitination address of message
   uint32_t mBlockoffset;	//Offset of block being requested
-  uint32_t mBlocksize;	//Size of block being requested 
+  uint32_t mBlocksize;	//Size of block being requested
   poly_packet_t* pPacket;
 }blockreq_packet_t;
 

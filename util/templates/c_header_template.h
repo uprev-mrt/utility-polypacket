@@ -16,6 +16,19 @@
 #define ${proto.prefix}_pack(msg, buf) poly_packet_pack(msg->pPacket, buf)
 #define ${proto.prefix}_send(iface, msg) ${proto.prefix}_service_send(iface, msg->pPacket)
 
+% for field in proto.fields:
+% if field.isEnum:
+typedef enum{
+  % for t in field.enums:
+  ${proto.prefix.upper()+"_"+field.name.upper() + "_" + t.upper()},
+  % endfor
+  ${proto.prefix.upper()+"_"+field.name.upper()}_MAX_LIMIT
+} ${proto.prefix}_${field.name.lower()}_e;
+% endif
+% endfor
+
+
+
 //Declare extern packet descriptors
 % for packet in proto.packets:
 extern poly_packet_desc_t* ${packet.globalName};

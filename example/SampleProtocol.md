@@ -1,6 +1,6 @@
 # SampleProtocol
-* Generated: 03/05/19<br/>
-* CRC: 2674BA21
+* Generated: 03/20/19<br/>
+* CRC: 1AC868B2
 
 ##### This is a sample protocol made up to demonstrate features of the PolyPacket code generation tool. The idea   is to have a tool that can automatically create parseable/serializable messaging for embedded systems.
 
@@ -70,7 +70,7 @@ Message to get data from node
 ### RespData
 Response to get/set messages
 
-* *Responds To: GetData, SetData*
+* *Responds To: SetData, GetData*
 
 |***Byte***|0|1|2|3|4|5|6|7|8|9|10| . . . . . . . |41
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
