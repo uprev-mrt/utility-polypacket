@@ -13,24 +13,24 @@
 
 
 //Declare extern packet descriptors
-extern poly_packet_desc_t* ACK_P_DESC;
-extern poly_packet_desc_t* SETDATA_P_DESC;
-extern poly_packet_desc_t* GETDATA_P_DESC;
-extern poly_packet_desc_t* RESPDATA_P_DESC;
-extern poly_packet_desc_t* BLOCKREQ_P_DESC;
-extern poly_packet_desc_t* BLOCKRESP_P_DESC;
+extern poly_packet_desc_t* PP_ACK_PACKET;
+extern poly_packet_desc_t* PP_SETDATA_PACKET;
+extern poly_packet_desc_t* PP_GETDATA_PACKET;
+extern poly_packet_desc_t* PP_RESPDATA_PACKET;
+extern poly_packet_desc_t* PP_BLOCKREQ_PACKET;
+extern poly_packet_desc_t* PP_BLOCKRESP_PACKET;
 
 
 //Declare extern field descriptors
-extern poly_field_desc_t* SRC_F_DESC;
-extern poly_field_desc_t* DST_F_DESC;
-extern poly_field_desc_t* CMD_F_DESC;
-extern poly_field_desc_t* SENSORA_F_DESC;
-extern poly_field_desc_t* SENSORB_F_DESC;
-extern poly_field_desc_t* SENSORNAME_F_DESC;
-extern poly_field_desc_t* BLOCKOFFSET_F_DESC;
-extern poly_field_desc_t* BLOCKSIZE_F_DESC;
-extern poly_field_desc_t* BLOCKDATA_F_DESC;
+extern poly_field_desc_t* PP_SRC_FIELD;
+extern poly_field_desc_t* PP_DST_FIELD;
+extern poly_field_desc_t* PP_CMD_FIELD;
+extern poly_field_desc_t* PP_SENSORA_FIELD;
+extern poly_field_desc_t* PP_SENSORB_FIELD;
+extern poly_field_desc_t* PP_SENSORNAME_FIELD;
+extern poly_field_desc_t* PP_BLOCKOFFSET_FIELD;
+extern poly_field_desc_t* PP_BLOCKSIZE_FIELD;
+extern poly_field_desc_t* PP_BLOCKDATA_FIELD;
 
 /*
  *@brief 
@@ -148,6 +148,8 @@ void sp_teardown(sp_packet_t* metaPacket);
 void sp_destroy(sp_packet_t* metaPacket);
 
 int sp_pack(sp_packet_t* metaPacket, uint8_t* data);
+ePacketStatus sp_parse(sp_packet_t* metaPacket, uint8_t* data, int len);
+int sp_print_json(sp_packet_t* metaPacket, char* buf);
 
 /*******************************************************************************
   Meta-Packet setters

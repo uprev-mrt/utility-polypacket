@@ -91,7 +91,7 @@ void ${proto.prefix}_service_init(int interfaceCount)
 
   //Build Field Descriptors
 % for field in proto.fields:
-  ${field.globalName} = new_poly_field_desc("${packet.name}", TYPE_${field.type.upper()}, ${field.arrayLen}, ${field.format.upper()});
+  ${field.globalName} = new_poly_field_desc("${field.name}", TYPE_${field.type.upper()}, ${field.arrayLen}, ${field.format.upper()});
 % endfor
 
 % for packet in proto.packets:
@@ -208,6 +208,16 @@ void ${proto.prefix}_destroy(${proto.prefix}_packet_t* metaPacket)
 int ${proto.prefix}_pack(${proto.prefix}_packet_t* metaPacket, uint8_t* data)
 {
   return poly_packet_pack(metaPacket->mPacket, data);
+}
+
+ePacketStatus ${proto.prefix}_parse(${proto.prefix}_packet_t* metaPacket, uint8_t* data, int len)
+{
+  return poly_packet_parse_buffer(metaPacket->mPacket, data, len);
+}
+
+int ${proto.prefix}_print_json(${proto.prefix}_packet_t* metaPacket, char* buf)
+{
+  return poly_packet_print_json(metaPacket->mPacket, buf, false);
 }
 
 

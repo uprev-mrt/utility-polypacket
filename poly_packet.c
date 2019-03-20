@@ -126,17 +126,18 @@ int poly_packet_id(uint8_t* data, int len)
 }
 
 
-ePacketStatus poly_packet_parse_buffer(poly_packet_t* packet, poly_packet_desc_t* desc, uint8_t* data, int len)
+ePacketStatus poly_packet_parse_buffer(poly_packet_t* packet, uint8_t* data, int len)
 {
   int idx=0;                //cursor in data
   int expectedLen =0;       //length indicated in header
-
   int manifestBit =0;        //bit offset for manifest
+
+  poly_packet_desc_t* desc = packet->mDesc;
+
   uint8_t manifestByte;         //current manifest byte
 
   uint16_t checkSumComp =0; //calculated checksum
 
-  packet->mDesc = desc;     //assign descriptor to packet
 
   //packet must be at least as long as the meta data required for each packet
   if(len < PACKET_METADATA_SIZE)
@@ -201,7 +202,7 @@ ePacketStatus poly_packet_parse_buffer(poly_packet_t* packet, poly_packet_desc_t
   {
     idx+= poly_field_parse(&packet->mFields[i], &data[idx]);
 
-    if(idx >= len)
+    if(idx > len)
     {
       return PACKET_PARSING_ERROR;
     }
@@ -303,10 +304,12 @@ int poly_packet_print_json(poly_packet_t* packet, char* buf, bool printMeta)
   if(printMeta)
   {
     idx += sprintf(&buf[idx]," \"typeId\" : \"%02X\" ,", packet->mHeader.mTypeId);
-    idx += sprintf(&buf[idx]," \"token\" : \"%04X\" ,", packet->mHeader.mToken);
+    idx += sprintf(&buf[idx]," \"token\" : \%04X\" ,", packet->mHeader.mToken);
     idx += sprintf(&buf[idx]," \"checksum\" : \"%04X\" ,", packet->mHeader.mCheckSum);
-    idx += sprintf(&buf[idx]," \"len\" : \"%d\" , ", packet->mHeader.mDataLen);
+    idx += sprintf(&buf[idx]," \"len\" : %d , ", packet->mHeader.mDataLen);
   }
+
+  idx += sprintf(&buf[idx]," \"packetType\" : \"%s\" ,", packet->mDesc->mName);
 
   for(int i=0; i < packet->mDesc->mFieldCount; i++)
   {

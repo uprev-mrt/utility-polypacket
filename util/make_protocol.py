@@ -112,7 +112,7 @@ class fieldDesc:
 
         self.id = 0
         self.name = name
-        self.globalName = self.name.upper()+"_F_DESC"
+        self.globalName = "PP_"+self.name.upper()+"_FIELD"
         self.isVarLen = False
         self.format = 'FORMAT_DEFAULT'
         self.isRequired = False
@@ -140,7 +140,7 @@ class fieldDesc:
 class packetDesc:
     def __init__(self, name):
         self.name = name
-        self.globalName =  name.upper()+"_P_DESC"
+        self.globalName =  "PP_"+name.upper()+"_PACKET"
         self.className = name.capitalize() +"Packet"
         self.desc =""
         self.fields = []

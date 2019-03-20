@@ -25,7 +25,7 @@ add_library(
   ../poly_field.c
   ../poly_service.h
   ../poly_service.c
-  ../../../Utilities/Fifo/Fifo.c
+  ../../../Utilities/Fifo/fifo.c
   )
 
 

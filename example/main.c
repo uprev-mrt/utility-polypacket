@@ -9,7 +9,8 @@ int main()
 {
   printf("\nBuilding Test packet C++\n\n*******************************\n\n");
   sp_service_init(2);
-  sp_packet_t* msg = new_sp_packet(SETDATA_P_DESC);
+  sp_packet_t* msg = new_sp_packet(PP_SETDATA_PACKET);
+  sp_packet_t* msgb = new_sp_packet(PP_SETDATA_PACKET);
 
   sp_setSrc(msg,0xABCD );
   sp_setDst(msg,0xCDEF);
@@ -19,6 +20,12 @@ int main()
 
   len = sp_pack(msg, buffer);
 
+
+  int tp = sp_parse(msgb, buffer, len);
+
+  sp_print_json(msgb, printBuf);
+
+  printf("%s\n", printBuf);
   sp_service_feed(0,buffer,len);
 
   sp_service_process();

@@ -82,6 +82,8 @@ void ${proto.prefix}_teardown(${proto.prefix}_packet_t* metaPacket);
 void ${proto.prefix}_destroy(${proto.prefix}_packet_t* metaPacket);
 
 int ${proto.prefix}_pack(${proto.prefix}_packet_t* metaPacket, uint8_t* data);
+ePacketStatus ${proto.prefix}_parse(${proto.prefix}_packet_t* metaPacket, uint8_t* data, int len);
+int ${proto.prefix}_print_json(${proto.prefix}_packet_t* metaPacket, char* buf);
 
 /*******************************************************************************
   Meta-Packet setters

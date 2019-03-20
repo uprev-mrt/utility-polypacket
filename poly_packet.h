@@ -126,7 +126,6 @@ int poly_packet_id(uint8_t* data, int len);
 /**
   *@brief parses a packet from raw data buffer
   *@param packet ptr to packet being parsed
-  *@param packet descriptor to parsing data
   *@param data raw data to be parsed
   *@param len length of data available for parsing
   *@pre Must be bound to data struct before this is called
@@ -135,7 +134,7 @@ int poly_packet_id(uint8_t* data, int len);
   *@return PACKET_BAD_CHECKSUM if the checksum is incorrect (likely bit error)
   *@return PACKET_PARSING_ERROR if len is longer than it should be (likely missed a delimiter)
   */
-ePacketStatus poly_packet_parse_buffer(poly_packet_t* packet, poly_packet_desc_t* desc, uint8_t* data, int len);
+ePacketStatus poly_packet_parse_buffer(poly_packet_t* packet, uint8_t* data, int len);
 
 
 /**

@@ -140,9 +140,17 @@ ePacketStatus poly_service_try_parse_interface(poly_service_t* pService, poly_pa
           {
             //Valid packet, Parse!
             fifo_peek_buf(&iface->mBytefifo, iface->mRaw, len );
-            packet = new_poly_packet(pService->mPacketDescs[iface->mCurrentHdr.mTypeId], true);
 
-            retVal = poly_packet_parse_buffer(packet, packet->mDesc, iface->mRaw, len);
+            for(int i=0; i < len; i++)
+            {
+              printf("%02X ",iface->mRaw[i]);
+            }
+            printf("\n");
+
+            packet = new_poly_packet(pService->mPacketDescs[iface->mCurrentHdr.mTypeId], true);
+            packet->mInterface = interface;
+
+            retVal = poly_packet_parse_buffer(packet, iface->mRaw, len);
 
             switch(retVal)
             {
@@ -151,7 +159,7 @@ ePacketStatus poly_service_try_parse_interface(poly_service_t* pService, poly_pa
                 break;
               default:
                 fifo_clear(&iface->mBytefifo, 1); //remove one byte
-                poly_packet_destroy(packet);
+              //  poly_packet_destroy(packet);
                 break;
             }
           }
