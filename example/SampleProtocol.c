@@ -10,7 +10,6 @@
 ***********************************************************/
 
 #include "SampleProtocol.h"
-#include "Utilities/PolyPacket/poly_service.h"
 #include <assert.h>
 
 
@@ -54,7 +53,7 @@ void sp_service_process()
   static sp_packet_t metaPacket;
   poly_packet_t* newPacket;
 
-  uint8_t handlingStatus = PACKET_UNHANDLED;
+  HandlerStatus_e status = PACKET_UNHANDLED;
 
   if(poly_service_try_parse(SP_SERVICE, newPacket) == PACKET_VALID)
   {
@@ -64,22 +63,22 @@ void sp_service_process()
     switch(newPacket->mDesc->mTypeId)
     {
       case PP_ACK_PACKET_ID:
-        handlingStatus = sp_ack_handler(metaPacket.mPayload.ack);
+        status = sp_ack_handler(metaPacket.mPayload.ack);
         break;
       case PP_SETDATA_PACKET_ID:
-        handlingStatus = sp_setdata_handler(metaPacket.mPayload.setdata);
+        status = sp_setdata_handler(metaPacket.mPayload.setdata);
         break;
       case PP_GETDATA_PACKET_ID:
-        handlingStatus = sp_getdata_handler(metaPacket.mPayload.getdata);
+        status = sp_getdata_handler(metaPacket.mPayload.getdata);
         break;
       case PP_RESPDATA_PACKET_ID:
-        handlingStatus = sp_respdata_handler(metaPacket.mPayload.respdata);
+        status = sp_respdata_handler(metaPacket.mPayload.respdata);
         break;
       case PP_BLOCKREQ_PACKET_ID:
-        handlingStatus = sp_blockreq_handler(metaPacket.mPayload.blockreq);
+        status = sp_blockreq_handler(metaPacket.mPayload.blockreq);
         break;
       case PP_BLOCKRESP_PACKET_ID:
-        handlingStatus = sp_blockresp_handler(metaPacket.mPayload.blockresp);
+        status = sp_blockresp_handler(metaPacket.mPayload.blockresp);
         break;
       default:
         //we should never get here
@@ -88,8 +87,8 @@ void sp_service_process()
     }
 
     //If the packet was not handled, throw it to the default handler
-    if(handlingStatus == PACKET_UNHANDLED)
-      handlingStatus = sp_default_handler(&metaPacket);
+    if(status == PACKET_UNHANDLED)
+      status = sp_default_handler(&metaPacket);
 
     sp_teardown(&metaPacket);
   }
@@ -320,7 +319,7 @@ int sp_pack(sp_packet_t* metaPacket, uint8_t* data)
   return poly_packet_pack(metaPacket->mPacket, data);
 }
 
-ePacketStatus sp_parse(sp_packet_t* metaPacket, uint8_t* data, int len)
+ParseStatus_e sp_parse(sp_packet_t* metaPacket, uint8_t* data, int len)
 {
   return poly_packet_parse_buffer(metaPacket->mPacket, data, len);
 }
@@ -575,32 +574,88 @@ void sp_blockresp_bind(blockresp_packet_t* blockresp, poly_packet_t* packet, boo
 
   Do not modify these, just create your own without the '__weak' attribute
 *******************************************************************************/
-uint8_t sp_ack_handler(ack_packet_t * packet)
+/**
+  *@brief Handler for receiving ack packets
+  *@param packet ptr to ack_packet_t  containing packet
+  *@return handling status
+  */
+HandlerStatus_e sp_ack_handler(ack_packet_t * packet)
 {
+  /* NOTE : This function should not be modified, when the callback is needed,
+          sp_ack_handler  should be implemented in the user file
+  */
   return PACKET_UNHANDLED;
 }
-uint8_t sp_setdata_handler(setdata_packet_t * packet)
+/**
+  *@brief Handler for receiving setdata packets
+  *@param packet ptr to setdata_packet_t  containing packet
+  *@return handling status
+  */
+HandlerStatus_e sp_setdata_handler(setdata_packet_t * packet)
 {
+  /* NOTE : This function should not be modified, when the callback is needed,
+          sp_setdata_handler  should be implemented in the user file
+  */
   return PACKET_UNHANDLED;
 }
-uint8_t sp_getdata_handler(getdata_packet_t * packet)
+/**
+  *@brief Handler for receiving getdata packets
+  *@param packet ptr to getdata_packet_t  containing packet
+  *@return handling status
+  */
+HandlerStatus_e sp_getdata_handler(getdata_packet_t * packet)
 {
+  /* NOTE : This function should not be modified, when the callback is needed,
+          sp_getdata_handler  should be implemented in the user file
+  */
   return PACKET_UNHANDLED;
 }
-uint8_t sp_respdata_handler(respdata_packet_t * packet)
+/**
+  *@brief Handler for receiving respdata packets
+  *@param packet ptr to respdata_packet_t  containing packet
+  *@return handling status
+  */
+HandlerStatus_e sp_respdata_handler(respdata_packet_t * packet)
 {
+  /* NOTE : This function should not be modified, when the callback is needed,
+          sp_respdata_handler  should be implemented in the user file
+  */
   return PACKET_UNHANDLED;
 }
-uint8_t sp_blockreq_handler(blockreq_packet_t * packet)
+/**
+  *@brief Handler for receiving blockreq packets
+  *@param packet ptr to blockreq_packet_t  containing packet
+  *@return handling status
+  */
+HandlerStatus_e sp_blockreq_handler(blockreq_packet_t * packet)
 {
+  /* NOTE : This function should not be modified, when the callback is needed,
+          sp_blockreq_handler  should be implemented in the user file
+  */
   return PACKET_UNHANDLED;
 }
-uint8_t sp_blockresp_handler(blockresp_packet_t * packet)
+/**
+  *@brief Handler for receiving blockresp packets
+  *@param packet ptr to blockresp_packet_t  containing packet
+  *@return handling status
+  */
+HandlerStatus_e sp_blockresp_handler(blockresp_packet_t * packet)
 {
+  /* NOTE : This function should not be modified, when the callback is needed,
+          sp_blockresp_handler  should be implemented in the user file
+  */
   return PACKET_UNHANDLED;
 }
 
-uint8_t sp_default_handler( sp_packet_t * metaPacket)
+/**
+  *@brief catch-all handler for any packet not handled by its default handler
+  *@param metaPacket ptr to sp_packet_t containing packet
+  *@return handling status
+  */
+HandlerStatus_e sp_default_handler( sp_packet_t * metaPacket)
 {
+  /* NOTE : This function should not be modified, when the callback is needed,
+          sp_default_handler  should be implemented in the user file
+  */
   return PACKET_UNHANDLED;
 }

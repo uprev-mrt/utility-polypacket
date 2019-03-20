@@ -26,10 +26,18 @@ extern "C"
 
 typedef void (*poly_rx_callback)(poly_packet_t* packet, int iface);
 
-typedef enum parseState {
+typedef enum ServiceParseState {
   STATE_WAITING_FOR_HEADER,
   STATE_HEADER_FOUND,
-}eParseState;
+}ServiceParseState_e;
+
+typedef enum HandlerStatus {
+  PACKET_HANDLED,
+  PACKET_ROUTED,
+  PACKET_IGNORED,
+  PACKET_UNHANDLED
+} HandlerStatus_e;
+
 
 typedef struct{
   uint8_t* mRaw; //raw packet being parsed
@@ -37,7 +45,7 @@ typedef struct{
 
   fifo_t mBytefifo;       //fifo of incoming bytes
   poly_packet_hdr_t mCurrentHdr; //header for current message candidate
-  eParseState mParseState;
+  ServiceParseState_e mParseState;
   fifo_t mPacketBuffer; //outgoing packet buffer
   bool mUpdate;         //flag set when there is new data to process
   //diagnostic info
@@ -123,7 +131,7 @@ bool poly_service_seek_header(poly_service_t* pService, poly_interface_t* iface)
   *@return PACKET_BAD_CHECKSUM if the checksum is incorrect (likely bit error)
   *@return PACKET_PARSING_ERROR if len is longer than it should be (likely missed a delimiter)
   */
-ePacketStatus poly_service_try_parse_interface(poly_service_t* pService, poly_packet_t* packet,  int interface);
+ParseStatus_e poly_service_try_parse_interface(poly_service_t* pService, poly_packet_t** packet,  int interface);
 
 /**
   *@brief parses packet from data buffer
@@ -132,7 +140,7 @@ ePacketStatus poly_service_try_parse_interface(poly_service_t* pService, poly_pa
   *@return PACKET_VALID if packet is ok
   *@return PACKET_NONE is no valid packets are found
   */
-ePacketStatus poly_service_try_parse(poly_service_t* pService, poly_packet_t* packet);
+ParseStatus_e poly_service_try_parse(poly_service_t* pService, poly_packet_t** packet);
 
 
 

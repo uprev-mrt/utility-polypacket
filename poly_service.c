@@ -113,10 +113,10 @@ bool poly_service_seek_header(poly_service_t* pService, poly_interface_t* iface)
     return retVal;
 }
 
-ePacketStatus poly_service_try_parse_interface(poly_service_t* pService, poly_packet_t* packet, int interface)
+ParseStatus_e poly_service_try_parse_interface(poly_service_t* pService, poly_packet_t* packet, int interface)
 {
   poly_interface_t* iface = &pService->mInterfaces[interface];
-  ePacketStatus retVal = PACKET_NONE;
+  ParseStatus_e retVal = PACKET_NONE;
   uint16_t checksumComp;
   uint8_t trash;
   int len;
@@ -142,12 +142,6 @@ ePacketStatus poly_service_try_parse_interface(poly_service_t* pService, poly_pa
           {
             //Valid packet, Parse!
             fifo_peek_buf(&iface->mBytefifo, iface->mRaw, len );
-
-            for(int i=0; i < len; i++)
-            {
-              printf("%02X ",iface->mRaw[i]);
-            }
-            printf("\n");
 
             packet = new_poly_packet(pService->mPacketDescs[iface->mCurrentHdr.mTypeId], true);
             packet->mInterface = interface;
@@ -178,15 +172,17 @@ ePacketStatus poly_service_try_parse_interface(poly_service_t* pService, poly_pa
 
 }
 
-ePacketStatus poly_service_try_parse(poly_service_t* pService, poly_packet_t* packet)
+ParseStatus_e poly_service_try_parse(poly_service_t* pService, poly_packet_t* packet)
 {
+  ParseStatus_e retVal = PACKET_NONE;
   for(int i=0; i < pService->mInterfaceCount; i++)
   {
     if (poly_service_try_parse_interface(pService, packet,i) == PACKET_VALID)
     {
-      return PACKET_VALID;
+      retVal=  PACKET_VALID;
+      break;
     }
   }
 
-  return PACKET_NONE;
+  return retVal;
 }

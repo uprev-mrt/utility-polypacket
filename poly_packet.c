@@ -126,7 +126,7 @@ int poly_packet_id(uint8_t* data, int len)
 }
 
 
-ePacketStatus poly_packet_parse_buffer(poly_packet_t* packet, uint8_t* data, int len)
+ParseStatus_e poly_packet_parse_buffer(poly_packet_t* packet, uint8_t* data, int len)
 {
   int idx=0;                //cursor in data
   int expectedLen =0;       //length indicated in header

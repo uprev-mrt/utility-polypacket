@@ -10,7 +10,6 @@
 ***********************************************************/
 
 #include "${proto.fileName}.h"
-#include "Utilities/PolyPacket/poly_service.h"
 #include <assert.h>
 
 
@@ -42,7 +41,7 @@ void ${proto.prefix}_service_process()
   static ${proto.prefix}_packet_t metaPacket;
   poly_packet_t* newPacket;
 
-  uint8_t handlingStatus = PACKET_UNHANDLED;
+  HandlerStatus_e status = PACKET_UNHANDLED;
 
   if(poly_service_try_parse(${proto.service()}, newPacket) == PACKET_VALID)
   {
@@ -53,7 +52,7 @@ void ${proto.prefix}_service_process()
     {
   % for packet in proto.packets:
       case ${packet.globalName}_ID:
-        handlingStatus = ${proto.prefix}_${packet.name.lower()}_handler(metaPacket.mPayload.${packet.name.lower()});
+        status = ${proto.prefix}_${packet.name.lower()}_handler(metaPacket.mPayload.${packet.name.lower()});
         break;
   % endfor
       default:
@@ -63,8 +62,8 @@ void ${proto.prefix}_service_process()
     }
 
     //If the packet was not handled, throw it to the default handler
-    if(handlingStatus == PACKET_UNHANDLED)
-      handlingStatus = ${proto.prefix}_default_handler(&metaPacket);
+    if(status == PACKET_UNHANDLED)
+      status = ${proto.prefix}_default_handler(&metaPacket);
 
     ${proto.prefix}_teardown(&metaPacket);
   }
@@ -210,7 +209,7 @@ int ${proto.prefix}_pack(${proto.prefix}_packet_t* metaPacket, uint8_t* data)
   return poly_packet_pack(metaPacket->mPacket, data);
 }
 
-ePacketStatus ${proto.prefix}_parse(${proto.prefix}_packet_t* metaPacket, uint8_t* data, int len)
+ParseStatus_e ${proto.prefix}_parse(${proto.prefix}_packet_t* metaPacket, uint8_t* data, int len)
 {
   return poly_packet_parse_buffer(metaPacket->mPacket, data, len);
 }
@@ -291,13 +290,29 @@ void ${proto.prefix}_${packet.name.lower()}_bind(${packet.structName}* ${packet.
   Do not modify these, just create your own without the '__weak' attribute
 *******************************************************************************/
 % for packet in proto.packets:
-uint8_t ${proto.prefix}_${packet.name.lower()}_handler(${packet.structName} * packet)
+/**
+  *@brief Handler for receiving ${packet.name.lower()} packets
+  *@param packet ptr to ${packet.structName}  containing packet
+  *@return handling status
+  */
+HandlerStatus_e ${proto.prefix}_${packet.name.lower()}_handler(${packet.structName} * packet)
 {
+  /* NOTE : This function should not be modified, when the callback is needed,
+          ${proto.prefix}_${packet.name.lower()}_handler  should be implemented in the user file
+  */
   return PACKET_UNHANDLED;
 }
 % endfor
 
-uint8_t ${proto.prefix}_default_handler( ${proto.prefix}_packet_t * metaPacket)
+/**
+  *@brief catch-all handler for any packet not handled by its default handler
+  *@param metaPacket ptr to ${proto.prefix}_packet_t containing packet
+  *@return handling status
+  */
+HandlerStatus_e ${proto.prefix}_default_handler( ${proto.prefix}_packet_t * metaPacket)
 {
+  /* NOTE : This function should not be modified, when the callback is needed,
+          ${proto.prefix}_default_handler  should be implemented in the user file
+  */
   return PACKET_UNHANDLED;
 }

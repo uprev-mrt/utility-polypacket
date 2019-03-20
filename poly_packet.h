@@ -15,19 +15,15 @@ extern "C"
 #endif
 
 
-typedef enum PacketStatus {
+typedef enum ParseStatus {
   PACKET_VALID = -400,
   PACKET_INCOMPLETE,
   PACKET_BAD_CHECKSUM,
   PACKET_PARSING_ERROR,
   INVALID_PACKET_TYPE,
   PACKET_NONE
-}ePacketStatus;
+} ParseStatus_e;
 
-#define PACKET_HANDLED 0
-#define PACKET_ROUTED   1
-#define PACKET_IGNORED 2
-#define PACKET_UNHANDLED 4
 
 #define PACKET_METADATA_SIZE (sizeof(poly_packet_hdr_t))
 
@@ -64,6 +60,7 @@ typedef struct{
   poly_packet_desc_t* mDesc;     //prt to packet descriptor
   poly_field_t* mFields;        //array of fields contained in packet
   uint8_t mInterface;              //id of interface that packet is from/to
+  bool mFieldsAllocated;
 }poly_packet_t;
 
 
@@ -73,7 +70,7 @@ typedef struct{
   *@param maxFields max number of fields in packet descriptor
   *@return ptr to new packet descriptor
   */
-poly_packet_desc_t* new_poly_packet_desc(const char* name , int maxFields);
+poly_packet_desc_t new_poly_packet_desc(const char* name , int maxFields);
 
 /**
   *@brief adds field descriptor to packet descriptor
@@ -134,7 +131,7 @@ int poly_packet_id(uint8_t* data, int len);
   *@return PACKET_BAD_CHECKSUM if the checksum is incorrect (likely bit error)
   *@return PACKET_PARSING_ERROR if len is longer than it should be (likely missed a delimiter)
   */
-ePacketStatus poly_packet_parse_buffer(poly_packet_t* packet, uint8_t* data, int len);
+ParseStatus_e poly_packet_parse_buffer(poly_packet_t* packet, uint8_t* data, int len);
 
 
 /**

@@ -22,7 +22,7 @@ uint8_t compBuffer[] = {0x01, 0x00, 0x2C, 0x00, 0x00, 0x00, 0xBB, 0x10, 0xE0, 0x
 
 TEST(PolyPacket_CTest, PackTest )
 {
-  ePacketStatus status;
+  ParseStatus_e status;
   sp_service_init(1);
   sp_packet_t* msg = new_sp_packet(PP_SETDATA_PACKET);
   sp_packet_t* msgb = new_sp_packet(PP_SETDATA_PACKET);
