@@ -66,18 +66,6 @@ formatDict = {
 }
 
 
-metaDoc = "### Header\n" +\
-          "Every Packet has a standard Header before the data\n\n" +\
-          "|***Byte***|0|1|2|3|4|5|6|\n" +\
-          "|---|---|---|---|---|---|---|---|\n" +\
-          "|***Field***<td colspan=\'1\'>***Id***<td colspan=\'2\'>***Len***<td colspan=\'2\'>***Token***<td colspan=\'2\'>***Checksum***\n" +\
-          "|***Type***<td colspan=\'1\'>uint8<td colspan=\'2\'>uint16<td colspan=\'2\'>uint16<td colspan=\'2\'>uint16\n\n" +\
-          ">***Id*** : The ID used to identify the type of packet, packet Ids are assigned and managed automatically<br/>\n" +\
-          ">***Len*** : This is the len of the packet data, this does not include the header and checksum<br/>\n" +\
-          ">***Token*** : A unique randomly generated token. Each packet is tokenized to provide functions like ack/retry and preventing duplicates <br/>\n" +\
-          ">***Checksum*** : A calculated checksum of the data in the packet\n" +\
-          "----\n"
-
 def crc(fileName):
     prev = 0
     for eachLine in open(fileName,"rb"):
@@ -87,7 +75,7 @@ def crc(fileName):
 
 class fieldVal:
     def __init__(self, name):
-        self.name = name
+        self.name = name.upper()
         self.desc = ""
 
 class fieldDesc:
@@ -128,6 +116,9 @@ class fieldDesc:
         self.isRequired = False
         self.desc = ""
         self.memberName = "m"+ self.name.capitalize()
+
+    def camel(self):
+        return self.name[:1].capitalize() + self.name[1:]
 
     def setType(self, type, len):
 
@@ -312,6 +303,18 @@ class packetDesc:
         #write field description table
         for pfield in self.fields:
             output.write('>***'+ pfield.name+'*** : ' + pfield.desc +'<br/>\n')
+            if pfield.isMask:
+                for idx,val in enumerate(pfield.vals):
+                    strVal = pfield.valsFormat % (1 << idx)
+                    output.write('>> **{0}** : {1} - {2}<br/>\n'.format(strVal, val.name, val.desc))
+                output.write('>\n')
+
+            if pfield.isEnum:
+                for idx,val in enumerate(pfield.vals):
+                    strVal = pfield.valsFormat % (idx)
+                    output.write('>> **{0}** : {1} - {2}<br/>\n'.format(strVal, val.name, val.desc))
+                output.write('>\n')
+
         output.write('\n------\n')
 
         return output.getvalue();
@@ -337,6 +340,7 @@ class protocolDesc:
         self.packetIdx ={}
         self.packetId =0
         self.prefix = "pp";
+        self.snippets = False
 
     def service(self):
         return self.prefix.upper() +'_SERVICE'
@@ -487,28 +491,6 @@ def buildTemplate(protocol, templateFile, outputFile):
     #text_file.write(template.render(proto = protocol))
     text_file.close()
 
-def createDoc(protocol, filename):
-    global path
-    output = io.StringIO()
-    output.write('# ' + protocol.name + '\n')
-    output.write('* Generated: '+now.strftime("%m/%d/%y")+'<br/>\n')
-    output.write('* CRC: '+protocol.hash+'\n\n')
-    output.write('##### ' + protocol.desc + '\n\n')
-    output.write('----\n')
-    output.write(metaDoc +'')
-    output.write('# Packet Types:\n\n')
-
-
-
-    for packet in protocol.packets:
-        output.write(packet.getDocMd())
-
-
-
-
-    text_file = open(filename, "w")
-    text_file.write(output.getvalue())
-    text_file.close()
 
 # Initialize the argument parser
 def init_args():
@@ -518,6 +500,7 @@ def init_args():
     parser.add_argument('-o', '--output', type=str, help='Output path', default="")
     parser.add_argument('-c', '--pure_c', action='store_true', help='generate pure c code', default=False)
     parser.add_argument('-d', '--document', action='store_true', help='Enable documentation', default=False)
+    parser.add_argument('-s', '--snippets', action='store_true', help='Adds helpful code snippets to files', default=False)
 
 def main():
     global path
@@ -536,6 +519,9 @@ def main():
 
     protocol = parseXML(xmlFile)
     protocol.hash = fileCrc
+    protocol.genTime = now.strftime("%m/%d/%y")
+
+    protocol.snippets = args.snippets
 
     if(args.pure_c):
         buildTemplate(protocol, 'templates/c_header_template.h', path+"/" + protocol.fileName+".h")
@@ -547,7 +533,7 @@ def main():
 
 
     if(args.document):
-        createDoc(protocol,path+"/" + protocol.fileName+".md")
+        buildTemplate(protocol, 'templates/doc_template.md', path+"/" + protocol.fileName+".md")
 
 if __name__ == "__main__":
     main()

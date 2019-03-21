@@ -96,9 +96,9 @@ void ${proto.prefix}_service_process()
       case ${packet.globalName}_ID:
       %if packet.hasResponse:
        poly_packet_build(&response.mPacket, ${packet.response.globalName},true);
-       status = ${proto.prefix}_${packet.name.lower()}_handler(&packet , &response );
+       status = ${proto.prefix}_${packet.name}_handler(&packet , &response );
       %else:
-        status = ${proto.prefix}_${packet.name.lower()}_handler(&packet);
+        status = ${proto.prefix}_${packet.name}_handler(&packet);
       %endif
         break;
   % endfor
@@ -190,6 +190,12 @@ void ${proto.prefix}_destroy(${proto.prefix}_packet_t* metaPacket)
   free(metaPacket);
 }
 
+int ${proto.prefix}_getFieldLen(${proto.prefix}_packet_t* packet, poly_field_desc_t* fieldDesc )
+{
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, ${field.globalName});
+  return (int)field->mSize;
+}
+
 /*******************************************************************************
 
   Meta-Packet setters
@@ -198,9 +204,9 @@ void ${proto.prefix}_destroy(${proto.prefix}_packet_t* metaPacket)
 
 % for field in proto.fields:
 %if field.isArray:
-void ${proto.prefix}_set${field.name.capitalize()}(${proto.prefix}_packet_t* packet, const ${field.getParamType()} val)
+void ${proto.prefix}_set${field.camel()}(${proto.prefix}_packet_t* packet, const ${field.getParamType()} val)
 % else:
-void ${proto.prefix}_set${field.name.capitalize()}(${proto.prefix}_packet_t* packet, ${field.getParamType()} val)
+void ${proto.prefix}_set${field.camel()}(${proto.prefix}_packet_t* packet, ${field.getParamType()} val)
 %endif
 {
   poly_field_t* field = poly_packet_get_field(&packet->mPacket, ${field.globalName});
@@ -218,7 +224,7 @@ void ${proto.prefix}_set${field.name.capitalize()}(${proto.prefix}_packet_t* pac
 *******************************************************************************/
 
 % for field in proto.fields:
-${field.getParamType()} ${proto.prefix}_get${field.name.capitalize()}(${proto.prefix}_packet_t* packet)
+${field.getParamType()} ${proto.prefix}_get${field.camel()}(${proto.prefix}_packet_t* packet)
 {
   ${field.getParamType()} val;
   poly_field_t* field = poly_packet_get_field(&packet->mPacket, ${field.globalName});
@@ -245,7 +251,7 @@ ${field.getParamType()} ${proto.prefix}_get${field.name.capitalize()}(${proto.pr
   *@param ${packet.name} incoming ${packet.name} packet
   *@return handling status
   */
-__attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.name.lower()}_handler(${proto.prefix}_packet_t* ${packet.name})
+__attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.name}_handler(${proto.prefix}_packet_t* ${proto.prefix}_${packet.name})
 {
 %else:
 /**
@@ -254,12 +260,12 @@ __attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.name.lower()}_han
   *@param ${packet.response.name} ${packet.response.name} packet to respond with
   *@return handling status
   */
-__attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.name.lower()}_handler(${proto.prefix}_packet_t* ${packet.name}, ${proto.prefix}_packet_t* ${packet.response.name})
+__attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.name}_handler(${proto.prefix}_packet_t* ${proto.prefix}_${packet.name}, ${proto.prefix}_packet_t* ${proto.prefix}_${packet.response.name})
 {
   //Set required Fields
 % for field in packet.response.fields:
 %if field.isRequired:
-  //${proto.prefix}_set${field.name}(${packet.response.name}, value );                   //Set ${field.name} value
+  //${proto.prefix}_set${field.camel}(${packet.response.name}, value );                   //Set ${field.name} value
 %endif
 %endfor
 %endif
@@ -277,7 +283,7 @@ __attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.name.lower()}_han
   *@param metaPacket ptr to ${proto.prefix}_packet_t containing packet
   *@return handling status
   */
-__attribute__((weak)) HandlerStatus_e ${proto.prefix}_default_handler( ${proto.prefix}_packet_t * metaPacket)
+__attribute__((weak)) HandlerStatus_e ${proto.prefix}_default_handler( ${proto.prefix}_packet_t * ${proto.prefix}_packet)
 {
 
   /* NOTE : This function should not be modified, when the callback is needed,

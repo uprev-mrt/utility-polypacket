@@ -158,7 +158,15 @@ void ${proto.prefix}_set${field.name.capitalize()}(${proto.prefix}_packet_t* pac
   Meta-Packet getters
 *******************************************************************************/
 % for field in proto.fields:
+%if field.isArray:
 ${field.getParamType()} ${proto.prefix}_get${field.name.capitalize()}(${proto.prefix}_packet_t* packet);
+%endif
+% endfor
+
+% for field in proto.fields:
+%if not field.isArray:
+${field.getParamType()} ${proto.prefix}_get${field.name.capitalize()}(${proto.prefix}_packet_t* packet);
+%endif
 % endfor
 
 /*******************************************************************************

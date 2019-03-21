@@ -20,6 +20,21 @@ typedef enum{
   % endfor
   ${proto.prefix.upper()+"_"+field.name.upper()}_MAX_LIMIT
 } ${proto.prefix}_${field.name.lower()}_e;
+
+%if proto.snippets:
+//Switch Snippet
+/*
+switch(${field.name.lower()})
+{
+% for val in field.vals:
+  case ${proto.prefix.upper()+"_"+field.name.upper() + "_" + val.name.upper()}:    // ${val.desc}
+    break;
+% endfor
+  default:
+    break;
+}
+*/
+% endif
 % endif
 % endfor
 
@@ -30,7 +45,7 @@ typedef enum{
   % for idx,val in enumerate(field.vals):
   ${proto.prefix.upper()+"_"+field.name.upper() + "_" + val.name.upper()} = ${ field.valsFormat % (1 << idx)},    /* ${val.desc} */
   % endfor
-  ${proto.prefix.upper()+"_"+field.name.upper()}_MAX_LIMIT  
+  ${proto.prefix.upper()+"_"+field.name.upper()}_MAX_LIMIT
 } ${proto.prefix}_${field.name.lower()}_e;
 % endif
 % endfor
@@ -142,15 +157,22 @@ void ${proto.prefix}_destroy(${proto.prefix}_packet_t* metaPacket);
   */
 #define ${proto.prefix}_pack(packet, buf) poly_packet_pack(&packet->mPacket, buf)
 
+/**
+  *@brief gets the length of a give field in a packet
+  *@param packet ptr to ${proto.prefix}_packet_t
+  *@param field ptr to field descriptor
+  *@return size of field
+  */
+int ${proto.prefix}_getFieldLen(${proto.prefix}_packet_t* packet, poly_field_desc_t* fieldDesc );
 
 /*******************************************************************************
   Meta-Packet setters
 *******************************************************************************/
 % for field in proto.fields:
   %if field.isArray:
-void ${proto.prefix}_set${field.name.capitalize()}(${proto.prefix}_packet_t* packet, const ${field.getParamType()} val);
+void ${proto.prefix}_set${field.camel()}(${proto.prefix}_packet_t* packet, const ${field.getParamType()} val);
   % else:
-void ${proto.prefix}_set${field.name.capitalize()}(${proto.prefix}_packet_t* packet, ${field.getParamType()} val);
+void ${proto.prefix}_set${field.camel()}(${proto.prefix}_packet_t* packet, ${field.getParamType()} val);
   % endif
 % endfor
 
@@ -161,18 +183,20 @@ void ${proto.prefix}_set${field.name.capitalize()}(${proto.prefix}_packet_t* pac
 ${field.getParamType()} ${proto.prefix}_get${field.name.capitalize()}(${proto.prefix}_packet_t* packet);
 % endfor
 
+
+
 /*******************************************************************************
   Packet Handlers
 *******************************************************************************/
 % for packet in proto.packets:
 %if packet.hasResponse:
 /*@brief Handler for ${packet.name} packets */
-HandlerStatus_e ${proto.prefix}_${packet.name.lower()}_handler(${proto.prefix}_packet_t* ${packet.name}, ${proto.prefix}_packet_t* ${packet.response.name});
+HandlerStatus_e ${proto.prefix}_${packet.name}_handler(${proto.prefix}_packet_t* ${proto.prefix}_${packet.name}, ${proto.prefix}_packet_t* ${proto.prefix}_${packet.response.name});
 %else:
 /*@brief Handler for ${packet.name} packets */
-HandlerStatus_e ${proto.prefix}_${packet.name.lower()}_handler(${proto.prefix}_packet_t* ${packet.name});
+HandlerStatus_e ${proto.prefix}_${packet.name}_handler(${proto.prefix}_packet_t* ${proto.prefix}_${packet.name});
 %endif
 
 % endfor
 /*@brief Catch-All Handler for unhandled packets */
-HandlerStatus_e ${proto.prefix}_default_handler(${proto.prefix}_packet_t * packet);
+HandlerStatus_e ${proto.prefix}_default_handler(${proto.prefix}_packet_t * ${proto.prefix}_packet);
