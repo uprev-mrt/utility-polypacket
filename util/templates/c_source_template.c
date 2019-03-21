@@ -275,7 +275,6 @@ ${field.getParamType()} ${proto.prefix}_get${field.camel()}(${proto.prefix}_pack
   *@return handling status
   */
 __attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.name}_handler(${proto.prefix}_packet_t* ${proto.prefix}_${packet.name})
-{
 %else:
 /**
   *@brief Handler for receiving ${packet.name} packets
@@ -284,14 +283,23 @@ __attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.name}_handler(${p
   *@return handling status
   */
 __attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.name}_handler(${proto.prefix}_packet_t* ${proto.prefix}_${packet.name}, ${proto.prefix}_packet_t* ${proto.prefix}_${packet.response.name})
+%endif
 {
-  //Set required Fields
+  /*  Get Required Fields in packet */
+% for field in packet.fields:
+%if field.isRequired:
+  //${field.getParamType()} ${field.name} = ${proto.prefix}_get${field.camel()}(${proto.prefix}_${packet.name});
+%endif
+% endfor
+%if packet.hasResponse:
+  /*    Set required Fields in response  */
 % for field in packet.response.fields:
 %if field.isRequired:
   //${proto.prefix}_set${field.camel()}(${packet.response.name}, value );                   //Set ${field.name} value
 %endif
 %endfor
 %endif
+
 
   /* NOTE : This function should not be modified! If needed,  It should be overridden in the application code */
 
