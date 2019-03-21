@@ -123,10 +123,10 @@ char printBuf[1024];
 
 
 //Handlers for packets are declared weak in service
-HandlerStatus_e sp_setdata_handler(setdata_packet_t * packet)
+HandlerStatus_e sp_SetData_handler(sp_packet_t * packet)
 {
   // do something
-  pp_print_json(msg, printBuf);
+  sp_print_json(msg, printBuf);
   sprintf("Handled: %s",printBuf);
   return PACKET_HANDLED;
 }
@@ -134,7 +134,7 @@ HandlerStatus_e sp_setdata_handler(setdata_packet_t * packet)
 //mock uart receive handler
 void platform_uart_handler(uint8_t* data ,int len)
 {
-  pp_service_feed(0, data, len); // feed received byte into interface 0 of service
+  sp_service_feed(0, data, len); // feed received byte into interface 0 of service
 }
 
 //mock function to mimic sending data over uart
@@ -145,29 +145,29 @@ void platform_uart_send(uint8_t* data, int len)
 
 int main()
 {
-  pp_service_init(1); //initialize the service with 1 interface
+  sp_service_init(1); //initialize the service with 1 interface
 
-  pp_packet_t* msg = new_sp_packet(PP_SETDATA_PACKET);  //creates a new message (must destroyed when done)
+  sp_packet_t* msg = new_sp_packet(SP_SETDATA_PACKET);  //creates a new message (must be cleaned when done)
 
   //set values in message
-  pp_setSrc(msg,0xABCD );
-  pp_setDst(msg,0xCDEF);
-  pp_setSensora(msg,32500);
-  pp_setSensorb(msg,898989);
-  pp_setSensorname(msg, "This is my test string");
+  sp_setSrc(msg,0xABCD );
+  sp_setDst(msg,0xCDEF);
+  sp_setSensora(msg,32500);
+  sp_setSensorb(msg,898989);
+  sp_setSensorname(msg, "This is my test string");
 
-  pp_service_register_tx(0, &platform_uart_send ); // register sending function
-
-
-  pp_send(0,msg); // Send message over interface 0
+  sp_service_register_tx(0, &platform_uart_send ); // register sending function
 
 
-  pp_destroy(msg); //destroy when done
+  sp_send(0,msg); // Send message over interface 0
+
+
+  sp_clean(msg); //clean when done
 
 
   while(1)
   {
-    pp_service_process();
+    sp_service_process();
   }
 
   return 0;
@@ -179,7 +179,7 @@ This example shows how to use the code to create a service. The service is initi
 ### Initializing service
 
 ```
-pp_service_init(1); //initialize the service with 1 interface
+sp_service_init(1); //initialize the service with 1 interface
 ```
 For devices where multiple hardware ports are being used by the same protocol, you can use more interfaces
 
@@ -188,14 +188,14 @@ For devices where multiple hardware ports are being used by the same protocol, y
 
 This creates a new message with the packet type 'SetData' defined in our xml
 ```
-pp_packet_t* msg = new_sp_packet(PP_SETDATA_PACKET);
+sp_packet_t* msg = new_sp_packet(SP_SETDATA_PACKET);
 ```
 
 next we set fields in the message
 
 ```
-pp_setSrc(msg,0xABCD );
-pp_setDst(msg,0xCDEF);
+sp_setSrc(msg,0xABCD );
+sp_setDst(msg,0xCDEF);
 ```
 
 ---
@@ -204,11 +204,11 @@ pp_setDst(msg,0xCDEF);
 For each interface we can register a send function this allows us to automate things like acknowledgements
 
 ```
-pp_service_register_tx(0, &platform_uart_send ); // register sending function
+sp_service_register_tx(0, &platform_uart_send ); // register sending function
 ```
 once we have registered a callback for an interface, we can send messages to it
 ```
-pp_send(0,msg)
+sp_send(0,msg)
 ```
 
 ---
@@ -219,7 +219,7 @@ The generated service creates a handler for each packet type, they are created w
 The following is our handler for 'SetData' type packets
 
 ```
-HandlerStatus_e sp_setdata_handler(setdata_packet_t * packet)
+HandlerStatus_e sp_SetData_handler(sp_packet_t * packet)
 {
   //do something with received packet
 }
@@ -232,6 +232,6 @@ The service is meant to be run on many platforms, so it does not have built in t
 ```
 while(1)
 {
-  pp_service_process();
+  sp_service_process();
 }
 ```
