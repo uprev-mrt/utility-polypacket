@@ -53,6 +53,8 @@ cNameDict = {
      "int" : "int",
      "float" : "float",
      "double" : "double",
+     "enum" : "uint8_t",
+     "flag" : "uint8_t"
  }
 
 formatDict = {
@@ -83,11 +85,30 @@ def crc(fileName):
     return "%X"%(prev & 0xFFFFFFFF)
 
 
+class fieldVal:
+    def __init__(self, name):
+        self.name = name
+        self.desc = ""
+
 class fieldDesc:
     def __init__(self, name, strType):
-        self.enums = []
+        self.vals = []
         self.arrayLen = 1
-        self.isEnum = False;
+        self.isEnum = False
+        self.isMask = False
+        self.valsFormat = "0x%0.2X"
+
+        self.format = 'FORMAT_DEFAULT'
+
+        if strType in ['flag','flags']:
+            self.format = 'FORMAT_HEX'
+            self.isMask = True
+            strType = 'uint8_t'
+
+        if strType in ['enum','enums']:
+            self.format = 'FORMAT_HEX'
+            self.isEnum = True
+            strType = 'uint8_t'
 
         m = re.search('\[([0-9]*)\]', strType)
         if(m):
@@ -95,22 +116,26 @@ class fieldDesc:
                 self.arrayLen = int(m.group(1))
             strType = strType[0:m.start()]
 
-        #check if its an enum
-        m = re.search('enum\[(.*)\]', strType)
-        if(m):
-            strEnums = m.group(1)
-            if(strEnums != ''):
-                self.enums = [x.strip() for x in strEnums.split(',')]
-                self.isEnum = True
-            strType = 'uint8'
 
+        strType = strType.lower().replace('_t','')
 
+        self.setType(strType, self.arrayLen)
 
-        self.type = strType.lower().replace('_t','')
+        self.id = 0
+        self.name = name
+        self.globalName = "PP_FIELD_"+self.name.upper()
+        self.isVarLen = False
+        self.isRequired = False
+        self.desc = ""
+        self.memberName = "m"+ self.name.capitalize()
 
-        if not (self.type in cNameDict):
+    def setType(self, type, len):
+
+        if not (type in cNameDict):
             print( "INVALID DATA TYPE!:  " + type)
 
+        self.arrayLen = len
+        self.type = type
         self.size = sizeDict[self.type] * self.arrayLen
         self.cType = cNameDict[self.type]
         self.cppType = self.cType
@@ -128,14 +153,20 @@ class fieldDesc:
             if(self.isArray):
                 self.cppType = self.cppType +"*"
 
-        self.id = 0
-        self.name = name
-        self.globalName = "PP_FIELD_"+self.name.upper()
-        self.isVarLen = False
-        self.format = 'FORMAT_DEFAULT'
-        self.isRequired = False
-        self.desc = ""
-        self.memberName = "m"+ self.name.capitalize()
+    def addVal(self, val):
+        self.vals.append(val)
+
+        if self.isMask:
+            strType = 'uint8'
+            if len(self.vals) > 8:
+                self.valsFormat = "0x%0.4X"
+                strType = 'uint16'
+            if len(self.vals) > 16:
+                self.valsFormat = "0x%0.8X"
+                strType = 'uint32'
+            if len(self.vals) > 32:
+                print( "Error maximum flags per field is 32")
+            self.setType(strType,1)
 
     def setPrefix(self, prefix):
         self.globalName = prefix.upper()+"_FIELD_"+self.name.upper()
@@ -363,7 +394,6 @@ def parseXML(xmlfile):
         name = field.attrib['name']
         strType = field.attrib['type'];
 
-
         newField = fieldDesc(name, strType)
         newField.setPrefix(protocol.prefix)
 
@@ -379,6 +409,18 @@ def parseXML(xmlfile):
 
         if(name in protocol.fields):
             print( 'ERROR Duplicate Field Name!: ' + name)
+
+        #get vals if any
+        for val in field.findall('./Val'):
+            name = val.attrib['name']
+            newVal = fieldVal(name)
+
+            if('desc' in val.attrib):
+                newVal.desc = val.attrib['desc']
+
+            newField.addVal(newVal)
+
+
 
         protocol.addField(newField)
 

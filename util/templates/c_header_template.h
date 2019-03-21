@@ -13,11 +13,24 @@
 
 % for field in proto.fields:
 % if field.isEnum:
+/* Enums for ${field.name} field */
 typedef enum{
-  % for t in field.enums:
-  ${proto.prefix.upper()+"_"+field.name.upper() + "_" + t.upper()},
+  % for val in field.vals:
+  ${proto.prefix.upper()+"_"+field.name.upper() + "_" + val.name.upper()},              /* ${val.desc} */
   % endfor
   ${proto.prefix.upper()+"_"+field.name.upper()}_MAX_LIMIT
+} ${proto.prefix}_${field.name.lower()}_e;
+% endif
+% endfor
+
+% for field in proto.fields:
+% if field.isMask:
+/* Flags for ${field.name} field */
+typedef enum{
+  % for idx,val in enumerate(field.vals):
+  ${proto.prefix.upper()+"_"+field.name.upper() + "_" + val.name.upper()} = ${ field.valsFormat % (1 << idx)},    /* ${val.desc} */
+  % endfor
+  ${proto.prefix.upper()+"_"+field.name.upper()}_MAX_LIMIT  
 } ${proto.prefix}_${field.name.lower()}_e;
 % endif
 % endfor

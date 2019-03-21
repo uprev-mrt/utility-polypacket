@@ -34,7 +34,7 @@ typedef enum HandlerStatus {
   PACKET_HANDLED,
   PACKET_ROUTED,
   PACKET_IGNORED,
-  PACKET_UNHANDLED
+  PACKET_NOT_HANDLED
 } HandlerStatus_e;
 
 typedef HandlerStatus_e (*poly_tx_callback)(uint8_t* data , int len);

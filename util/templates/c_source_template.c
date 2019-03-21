@@ -81,7 +81,7 @@ void ${proto.prefix}_service_process()
   static ${proto.prefix}_packet_t packet;
   static ${proto.prefix}_packet_t response;
 
-  HandlerStatus_e status = PACKET_UNHANDLED;
+  HandlerStatus_e status = PACKET_NOT_HANDLED;
 
   if(poly_service_try_parse(&${proto.service()}, &packet.mPacket) == PACKET_VALID)
   {
@@ -115,7 +115,7 @@ void ${proto.prefix}_service_process()
     }
 
     //If the packet was not handled, throw it to the default handler
-    if(status == PACKET_UNHANDLED)
+    if(status == PACKET_NOT_HANDLED)
     {
       status = ${proto.prefix}_default_handler(&packet);
     }
@@ -239,30 +239,34 @@ ${field.getParamType()} ${proto.prefix}_get${field.name.capitalize()}(${proto.pr
   Do not modify these, just create your own without the '__weak' attribute
 *******************************************************************************/
 % for packet in proto.packets:
+%if not packet.hasResponse:
 /**
-  *@brief Handler for receiving ${packet.name.lower()} packets
-  *@param packet ptr to ${packet.structName}  containing packet
+  *@brief Handler for receiving ${packet.name} packets
+  *@param ${packet.name} incoming ${packet.name} packet
   *@return handling status
   */
-%if not packet.hasResponse:
 __attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.name.lower()}_handler(${proto.prefix}_packet_t* ${packet.name})
 {
 %else:
+/**
+  *@brief Handler for receiving ${packet.name} packets
+  *@param ${packet.name} incoming ${packet.name} packet
+  *@param ${packet.response.name} ${packet.response.name} packet to respond with
+  *@return handling status
+  */
 __attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.name.lower()}_handler(${proto.prefix}_packet_t* ${packet.name}, ${proto.prefix}_packet_t* ${packet.response.name})
 {
   //Set required Fields
 % for field in packet.response.fields:
 %if field.isRequired:
-  //${proto.prefix}_set${field.name}( value );                      //Set ${field.name} value
+  //${proto.prefix}_set${field.name}(${packet.response.name}, value );                   //Set ${field.name} value
 %endif
 %endfor
 %endif
 
-  /* NOTE : This function should not be modified, when the callback is needed,
-          ${proto.prefix}_${packet.name.lower()}_handler  should be implemented in the user file
-  */
+  /* NOTE : This function should not be modified! If needed,  It should be overridden in the application code */
 
-  return PACKET_UNHANDLED;
+  return PACKET_NOT_HANDLED;
 }
 
 
@@ -279,6 +283,6 @@ __attribute__((weak)) HandlerStatus_e ${proto.prefix}_default_handler( ${proto.p
   /* NOTE : This function should not be modified, when the callback is needed,
           ${proto.prefix}_default_handler  should be implemented in the user file
   */
-  
-  return PACKET_UNHANDLED;
+
+  return PACKET_NOT_HANDLED;
 }

@@ -195,10 +195,10 @@ ParseStatus_e poly_service_try_parse(poly_service_t* pService, poly_packet_t* pa
 
 ParseStatus_e poly_service_send(poly_service_t* pService, int interface,  poly_packet_t* packet)
 {
-  ParseStatus_e status = PACKET_UNHANDLED;
+  ParseStatus_e status = PACKET_NOT_HANDLED;
    assert(interface < pService->mInterfaceCount);
    if(!pService->mInterfaces[interface].mHasCallBack)
-   return PACKET_UNHANDLED;
+   return PACKET_NOT_HANDLED;
 
    uint8_t data[packet->mDesc->mMaxPacketSize];
    int len = poly_packet_pack(packet, data);

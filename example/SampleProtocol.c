@@ -131,7 +131,7 @@ void sp_service_process()
   static sp_packet_t packet;
   static sp_packet_t response;
 
-  HandlerStatus_e status = PACKET_UNHANDLED;
+  HandlerStatus_e status = PACKET_NOT_HANDLED;
 
   if(poly_service_try_parse(&SP_SERVICE, &packet.mPacket) == PACKET_VALID)
   {
@@ -176,7 +176,7 @@ void sp_service_process()
     }
 
     //If the packet was not handled, throw it to the default handler
-    if(status == PACKET_UNHANDLED)
+    if(status == PACKET_NOT_HANDLED)
     {
       status = sp_default_handler(&packet);
     }
@@ -407,7 +407,7 @@ __attribute__((weak)) HandlerStatus_e sp_ack_handler(sp_packet_t* ack)
           sp_ack_handler  should be implemented in the user file
   */
 
-  return PACKET_UNHANDLED;
+  return PACKET_NOT_HANDLED;
 }
 
 
@@ -426,7 +426,7 @@ __attribute__((weak)) HandlerStatus_e sp_setdata_handler(sp_packet_t* SetData, s
           sp_setdata_handler  should be implemented in the user file
   */
 
-  return PACKET_UNHANDLED;
+  return PACKET_NOT_HANDLED;
 }
 
 
@@ -445,7 +445,7 @@ __attribute__((weak)) HandlerStatus_e sp_getdata_handler(sp_packet_t* GetData, s
           sp_getdata_handler  should be implemented in the user file
   */
 
-  return PACKET_UNHANDLED;
+  return PACKET_NOT_HANDLED;
 }
 
 
@@ -461,7 +461,7 @@ __attribute__((weak)) HandlerStatus_e sp_respdata_handler(sp_packet_t* RespData)
           sp_respdata_handler  should be implemented in the user file
   */
 
-  return PACKET_UNHANDLED;
+  return PACKET_NOT_HANDLED;
 }
 
 
@@ -483,7 +483,7 @@ __attribute__((weak)) HandlerStatus_e sp_blockreq_handler(sp_packet_t* blockReq,
           sp_blockreq_handler  should be implemented in the user file
   */
 
-  return PACKET_UNHANDLED;
+  return PACKET_NOT_HANDLED;
 }
 
 
@@ -499,7 +499,7 @@ __attribute__((weak)) HandlerStatus_e sp_blockresp_handler(sp_packet_t* blockRes
           sp_blockresp_handler  should be implemented in the user file
   */
 
-  return PACKET_UNHANDLED;
+  return PACKET_NOT_HANDLED;
 }
 
 
@@ -516,5 +516,5 @@ __attribute__((weak)) HandlerStatus_e sp_default_handler( sp_packet_t * metaPack
           sp_default_handler  should be implemented in the user file
   */
   
-  return PACKET_UNHANDLED;
+  return PACKET_NOT_HANDLED;
 }

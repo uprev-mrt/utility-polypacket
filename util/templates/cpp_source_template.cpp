@@ -81,7 +81,7 @@ void ${proto.prefix}_service_process()
   static ${proto.prefix}_packet_t packet;
   static ${proto.prefix}_packet_t response;
 
-  HandlerStatus_e status = PACKET_UNHANDLED;
+  HandlerStatus_e status = PACKET_NOT_HANDLED;
 
   if(poly_service_try_parse(&${proto.service()}, &packet.mPacket) == PACKET_VALID)
   {
@@ -115,7 +115,7 @@ void ${proto.prefix}_service_process()
     }
 
     //If the packet was not handled, throw it to the default handler
-    if(status == PACKET_UNHANDLED)
+    if(status == PACKET_NOT_HANDLED)
     {
       status = ${proto.prefix}_default_handler(&packet);
     }
@@ -255,7 +255,7 @@ __attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.name.lower()}_han
   /* NOTE : This function should not be modified, when the callback is needed,
           ${proto.prefix}_${packet.name.lower()}_handler  should be implemented in the user file
   */
-  return PACKET_UNHANDLED;
+  return PACKET_NOT_HANDLED;
 }
 % endfor
 
@@ -269,5 +269,5 @@ __attribute__((weak)) HandlerStatus_e ${proto.prefix}_default_handler( ${proto.p
   /* NOTE : This function should not be modified, when the callback is needed,
           ${proto.prefix}_default_handler  should be implemented in the user file
   */
-  return PACKET_UNHANDLED;
+  return PACKET_NOT_HANDLED;
 }
