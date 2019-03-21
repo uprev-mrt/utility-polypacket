@@ -49,14 +49,14 @@ typedef struct{
   ServiceParseState_e mParseState;
   fifo_t mPacketBuffer; //outgoing packet buffer
   bool mUpdate;         //flag set when there is new data to process
+  poly_tx_callback f_TxCallBack;
+  bool mHasCallBack;
   //diagnostic info
   int mPacketsIn;     //Total number of incoming packets parsed
   int mPacketsOut;    //Total packets sent on on spool
   int mRetries;       //total number of packet retries (no ack)
   int mFailures;      //total number of packets that failed (hit max retries )
   int mBitErrors;     //total number of bit errors (bad packet parse)
-  poly_tx_callback f_TxCallBack;
-  bool mHasCallBack;
 }poly_interface_t;
 
 /**

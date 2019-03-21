@@ -157,10 +157,11 @@ ParseStatus_e poly_service_try_parse_interface(poly_service_t* pService, poly_pa
             {
               case PACKET_VALID:
                 fifo_clear(&iface->mBytefifo, len); //remove these bytes from fifo
+                iface->mPacketsIn++;
                 break;
               default:
                 fifo_clear(&iface->mBytefifo, 1); //remove one byte
-              //  poly_packet_destroy(packet);
+                poly_packet_clean(packet);
                 break;
             }
           }

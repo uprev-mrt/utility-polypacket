@@ -78,28 +78,27 @@ void ${proto.prefix}_service_init(int interfaceCount)
   */
 void ${proto.prefix}_service_process()
 {
-  static ${proto.prefix}_packet_t metaPacket;
-  static ${proto.prefix}_packet_t metaResponse;
+  static ${proto.prefix}_packet_t packet;
+  static ${proto.prefix}_packet_t response;
 
   HandlerStatus_e status = PACKET_UNHANDLED;
 
-  if(poly_service_try_parse(&${proto.service()}, &metaPacket.mPacket) == PACKET_VALID)
+  if(poly_service_try_parse(&${proto.service()}, &packet.mPacket) == PACKET_VALID)
   {
 
     //set response token with ack flag (this will persist even when packet it built)
-    metaResponse.mPacket.mHeader.mToken = metaPacket.mPacket.mHeader.mToken | POLY_ACK_FLAG;
+    response.mPacket.mHeader.mToken = packet.mPacket.mHeader.mToken | POLY_ACK_FLAG;
 
     //Dispatch packet
-    switch(metaPacket.mPacket.mDesc->mTypeId)
+    switch(packet.mPacket.mDesc->mTypeId)
     {
   % for packet in proto.packets:
       case ${packet.globalName}_ID:
       %if packet.hasResponse:
-       poly_packet_build(&metaResponse.mPacket, ${packet.response.globalName},true);
-       status = ${proto.prefix}_${packet.name.lower()}_handler(&metaPacket , &metaResponse );
+       poly_packet_build(&response.mPacket, ${packet.response.globalName},true);
+       status = ${proto.prefix}_${packet.name.lower()}_handler(&packet , &response );
       %else:
-        poly_packet_build(&metaResponse.mPacket, ${proto.prefix.upper()}_ACK_PACKET, true);
-        status = ${proto.prefix}_${packet.name.lower()}_handler(&metaPacket);
+        status = ${proto.prefix}_${packet.name.lower()}_handler(&packet);
       %endif
         break;
   % endfor
@@ -109,13 +108,28 @@ void ${proto.prefix}_service_process()
         break;
     }
 
+    //If this packet doe not have an explicit response and AutoAck is enabled, create an ack packet
+    if(( ${proto.prefix.upper()}_SERVICE.mAutoAck ) && (!response.mPacket.mBuilt))
+    {
+      poly_packet_build(&response.mPacket, ${proto.prefix.upper()}_PACKET_ACK,true);
+    }
+
     //If the packet was not handled, throw it to the default handler
     if(status == PACKET_UNHANDLED)
-      status = ${proto.prefix}_default_handler(&metaPacket);
+    {
+      status = ${proto.prefix}_default_handler(&packet);
+    }
 
-    //If we are inside this scope, then the poly_packet_t was allocated and needs to be destroyed
-    poly_packet_clean(&metaPacket.mPacket);
-    poly_packet_clean(&metaResponse.mPacket);
+
+    //If a response has been build and the status was not set to ignore, we send a response on the intrface it came from
+    if(( status == PACKET_HANDLED) && (response.mPacket.mBuilt) )
+    {
+      poly_service_send(&${proto.service()}, packet.mPacket.mInterface , &response.mPacket);
+    }
+
+    //Clean the packets
+    poly_packet_clean(&packet.mPacket);
+    poly_packet_clean(&response.mPacket);
   }
 
 }

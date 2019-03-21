@@ -14,31 +14,31 @@
 
 
 //Define packet IDs
-#define  SP_ACK_PACKET_ID 0
-#define  SP_SETDATA_PACKET_ID 1
-#define  SP_GETDATA_PACKET_ID 2
-#define  SP_RESPDATA_PACKET_ID 3
-#define  SP_BLOCKREQ_PACKET_ID 4
-#define  SP_BLOCKRESP_PACKET_ID 5
+#define  SP_PACKET_ACK_ID 0
+#define  SP_PACKET_SETDATA_ID 1
+#define  SP_PACKET_GETDATA_ID 2
+#define  SP_PACKET_RESPDATA_ID 3
+#define  SP_PACKET_BLOCKREQ_ID 4
+#define  SP_PACKET_BLOCKRESP_ID 5
 
 
 //Global descriptors
-poly_packet_desc_t* SP_ACK_PACKET;
-poly_packet_desc_t* SP_SETDATA_PACKET;
-poly_packet_desc_t* SP_GETDATA_PACKET;
-poly_packet_desc_t* SP_RESPDATA_PACKET;
-poly_packet_desc_t* SP_BLOCKREQ_PACKET;
-poly_packet_desc_t* SP_BLOCKRESP_PACKET;
+poly_packet_desc_t* SP_PACKET_ACK;
+poly_packet_desc_t* SP_PACKET_SETDATA;
+poly_packet_desc_t* SP_PACKET_GETDATA;
+poly_packet_desc_t* SP_PACKET_RESPDATA;
+poly_packet_desc_t* SP_PACKET_BLOCKREQ;
+poly_packet_desc_t* SP_PACKET_BLOCKRESP;
 
-poly_field_desc_t* SP_SRC_FIELD;
-poly_field_desc_t* SP_DST_FIELD;
-poly_field_desc_t* SP_CMD_FIELD;
-poly_field_desc_t* SP_SENSORA_FIELD;
-poly_field_desc_t* SP_SENSORB_FIELD;
-poly_field_desc_t* SP_SENSORNAME_FIELD;
-poly_field_desc_t* SP_BLOCKOFFSET_FIELD;
-poly_field_desc_t* SP_BLOCKSIZE_FIELD;
-poly_field_desc_t* SP_BLOCKDATA_FIELD;
+poly_field_desc_t* SP_FIELD_SRC;
+poly_field_desc_t* SP_FIELD_DST;
+poly_field_desc_t* SP_FIELD_CMD;
+poly_field_desc_t* SP_FIELD_SENSORA;
+poly_field_desc_t* SP_FIELD_SENSORB;
+poly_field_desc_t* SP_FIELD_SENSORNAME;
+poly_field_desc_t* SP_FIELD_BLOCKOFFSET;
+poly_field_desc_t* SP_FIELD_BLOCKSIZE;
+poly_field_desc_t* SP_FIELD_BLOCKDATA;
 
 static poly_service_t SP_SERVICE;
 
@@ -56,67 +56,67 @@ void sp_service_init(int interfaceCount)
   poly_service_init(&SP_SERVICE,6, interfaceCount);
 
   //Build Packet Descriptors
-  SP_ACK_PACKET = new_poly_packet_desc("ack", 0);
-  SP_SETDATA_PACKET = new_poly_packet_desc("SetData", 5);
-  SP_GETDATA_PACKET = new_poly_packet_desc("GetData", 5);
-  SP_RESPDATA_PACKET = new_poly_packet_desc("RespData", 5);
-  SP_BLOCKREQ_PACKET = new_poly_packet_desc("blockReq", 4);
-  SP_BLOCKRESP_PACKET = new_poly_packet_desc("blockResp", 5);
+  SP_PACKET_ACK = new_poly_packet_desc("ack", 0);
+  SP_PACKET_SETDATA = new_poly_packet_desc("SetData", 5);
+  SP_PACKET_GETDATA = new_poly_packet_desc("GetData", 5);
+  SP_PACKET_RESPDATA = new_poly_packet_desc("RespData", 5);
+  SP_PACKET_BLOCKREQ = new_poly_packet_desc("blockReq", 4);
+  SP_PACKET_BLOCKRESP = new_poly_packet_desc("blockResp", 5);
 
   //Build Field Descriptors
-  SP_SRC_FIELD = new_poly_field_desc("src", TYPE_UINT16, 1, FORMAT_HEX);
-  SP_DST_FIELD = new_poly_field_desc("dst", TYPE_UINT16, 1, FORMAT_HEX);
-  SP_CMD_FIELD = new_poly_field_desc("cmd", TYPE_UINT8, 1, FORMAT_HEX);
-  SP_SENSORA_FIELD = new_poly_field_desc("sensorA", TYPE_INT16, 1, FORMAT_DEC);
-  SP_SENSORB_FIELD = new_poly_field_desc("sensorB", TYPE_INT, 1, FORMAT_DEC);
-  SP_SENSORNAME_FIELD = new_poly_field_desc("sensorName", TYPE_STRING, 32, FORMAT_ASCII);
-  SP_BLOCKOFFSET_FIELD = new_poly_field_desc("blockOffset", TYPE_UINT32, 1, FORMAT_HEX);
-  SP_BLOCKSIZE_FIELD = new_poly_field_desc("blockSize", TYPE_UINT32, 1, FORMAT_DEC);
-  SP_BLOCKDATA_FIELD = new_poly_field_desc("blockData", TYPE_UINT8, 64, FORMAT_NONE);
+  SP_FIELD_SRC = new_poly_field_desc("src", TYPE_UINT16, 1, FORMAT_HEX);
+  SP_FIELD_DST = new_poly_field_desc("dst", TYPE_UINT16, 1, FORMAT_HEX);
+  SP_FIELD_CMD = new_poly_field_desc("cmd", TYPE_UINT8, 1, FORMAT_HEX);
+  SP_FIELD_SENSORA = new_poly_field_desc("sensorA", TYPE_INT16, 1, FORMAT_DEC);
+  SP_FIELD_SENSORB = new_poly_field_desc("sensorB", TYPE_INT, 1, FORMAT_DEC);
+  SP_FIELD_SENSORNAME = new_poly_field_desc("sensorName", TYPE_STRING, 32, FORMAT_ASCII);
+  SP_FIELD_BLOCKOFFSET = new_poly_field_desc("blockOffset", TYPE_UINT32, 1, FORMAT_HEX);
+  SP_FIELD_BLOCKSIZE = new_poly_field_desc("blockSize", TYPE_UINT32, 1, FORMAT_DEC);
+  SP_FIELD_BLOCKDATA = new_poly_field_desc("blockData", TYPE_UINT8, 64, FORMAT_NONE);
 
 
   //Setting Field Descriptors for SetData
-  poly_packet_desc_add_field(SP_SETDATA_PACKET , SP_SRC_FIELD , true );
-  poly_packet_desc_add_field(SP_SETDATA_PACKET , SP_DST_FIELD , true );
-  poly_packet_desc_add_field(SP_SETDATA_PACKET , SP_SENSORA_FIELD , false );
-  poly_packet_desc_add_field(SP_SETDATA_PACKET , SP_SENSORB_FIELD , false );
-  poly_packet_desc_add_field(SP_SETDATA_PACKET , SP_SENSORNAME_FIELD , false );
+  poly_packet_desc_add_field(SP_PACKET_SETDATA , SP_FIELD_SRC , true );
+  poly_packet_desc_add_field(SP_PACKET_SETDATA , SP_FIELD_DST , true );
+  poly_packet_desc_add_field(SP_PACKET_SETDATA , SP_FIELD_SENSORA , false );
+  poly_packet_desc_add_field(SP_PACKET_SETDATA , SP_FIELD_SENSORB , false );
+  poly_packet_desc_add_field(SP_PACKET_SETDATA , SP_FIELD_SENSORNAME , false );
 
   //Setting Field Descriptors for GetData
-  poly_packet_desc_add_field(SP_GETDATA_PACKET , SP_SRC_FIELD , true );
-  poly_packet_desc_add_field(SP_GETDATA_PACKET , SP_DST_FIELD , true );
-  poly_packet_desc_add_field(SP_GETDATA_PACKET , SP_SENSORA_FIELD , false );
-  poly_packet_desc_add_field(SP_GETDATA_PACKET , SP_SENSORB_FIELD , false );
-  poly_packet_desc_add_field(SP_GETDATA_PACKET , SP_SENSORNAME_FIELD , false );
+  poly_packet_desc_add_field(SP_PACKET_GETDATA , SP_FIELD_SRC , true );
+  poly_packet_desc_add_field(SP_PACKET_GETDATA , SP_FIELD_DST , true );
+  poly_packet_desc_add_field(SP_PACKET_GETDATA , SP_FIELD_SENSORA , false );
+  poly_packet_desc_add_field(SP_PACKET_GETDATA , SP_FIELD_SENSORB , false );
+  poly_packet_desc_add_field(SP_PACKET_GETDATA , SP_FIELD_SENSORNAME , false );
 
   //Setting Field Descriptors for RespData
-  poly_packet_desc_add_field(SP_RESPDATA_PACKET , SP_SRC_FIELD , true );
-  poly_packet_desc_add_field(SP_RESPDATA_PACKET , SP_DST_FIELD , true );
-  poly_packet_desc_add_field(SP_RESPDATA_PACKET , SP_SENSORA_FIELD , false );
-  poly_packet_desc_add_field(SP_RESPDATA_PACKET , SP_SENSORB_FIELD , false );
-  poly_packet_desc_add_field(SP_RESPDATA_PACKET , SP_SENSORNAME_FIELD , false );
+  poly_packet_desc_add_field(SP_PACKET_RESPDATA , SP_FIELD_SRC , true );
+  poly_packet_desc_add_field(SP_PACKET_RESPDATA , SP_FIELD_DST , true );
+  poly_packet_desc_add_field(SP_PACKET_RESPDATA , SP_FIELD_SENSORA , false );
+  poly_packet_desc_add_field(SP_PACKET_RESPDATA , SP_FIELD_SENSORB , false );
+  poly_packet_desc_add_field(SP_PACKET_RESPDATA , SP_FIELD_SENSORNAME , false );
 
   //Setting Field Descriptors for blockReq
-  poly_packet_desc_add_field(SP_BLOCKREQ_PACKET , SP_SRC_FIELD , true );
-  poly_packet_desc_add_field(SP_BLOCKREQ_PACKET , SP_DST_FIELD , true );
-  poly_packet_desc_add_field(SP_BLOCKREQ_PACKET , SP_BLOCKOFFSET_FIELD , true );
-  poly_packet_desc_add_field(SP_BLOCKREQ_PACKET , SP_BLOCKSIZE_FIELD , true );
+  poly_packet_desc_add_field(SP_PACKET_BLOCKREQ , SP_FIELD_SRC , true );
+  poly_packet_desc_add_field(SP_PACKET_BLOCKREQ , SP_FIELD_DST , true );
+  poly_packet_desc_add_field(SP_PACKET_BLOCKREQ , SP_FIELD_BLOCKOFFSET , true );
+  poly_packet_desc_add_field(SP_PACKET_BLOCKREQ , SP_FIELD_BLOCKSIZE , true );
 
   //Setting Field Descriptors for blockResp
-  poly_packet_desc_add_field(SP_BLOCKRESP_PACKET , SP_SRC_FIELD , true );
-  poly_packet_desc_add_field(SP_BLOCKRESP_PACKET , SP_DST_FIELD , true );
-  poly_packet_desc_add_field(SP_BLOCKRESP_PACKET , SP_BLOCKOFFSET_FIELD , true );
-  poly_packet_desc_add_field(SP_BLOCKRESP_PACKET , SP_BLOCKSIZE_FIELD , true );
-  poly_packet_desc_add_field(SP_BLOCKRESP_PACKET , SP_BLOCKDATA_FIELD , true );
+  poly_packet_desc_add_field(SP_PACKET_BLOCKRESP , SP_FIELD_SRC , true );
+  poly_packet_desc_add_field(SP_PACKET_BLOCKRESP , SP_FIELD_DST , true );
+  poly_packet_desc_add_field(SP_PACKET_BLOCKRESP , SP_FIELD_BLOCKOFFSET , true );
+  poly_packet_desc_add_field(SP_PACKET_BLOCKRESP , SP_FIELD_BLOCKSIZE , true );
+  poly_packet_desc_add_field(SP_PACKET_BLOCKRESP , SP_FIELD_BLOCKDATA , true );
 
 
   //Register packet descriptors with the service
-  poly_service_register_desc(&SP_SERVICE, SP_ACK_PACKET);
-  poly_service_register_desc(&SP_SERVICE, SP_SETDATA_PACKET);
-  poly_service_register_desc(&SP_SERVICE, SP_GETDATA_PACKET);
-  poly_service_register_desc(&SP_SERVICE, SP_RESPDATA_PACKET);
-  poly_service_register_desc(&SP_SERVICE, SP_BLOCKREQ_PACKET);
-  poly_service_register_desc(&SP_SERVICE, SP_BLOCKRESP_PACKET);
+  poly_service_register_desc(&SP_SERVICE, SP_PACKET_ACK);
+  poly_service_register_desc(&SP_SERVICE, SP_PACKET_SETDATA);
+  poly_service_register_desc(&SP_SERVICE, SP_PACKET_GETDATA);
+  poly_service_register_desc(&SP_SERVICE, SP_PACKET_RESPDATA);
+  poly_service_register_desc(&SP_SERVICE, SP_PACKET_BLOCKREQ);
+  poly_service_register_desc(&SP_SERVICE, SP_PACKET_BLOCKRESP);
 
   poly_service_start(&SP_SERVICE, 512);
 
@@ -128,43 +128,40 @@ void sp_service_init(int interfaceCount)
   */
 void sp_service_process()
 {
-  static sp_packet_t metaPacket;
-  static sp_packet_t metaResponse;
+  static sp_packet_t packet;
+  static sp_packet_t response;
 
   HandlerStatus_e status = PACKET_UNHANDLED;
 
-  if(poly_service_try_parse(&SP_SERVICE, &metaPacket.mPacket) == PACKET_VALID)
+  if(poly_service_try_parse(&SP_SERVICE, &packet.mPacket) == PACKET_VALID)
   {
 
     //set response token with ack flag (this will persist even when packet it built)
-    metaResponse.mPacket.mHeader.mToken = metaPacket.mPacket.mHeader.mToken | POLY_ACK_FLAG;
+    response.mPacket.mHeader.mToken = packet.mPacket.mHeader.mToken | POLY_ACK_FLAG;
 
     //Dispatch packet
-    switch(metaPacket.mPacket.mDesc->mTypeId)
+    switch(packet.mPacket.mDesc->mTypeId)
     {
-      case SP_ACK_PACKET_ID:
-        poly_packet_build(&metaResponse.mPacket, SP_ACK_PACKET, true);
-        status = sp_ack_handler(&metaPacket);
+      case SP_PACKET_ACK_ID:
+        status = sp_ack_handler(&packet);
         break;
-      case SP_SETDATA_PACKET_ID:
-       poly_packet_build(&metaResponse.mPacket, SP_RESPDATA_PACKET,true);
-       status = sp_setdata_handler(&metaPacket , &metaResponse );
+      case SP_PACKET_SETDATA_ID:
+       poly_packet_build(&response.mPacket, SP_PACKET_RESPDATA,true);
+       status = sp_setdata_handler(&packet , &response );
         break;
-      case SP_GETDATA_PACKET_ID:
-       poly_packet_build(&metaResponse.mPacket, SP_RESPDATA_PACKET,true);
-       status = sp_getdata_handler(&metaPacket , &metaResponse );
+      case SP_PACKET_GETDATA_ID:
+       poly_packet_build(&response.mPacket, SP_PACKET_RESPDATA,true);
+       status = sp_getdata_handler(&packet , &response );
         break;
-      case SP_RESPDATA_PACKET_ID:
-        poly_packet_build(&metaResponse.mPacket, SP_ACK_PACKET, true);
-        status = sp_respdata_handler(&metaPacket);
+      case SP_PACKET_RESPDATA_ID:
+        status = sp_respdata_handler(&packet);
         break;
-      case SP_BLOCKREQ_PACKET_ID:
-       poly_packet_build(&metaResponse.mPacket, SP_BLOCKRESP_PACKET,true);
-       status = sp_blockreq_handler(&metaPacket , &metaResponse );
+      case SP_PACKET_BLOCKREQ_ID:
+       poly_packet_build(&response.mPacket, SP_PACKET_BLOCKRESP,true);
+       status = sp_blockreq_handler(&packet , &response );
         break;
-      case SP_BLOCKRESP_PACKET_ID:
-        poly_packet_build(&metaResponse.mPacket, SP_ACK_PACKET, true);
-        status = sp_blockresp_handler(&metaPacket);
+      case SP_PACKET_BLOCKRESP_ID:
+        status = sp_blockresp_handler(&packet);
         break;
       default:
         //we should never get here
@@ -172,13 +169,28 @@ void sp_service_process()
         break;
     }
 
+    //If this packet doe not have an explicit response and AutoAck is enabled, create an ack packet
+    if(( SP_SERVICE.mAutoAck ) && (!response.mPacket.mBuilt))
+    {
+      poly_packet_build(&response.mPacket, SP_PACKET_ACK,true);
+    }
+
     //If the packet was not handled, throw it to the default handler
     if(status == PACKET_UNHANDLED)
-      status = sp_default_handler(&metaPacket);
+    {
+      status = sp_default_handler(&packet);
+    }
 
-    //If we are inside this scope, then the poly_packet_t was allocated and needs to be destroyed
-    poly_packet_clean(&metaPacket.mPacket);
-    poly_packet_clean(&metaResponse.mPacket);
+
+    //If a response has been build and the status was not set to ignore, we send a response on the intrface it came from
+    if(( status == PACKET_HANDLED) && (response.mPacket.mBuilt) )
+    {
+      poly_service_send(&SP_SERVICE, packet.mPacket.mInterface , &response.mPacket);
+    }
+
+    //Clean the packets
+    poly_packet_clean(&packet.mPacket);
+    poly_packet_clean(&response.mPacket);
   }
 
 }
@@ -247,55 +259,55 @@ void sp_destroy(sp_packet_t* metaPacket)
 
 void sp_setSrc(sp_packet_t* packet, uint16_t val)
 {
-  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_SRC_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_FIELD_SRC);
   poly_field_set(field,( const uint8_t*) &val);
 }
 
 void sp_setDst(sp_packet_t* packet, uint16_t val)
 {
-  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_DST_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_FIELD_DST);
   poly_field_set(field,( const uint8_t*) &val);
 }
 
 void sp_setCmd(sp_packet_t* packet, uint8_t val)
 {
-  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_CMD_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_FIELD_CMD);
   poly_field_set(field,( const uint8_t*) &val);
 }
 
 void sp_setSensora(sp_packet_t* packet, int16_t val)
 {
-  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_SENSORA_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_FIELD_SENSORA);
   poly_field_set(field,( const uint8_t*) &val);
 }
 
 void sp_setSensorb(sp_packet_t* packet, int val)
 {
-  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_SENSORB_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_FIELD_SENSORB);
   poly_field_set(field,( const uint8_t*) &val);
 }
 
 void sp_setSensorname(sp_packet_t* packet, const char* val)
 {
-  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_SENSORNAME_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_FIELD_SENSORNAME);
   poly_field_set(field,( const uint8_t*) val);
 }
 
 void sp_setBlockoffset(sp_packet_t* packet, uint32_t val)
 {
-  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_BLOCKOFFSET_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_FIELD_BLOCKOFFSET);
   poly_field_set(field,( const uint8_t*) &val);
 }
 
 void sp_setBlocksize(sp_packet_t* packet, uint32_t val)
 {
-  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_BLOCKSIZE_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_FIELD_BLOCKSIZE);
   poly_field_set(field,( const uint8_t*) &val);
 }
 
 void sp_setBlockdata(sp_packet_t* packet, const uint8_t* val)
 {
-  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_BLOCKDATA_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_FIELD_BLOCKDATA);
   poly_field_set(field,( const uint8_t*) val);
 }
 
@@ -307,7 +319,7 @@ void sp_setBlockdata(sp_packet_t* packet, const uint8_t* val)
 uint16_t sp_getSrc(sp_packet_t* packet)
 {
   uint16_t val;
-  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_SRC_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_FIELD_SRC);
   poly_field_get(field,(uint8_t*) &val);
   return val;
 }
@@ -315,7 +327,7 @@ uint16_t sp_getSrc(sp_packet_t* packet)
 uint16_t sp_getDst(sp_packet_t* packet)
 {
   uint16_t val;
-  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_DST_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_FIELD_DST);
   poly_field_get(field,(uint8_t*) &val);
   return val;
 }
@@ -323,7 +335,7 @@ uint16_t sp_getDst(sp_packet_t* packet)
 uint8_t sp_getCmd(sp_packet_t* packet)
 {
   uint8_t val;
-  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_CMD_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_FIELD_CMD);
   poly_field_get(field,(uint8_t*) &val);
   return val;
 }
@@ -331,7 +343,7 @@ uint8_t sp_getCmd(sp_packet_t* packet)
 int16_t sp_getSensora(sp_packet_t* packet)
 {
   int16_t val;
-  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_SENSORA_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_FIELD_SENSORA);
   poly_field_get(field,(uint8_t*) &val);
   return val;
 }
@@ -339,7 +351,7 @@ int16_t sp_getSensora(sp_packet_t* packet)
 int sp_getSensorb(sp_packet_t* packet)
 {
   int val;
-  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_SENSORB_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_FIELD_SENSORB);
   poly_field_get(field,(uint8_t*) &val);
   return val;
 }
@@ -347,7 +359,7 @@ int sp_getSensorb(sp_packet_t* packet)
 char* sp_getSensorname(sp_packet_t* packet)
 {
   char* val;
-  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_SENSORNAME_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_FIELD_SENSORNAME);
   val = (char*)poly_field_get(field, (uint8_t*)val);
   return val;
 }
@@ -355,7 +367,7 @@ char* sp_getSensorname(sp_packet_t* packet)
 uint32_t sp_getBlockoffset(sp_packet_t* packet)
 {
   uint32_t val;
-  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_BLOCKOFFSET_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_FIELD_BLOCKOFFSET);
   poly_field_get(field,(uint8_t*) &val);
   return val;
 }
@@ -363,7 +375,7 @@ uint32_t sp_getBlockoffset(sp_packet_t* packet)
 uint32_t sp_getBlocksize(sp_packet_t* packet)
 {
   uint32_t val;
-  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_BLOCKSIZE_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_FIELD_BLOCKSIZE);
   poly_field_get(field,(uint8_t*) &val);
   return val;
 }
@@ -371,7 +383,7 @@ uint32_t sp_getBlocksize(sp_packet_t* packet)
 uint8_t* sp_getBlockdata(sp_packet_t* packet)
 {
   uint8_t* val;
-  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_BLOCKDATA_FIELD);
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_FIELD_BLOCKDATA);
   val = (uint8_t*)poly_field_get(field, (uint8_t*)val);
   return val;
 }

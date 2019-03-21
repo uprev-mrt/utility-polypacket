@@ -12,7 +12,10 @@ int len;
  */
 HandlerStatus_e sp_setdata_handler(sp_packet_t* SetData, sp_packet_t* RespData)
 {
-
+  sp_setSrc(RespData,0xABCD );
+  sp_setDst(RespData,0xCDEF);
+  sp_setSensora(RespData,32500);
+  sp_setSensorb(RespData,898989);
   //convert the message to a json string
   sp_print_json(SetData, printBuf);
   printf("handled! = %s\n", printBuf);
@@ -23,7 +26,13 @@ HandlerStatus_e sp_setdata_handler(sp_packet_t* SetData, sp_packet_t* RespData)
 //Function to mock uart_tx on mcu
 HandlerStatus_e mock_uart_send(uint8_t* data, int len)
 {
-  printf("message sent!\n");
+
+  printf("message sent: ");
+  for(int i=0 ; i < len; i++)
+  {
+    printf(" %02X", data[i]);
+  }
+  printf("\n" );
   return PACKET_HANDLED;
 }
 
@@ -49,7 +58,7 @@ int main()
 
 
   //create a new message
-  sp_packet_t* msg = new_sp_packet(SP_SETDATA_PACKET);
+  sp_packet_t* msg = new_sp_packet(SP_PACKET_SETDATA);
 
   //Set the fields in the message
   sp_setSrc(msg,0xABCD );

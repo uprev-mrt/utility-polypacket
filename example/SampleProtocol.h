@@ -21,24 +21,24 @@ typedef enum{
 
 
 //Declare extern packet descriptors
-extern poly_packet_desc_t* SP_ACK_PACKET;
-extern poly_packet_desc_t* SP_SETDATA_PACKET;
-extern poly_packet_desc_t* SP_GETDATA_PACKET;
-extern poly_packet_desc_t* SP_RESPDATA_PACKET;
-extern poly_packet_desc_t* SP_BLOCKREQ_PACKET;
-extern poly_packet_desc_t* SP_BLOCKRESP_PACKET;
+extern poly_packet_desc_t* SP_PACKET_ACK;
+extern poly_packet_desc_t* SP_PACKET_SETDATA;
+extern poly_packet_desc_t* SP_PACKET_GETDATA;
+extern poly_packet_desc_t* SP_PACKET_RESPDATA;
+extern poly_packet_desc_t* SP_PACKET_BLOCKREQ;
+extern poly_packet_desc_t* SP_PACKET_BLOCKRESP;
 
 
 //Declare extern field descriptors
-extern poly_field_desc_t* SP_SRC_FIELD;
-extern poly_field_desc_t* SP_DST_FIELD;
-extern poly_field_desc_t* SP_CMD_FIELD;
-extern poly_field_desc_t* SP_SENSORA_FIELD;
-extern poly_field_desc_t* SP_SENSORB_FIELD;
-extern poly_field_desc_t* SP_SENSORNAME_FIELD;
-extern poly_field_desc_t* SP_BLOCKOFFSET_FIELD;
-extern poly_field_desc_t* SP_BLOCKSIZE_FIELD;
-extern poly_field_desc_t* SP_BLOCKDATA_FIELD;
+extern poly_field_desc_t* SP_FIELD_SRC;
+extern poly_field_desc_t* SP_FIELD_DST;
+extern poly_field_desc_t* SP_FIELD_CMD;
+extern poly_field_desc_t* SP_FIELD_SENSORA;
+extern poly_field_desc_t* SP_FIELD_SENSORB;
+extern poly_field_desc_t* SP_FIELD_SENSORNAME;
+extern poly_field_desc_t* SP_FIELD_BLOCKOFFSET;
+extern poly_field_desc_t* SP_FIELD_BLOCKSIZE;
+extern poly_field_desc_t* SP_FIELD_BLOCKDATA;
 
 /*@brief The main type dealt with by the user
  *@note just wraps a poly_packet to prevent mixing them when multiple protocol are in use

@@ -130,7 +130,7 @@ class fieldDesc:
 
         self.id = 0
         self.name = name
-        self.globalName = "PP_"+self.name.upper()+"_FIELD"
+        self.globalName = "PP_FIELD_"+self.name.upper()
         self.isVarLen = False
         self.format = 'FORMAT_DEFAULT'
         self.isRequired = False
@@ -138,7 +138,7 @@ class fieldDesc:
         self.memberName = "m"+ self.name.capitalize()
 
     def setPrefix(self, prefix):
-        self.globalName = prefix.upper()+"_"+self.name.upper()+"_FIELD"
+        self.globalName = prefix.upper()+"_FIELD_"+self.name.upper()
 
     def getFieldDeclaration(self):
         output = io.StringIO()
@@ -161,7 +161,7 @@ class fieldDesc:
 class packetDesc:
     def __init__(self, name):
         self.name = name
-        self.globalName =  "PP_"+name.upper()+"_PACKET"
+        self.globalName =  "PP_PACKET_"+self.name.upper()
         self.className = name.capitalize() +"Packet"
         self.desc =""
         self.fields = []
@@ -173,7 +173,7 @@ class packetDesc:
         self.hasResponse = False
 
     def setPrefix(self, prefix):
-        self.globalName = prefix.upper()+"_"+self.name.upper()+"_PACKET"
+        self.globalName = prefix.upper()+"_PACKET_"+self.name.upper()
 
     def addField(self, field):
         field.id = self.fieldCount

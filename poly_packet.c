@@ -75,6 +75,10 @@ void poly_packet_build(poly_packet_t* packet, poly_packet_desc_t* desc, bool all
 
 void poly_packet_clean(poly_packet_t* packet)
 {
+  //if it hasnt been built yet, there is nothing to clean
+  if(!packet->mBuilt)
+    return;
+
   //destroy all fields
   for(int i=0; i < packet->mDesc->mFieldCount; i++)
   {
