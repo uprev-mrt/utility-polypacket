@@ -51,6 +51,7 @@ poly_service_t* SP_SERVICE;
 void sp_service_process()
 {
   static sp_packet_t metaPacket;
+  static sp_packet_t metaResponse;
 
   HandlerStatus_e status = PACKET_UNHANDLED;
 
@@ -61,21 +62,27 @@ void sp_service_process()
     switch(metaPacket.mPacket.mDesc->mTypeId)
     {
       case SP_ACK_PACKET_ID:
+        poly_packet_init(&metaResponse.mPacket, SP_ACK_PACKET, true);
         status = sp_ack_handler(&metaPacket);
         break;
       case SP_SETDATA_PACKET_ID:
-        status = sp_setdata_handler(&metaPacket);
+       poly_packet_init(&metaResponse.mPacket, SP_RESPDATA_PACKET,true);
+       status = sp_setdata_handler(&metaPacket , &metaResponse );
         break;
       case SP_GETDATA_PACKET_ID:
-        status = sp_getdata_handler(&metaPacket);
+       poly_packet_init(&metaResponse.mPacket, SP_RESPDATA_PACKET,true);
+       status = sp_getdata_handler(&metaPacket , &metaResponse );
         break;
       case SP_RESPDATA_PACKET_ID:
+        poly_packet_init(&metaResponse.mPacket, SP_ACK_PACKET, true);
         status = sp_respdata_handler(&metaPacket);
         break;
       case SP_BLOCKREQ_PACKET_ID:
-        status = sp_blockreq_handler(&metaPacket);
+       poly_packet_init(&metaResponse.mPacket, SP_BLOCKRESP_PACKET,true);
+       status = sp_blockreq_handler(&metaPacket , &metaResponse );
         break;
       case SP_BLOCKRESP_PACKET_ID:
+        poly_packet_init(&metaResponse.mPacket, SP_ACK_PACKET, true);
         status = sp_blockresp_handler(&metaPacket);
         break;
       default:
@@ -90,6 +97,7 @@ void sp_service_process()
 
     //If we are inside this scope, then the poly_packet_t was allocated and needs to be destroyed
     poly_packet_destroy(&metaPacket.mPacket);
+    poly_packet_destroy(&metaResponse.mPacket);
   }
 
 }
@@ -371,6 +379,7 @@ uint8_t* sp_getBlockdata(sp_packet_t* packet)
   *@param packet ptr to ack_packet_t  containing packet
   *@return handling status
   */
+/*@brief Handler for ack packets */
 __attribute__((weak)) HandlerStatus_e sp_ack_handler(sp_packet_t* ack)
 {
   /* NOTE : This function should not be modified, when the callback is needed,
@@ -383,7 +392,8 @@ __attribute__((weak)) HandlerStatus_e sp_ack_handler(sp_packet_t* ack)
   *@param packet ptr to setdata_packet_t  containing packet
   *@return handling status
   */
-__attribute__((weak)) HandlerStatus_e sp_setdata_handler(sp_packet_t* SetData)
+/*@brief Handler for SetData packets */
+__attribute__((weak)) HandlerStatus_e sp_setdata_handler(sp_packet_t* SetData, sp_packet_t* RespData)
 {
   /* NOTE : This function should not be modified, when the callback is needed,
           sp_setdata_handler  should be implemented in the user file
@@ -395,7 +405,8 @@ __attribute__((weak)) HandlerStatus_e sp_setdata_handler(sp_packet_t* SetData)
   *@param packet ptr to getdata_packet_t  containing packet
   *@return handling status
   */
-__attribute__((weak)) HandlerStatus_e sp_getdata_handler(sp_packet_t* GetData)
+/*@brief Handler for GetData packets */
+__attribute__((weak)) HandlerStatus_e sp_getdata_handler(sp_packet_t* GetData, sp_packet_t* RespData)
 {
   /* NOTE : This function should not be modified, when the callback is needed,
           sp_getdata_handler  should be implemented in the user file
@@ -407,6 +418,7 @@ __attribute__((weak)) HandlerStatus_e sp_getdata_handler(sp_packet_t* GetData)
   *@param packet ptr to respdata_packet_t  containing packet
   *@return handling status
   */
+/*@brief Handler for RespData packets */
 __attribute__((weak)) HandlerStatus_e sp_respdata_handler(sp_packet_t* RespData)
 {
   /* NOTE : This function should not be modified, when the callback is needed,
@@ -419,7 +431,8 @@ __attribute__((weak)) HandlerStatus_e sp_respdata_handler(sp_packet_t* RespData)
   *@param packet ptr to blockreq_packet_t  containing packet
   *@return handling status
   */
-__attribute__((weak)) HandlerStatus_e sp_blockreq_handler(sp_packet_t* blockReq)
+/*@brief Handler for blockReq packets */
+__attribute__((weak)) HandlerStatus_e sp_blockreq_handler(sp_packet_t* blockReq, sp_packet_t* blockResp)
 {
   /* NOTE : This function should not be modified, when the callback is needed,
           sp_blockreq_handler  should be implemented in the user file
@@ -431,6 +444,7 @@ __attribute__((weak)) HandlerStatus_e sp_blockreq_handler(sp_packet_t* blockReq)
   *@param packet ptr to blockresp_packet_t  containing packet
   *@return handling status
   */
+/*@brief Handler for blockResp packets */
 __attribute__((weak)) HandlerStatus_e sp_blockresp_handler(sp_packet_t* blockResp)
 {
   /* NOTE : This function should not be modified, when the callback is needed,

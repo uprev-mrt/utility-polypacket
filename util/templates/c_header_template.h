@@ -35,9 +35,11 @@ extern poly_packet_desc_t* ${packet.globalName};
 extern poly_field_desc_t* ${field.globalName};
 % endfor
 
+/*@brief The main type dealt with by the user
+ *@note just wraps a poly_packet to prevent mixing them when multiple protocol are in use
+ */
 typedef struct{
-  poly_packet_t mPacket;
-  bool mInitialized;
+  poly_packet_t mPacket;    //internal packet structure
 }${proto.prefix}_packet_t;
 
 
@@ -62,6 +64,12 @@ void ${proto.prefix}_service_process();
   */
 void ${proto.prefix}_service_register_tx( int iface, poly_tx_callback txCallBack);
 
+/**
+  *@brief 'Feeds' bytes to service at given interface for processing
+  *@param iface index of interface to send on
+  *@param data data to be processed
+  *@param number of bytes
+  */
 void ${proto.prefix}_service_feed(int iface, uint8_t* data, int len);
 
 /**
@@ -138,8 +146,13 @@ ${field.getParamType()} ${proto.prefix}_get${field.name.capitalize()}(${proto.pr
   Packet Handlers
 *******************************************************************************/
 % for packet in proto.packets:
+%if packet.hasResponse:
+/*@brief Handler for ${packet.name} packets */
+HandlerStatus_e ${proto.prefix}_${packet.name.lower()}_handler(${proto.prefix}_packet_t* ${packet.name}, ${proto.prefix}_packet_t* ${packet.response.name});
+%else:
 /*@brief Handler for ${packet.name} packets */
 HandlerStatus_e ${proto.prefix}_${packet.name.lower()}_handler(${proto.prefix}_packet_t* ${packet.name});
+%endif
 
 % endfor
 /*@brief Catch-All Handler for unhandled packets */

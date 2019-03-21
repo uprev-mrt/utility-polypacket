@@ -170,6 +170,7 @@ class packetDesc:
         self.requests = {}
         self.standard = False
         self.structName = name.lower() + '_packet_t'
+        self.hasResponse = False
 
     def setPrefix(self, prefix):
         self.globalName = prefix.upper()+"_"+self.name.upper()+"_PACKET"
@@ -178,6 +179,13 @@ class packetDesc:
         field.id = self.fieldCount
         self.fields.append(field)
         self.fieldCount+=1
+
+    def postProcess(self):
+        if len(self.requests) > 0:
+            self.hasResponse = True;
+            self.response = self.protocol.getPacket(next(iter(self.requests.keys())))
+
+
 
     def getDocMd(self):
         output = io.StringIO()
@@ -304,6 +312,7 @@ class protocolDesc:
 
     def addField(self,field):
         field.id = self.fieldId
+        field.protocol = self
         self.fields.append(field)
         self.fieldIdx[field.name] = self.fieldId
         self.fieldId+=1
@@ -311,10 +320,15 @@ class protocolDesc:
 
     def addPacket(self,packet):
         packet.packetId = self.packetId
+        packet.protocol = self
         packet.setPrefix(self.prefix)
         self.packets.append(packet)
         self.packetIdx[packet.name] = self.packetId
         self.packetId+=1
+
+    def getPacket(self, name):
+        if name in self.packetIdx:
+            return self.packets[self.packetIdx[name]]
 
 
 def addStandardPackets(protocol):
@@ -415,6 +429,10 @@ def parseXML(xmlfile):
         for request in packet.requests:
             idx = protocol.packetIdx[request]
             protocol.packets[idx].respondsTo[packet.name] = 0
+
+    for packet in protocol.packets:
+        packet.postProcess()
+
 
     # return news items list
     return protocol

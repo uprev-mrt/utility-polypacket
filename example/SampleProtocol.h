@@ -40,9 +40,11 @@ extern poly_field_desc_t* SP_BLOCKOFFSET_FIELD;
 extern poly_field_desc_t* SP_BLOCKSIZE_FIELD;
 extern poly_field_desc_t* SP_BLOCKDATA_FIELD;
 
+/*@brief The main type dealt with by the user
+ *@note just wraps a poly_packet to prevent mixing them when multiple protocol are in use
+ */
 typedef struct{
-  poly_packet_t mPacket;
-  bool mInitialized;
+  poly_packet_t mPacket;    //internal packet structure
 }sp_packet_t;
 
 
@@ -67,6 +69,12 @@ void sp_service_process();
   */
 void sp_service_register_tx( int iface, poly_tx_callback txCallBack);
 
+/**
+  *@brief 'Feeds' bytes to service at given interface for processing
+  *@param iface index of interface to send on
+  *@param data data to be processed
+  *@param number of bytes
+  */
 void sp_service_feed(int iface, uint8_t* data, int len);
 
 /**
@@ -154,16 +162,16 @@ uint8_t* sp_getBlockdata(sp_packet_t* packet);
 HandlerStatus_e sp_ack_handler(sp_packet_t* ack);
 
 /*@brief Handler for SetData packets */
-HandlerStatus_e sp_setdata_handler(sp_packet_t* SetData);
+HandlerStatus_e sp_setdata_handler(sp_packet_t* SetData, sp_packet_t* RespData);
 
 /*@brief Handler for GetData packets */
-HandlerStatus_e sp_getdata_handler(sp_packet_t* GetData);
+HandlerStatus_e sp_getdata_handler(sp_packet_t* GetData, sp_packet_t* RespData);
 
 /*@brief Handler for RespData packets */
 HandlerStatus_e sp_respdata_handler(sp_packet_t* RespData);
 
 /*@brief Handler for blockReq packets */
-HandlerStatus_e sp_blockreq_handler(sp_packet_t* blockReq);
+HandlerStatus_e sp_blockreq_handler(sp_packet_t* blockReq, sp_packet_t* blockResp);
 
 /*@brief Handler for blockResp packets */
 HandlerStatus_e sp_blockresp_handler(sp_packet_t* blockResp);

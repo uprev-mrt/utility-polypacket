@@ -39,6 +39,7 @@ poly_service_t* ${proto.service()};
 void ${proto.prefix}_service_process()
 {
   static ${proto.prefix}_packet_t metaPacket;
+  static ${proto.prefix}_packet_t metaResponse;
 
   HandlerStatus_e status = PACKET_UNHANDLED;
 
@@ -50,7 +51,13 @@ void ${proto.prefix}_service_process()
     {
   % for packet in proto.packets:
       case ${packet.globalName}_ID:
+      %if packet.hasResponse:
+       poly_packet_init(&metaResponse.mPacket, ${packet.response.globalName},true);
+       status = ${proto.prefix}_${packet.name.lower()}_handler(&metaPacket , &metaResponse );
+      %else:
+        poly_packet_init(&metaResponse.mPacket, ${proto.prefix.upper()}_ACK_PACKET, true);
         status = ${proto.prefix}_${packet.name.lower()}_handler(&metaPacket);
+      %endif
         break;
   % endfor
       default:
@@ -65,6 +72,7 @@ void ${proto.prefix}_service_process()
 
     //If we are inside this scope, then the poly_packet_t was allocated and needs to be destroyed
     poly_packet_destroy(&metaPacket.mPacket);
+    poly_packet_destroy(&metaResponse.mPacket);
   }
 
 }
@@ -213,7 +221,13 @@ ${field.getParamType()} ${proto.prefix}_get${field.name.capitalize()}(${proto.pr
   *@param packet ptr to ${packet.structName}  containing packet
   *@return handling status
   */
+%if packet.hasResponse:
+/*@brief Handler for ${packet.name} packets */
+__attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.name.lower()}_handler(${proto.prefix}_packet_t* ${packet.name}, ${proto.prefix}_packet_t* ${packet.response.name})
+%else:
+/*@brief Handler for ${packet.name} packets */
 __attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.name.lower()}_handler(${proto.prefix}_packet_t* ${packet.name})
+%endif
 {
   /* NOTE : This function should not be modified, when the callback is needed,
           ${proto.prefix}_${packet.name.lower()}_handler  should be implemented in the user file
