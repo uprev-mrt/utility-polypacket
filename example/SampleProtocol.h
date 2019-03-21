@@ -10,11 +10,6 @@
 ***********************************************************/
 #include "Utilities/PolyPacket/poly_service.h"
 
-//Define basic function macros
-#define sp_print_json(msg,buf) poly_packet_print_json(msg->pPacket, buf, false)
-#define sp_parse(msg,buf,len) poly_packet_parse_buffer(msg->pPacket, buf, len)
-#define sp_pack(msg, buf) poly_packet_pack(msg->pPacket, buf)
-#define sp_send(iface, msg) sp_service_send(iface, msg->pPacket)
 
 typedef enum{
   SP_CMD_TEST,
@@ -45,84 +40,9 @@ extern poly_field_desc_t* SP_BLOCKOFFSET_FIELD;
 extern poly_field_desc_t* SP_BLOCKSIZE_FIELD;
 extern poly_field_desc_t* SP_BLOCKDATA_FIELD;
 
-/*
- *@brief
- */
-typedef struct{
-  poly_packet_t* pPacket;
-}ack_packet_t;
-
-/*
- *@brief Message to set data in node
- */
-typedef struct{
-  uint16_t mSrc;	//Source address of message
-  uint16_t mDst;	//Desitination address of message
-  int16_t mSensora;	//Value of Sensor A
-  int mSensorb;	//Value of Sensor B
-  char mSensorname[32];	//Name of sensor
-  poly_packet_t* pPacket;
-}setdata_packet_t;
-
-/*
- *@brief Message to get data from node
- */
-typedef struct{
-  uint16_t mSrc;	//Source address of message
-  uint16_t mDst;	//Desitination address of message
-  int16_t mSensora;	//Value of Sensor A
-  int mSensorb;	//Value of Sensor B
-  char mSensorname[32];	//Name of sensor
-  poly_packet_t* pPacket;
-}getdata_packet_t;
-
-/*
- *@brief Response to get/set messages
- */
-typedef struct{
-  uint16_t mSrc;	//Source address of message
-  uint16_t mDst;	//Desitination address of message
-  int16_t mSensora;	//Value of Sensor A
-  int mSensorb;	//Value of Sensor B
-  char mSensorname[32];	//Name of sensor
-  poly_packet_t* pPacket;
-}respdata_packet_t;
-
-/*
- *@brief This packet is used to request a block of data from the host during Ota updates
- */
-typedef struct{
-  uint16_t mSrc;	//Source address of message
-  uint16_t mDst;	//Desitination address of message
-  uint32_t mBlockoffset;	//Offset of block being requested
-  uint32_t mBlocksize;	//Size of block being requested
-  poly_packet_t* pPacket;
-}blockreq_packet_t;
-
-/*
- *@brief This packet sends a block of ota data to the node as a response to a block request
- */
-typedef struct{
-  uint16_t mSrc;	//Source address of message
-  uint16_t mDst;	//Desitination address of message
-  uint32_t mBlockoffset;	//Offset of block in memory
-  uint32_t mBlocksize;	//size of memory block
-  uint8_t mBlockdata[64];	//actual data from memory
-  poly_packet_t* pPacket;
-}blockresp_packet_t;
-
-
 typedef struct{
   poly_packet_t mPacket;
-  poly_packet_t* pPacket;
-  union{
-    ack_packet_t* ack;
-    setdata_packet_t* setdata;
-    getdata_packet_t* getdata;
-    respdata_packet_t* respdata;
-    blockreq_packet_t* blockreq;
-    blockresp_packet_t* blockresp;
-} mPayload;
+  bool mInitialized;
 }sp_packet_t;
 
 
@@ -154,10 +74,7 @@ void sp_service_feed(int iface, uint8_t* data, int len);
   *@param metaPacket packet to be sent
   *@param iface index of interface to send on
   */
-HandlerStatus_e sp_service_send( int iface, poly_packet_t* packet);
-
-
-
+HandlerStatus_e sp_send( int iface, sp_packet_t* metaPacket);
 
 
 /*******************************************************************************
@@ -168,6 +85,10 @@ sp_packet_t* new_sp_packet(poly_packet_desc_t* desc);
 
 void sp_teardown(sp_packet_t* metaPacket);
 void sp_destroy(sp_packet_t* metaPacket);
+//Define basic function macros
+#define sp_print_json(msg,buf) poly_packet_print_json(&msg->mPacket, buf, false)
+#define sp_parse(msg,buf,len) poly_packet_parse_buffer(&msg->mPacket, buf, len)
+#define sp_pack(msg, buf) poly_packet_pack(&msg->mPacket, buf)
 
 
 /*******************************************************************************
@@ -196,32 +117,20 @@ uint32_t sp_getBlockoffset(sp_packet_t* packet);
 uint32_t sp_getBlocksize(sp_packet_t* packet);
 uint8_t* sp_getBlockdata(sp_packet_t* packet);
 
-
-/*******************************************************************************
-  Packet binders
-*******************************************************************************/
-void sp_ack_bind(ack_packet_t* ack, poly_packet_t* packet, bool copy);
-void sp_setdata_bind(setdata_packet_t* setdata, poly_packet_t* packet, bool copy);
-void sp_getdata_bind(getdata_packet_t* getdata, poly_packet_t* packet, bool copy);
-void sp_respdata_bind(respdata_packet_t* respdata, poly_packet_t* packet, bool copy);
-void sp_blockreq_bind(blockreq_packet_t* blockreq, poly_packet_t* packet, bool copy);
-void sp_blockresp_bind(blockresp_packet_t* blockresp, poly_packet_t* packet, bool copy);
-
-
 /*******************************************************************************
   Packet Handlers
 *******************************************************************************/
 /*@brief Handler for ack packets */
-HandlerStatus_e sp_ack_handler(ack_packet_t * packet);
+HandlerStatus_e sp_ack_handler(sp_packet_t* ack);
 /*@brief Handler for SetData packets */
-HandlerStatus_e sp_setdata_handler(setdata_packet_t * packet);
+HandlerStatus_e sp_setdata_handler(sp_packet_t* SetData);
 /*@brief Handler for GetData packets */
-HandlerStatus_e sp_getdata_handler(getdata_packet_t * packet);
+HandlerStatus_e sp_getdata_handler(sp_packet_t* GetData);
 /*@brief Handler for RespData packets */
-HandlerStatus_e sp_respdata_handler(respdata_packet_t * packet);
+HandlerStatus_e sp_respdata_handler(sp_packet_t* RespData);
 /*@brief Handler for blockReq packets */
-HandlerStatus_e sp_blockreq_handler(blockreq_packet_t * packet);
+HandlerStatus_e sp_blockreq_handler(sp_packet_t* blockReq);
 /*@brief Handler for blockResp packets */
-HandlerStatus_e sp_blockresp_handler(blockresp_packet_t * packet);
+HandlerStatus_e sp_blockresp_handler(sp_packet_t* blockResp);
 
 HandlerStatus_e sp_default_handler(sp_packet_t * packet);

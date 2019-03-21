@@ -39,7 +39,6 @@ poly_service_t* ${proto.service()};
 void ${proto.prefix}_service_process()
 {
   static ${proto.prefix}_packet_t metaPacket;
-  metaPacket.pPacket = &metaPacket.mPacket;
 
   HandlerStatus_e status = PACKET_UNHANDLED;
 
@@ -51,9 +50,7 @@ void ${proto.prefix}_service_process()
     {
   % for packet in proto.packets:
       case ${packet.globalName}_ID:
-        metaPacket.mPayload.${packet.name.lower()} = (${packet.structName}*) malloc(sizeof(${packet.structName}));
-        ${proto.prefix}_${packet.name.lower()}_bind(metaPacket.mPayload.${packet.name.lower()}, &metaPacket.mPacket, true);
-        status = ${proto.prefix}_${packet.name.lower()}_handler(metaPacket.mPayload.${packet.name.lower()});
+        status = ${proto.prefix}_${packet.name.lower()}_handler(&metaPacket);
         break;
   % endfor
       default:
@@ -120,9 +117,9 @@ void ${proto.prefix}_service_feed(int iface, uint8_t* data, int len)
   poly_service_feed(${proto.service()},iface,data,len);
 }
 
-HandlerStatus_e ${proto.prefix}_service_send(int iface, poly_packet_t* packet)
+HandlerStatus_e ${proto.prefix}_send(int iface, ${proto.prefix}_packet_t* metaPacket)
 {
-  return poly_service_send(${proto.service()}, iface, packet);
+  return poly_service_send(${proto.service()}, iface, &metaPacket->mPacket);
 }
 
 /*******************************************************************************
@@ -140,18 +137,7 @@ ${proto.prefix}_packet_t* new_${proto.prefix}_packet(poly_packet_desc_t* desc)
   ${proto.prefix}_packet_t* newMetaPacket = (${proto.prefix}_packet_t*) malloc(sizeof(${proto.prefix}_packet_t));
 
   //create new unallocated packet
-  poly_packet_init(&newMetaPacket->mPacket, desc, false);
-  newMetaPacket->pPacket = &newMetaPacket->mPacket;
-
-  switch(newMetaPacket->mPacket.mDesc->mTypeId)
-  {
-% for packet in proto.packets:
-    case ${packet.globalName}_ID:
-      newMetaPacket->mPayload.${packet.name.lower()} = (${packet.structName}*) malloc(sizeof(${packet.structName}));
-      ${proto.prefix}_${packet.name.lower()}_bind(newMetaPacket->mPayload.${packet.name.lower()}, &newMetaPacket->mPacket, false);
-      break;
-% endfor
-  }
+  poly_packet_init(&newMetaPacket->mPacket, desc, true);
 
   return newMetaPacket;
 }
@@ -162,15 +148,6 @@ ${proto.prefix}_packet_t* new_${proto.prefix}_packet(poly_packet_desc_t* desc)
   */
 void ${proto.prefix}_teardown(${proto.prefix}_packet_t* metaPacket)
 {
-  switch(metaPacket->mPacket.mDesc->mTypeId)
-  {
-% for packet in proto.packets:
-    case ${packet.globalName}_ID:
-    free(metaPacket->mPayload.${packet.name.lower()});
-    break;
-% endfor
-  }
-
   poly_packet_destroy(&metaPacket->mPacket);
 }
 
@@ -231,27 +208,6 @@ ${field.getParamType()} ${proto.prefix}_get${field.name.capitalize()}(${proto.pr
 
 
 /*******************************************************************************
-  Packet binders
-*******************************************************************************/
-% for packet in proto.packets:
-/**
-  *@brief Binds struct to poly_service_t
-  *@param ${packet.name.lower()} ptr to ${packet.structName} to be bound
-  *@param packet packet to bind to
-  */
-void ${proto.prefix}_${packet.name.lower()}_bind(${packet.structName}* ${packet.name.lower()}, poly_packet_t* packet, bool copy)
-{
-  ${packet.name.lower()}->pPacket = packet;
-
-% for field in packet.fields:
-  poly_field_bind( poly_packet_get_field(packet, ${field.globalName}), (uint8_t*) &${packet.name.lower()}->${field.memberName}, copy);
-% endfor
-
-}
-
-% endfor
-
-/*******************************************************************************
   Weak packet handlers
 
   Do not modify these, just create your own without the '__weak' attribute
@@ -262,7 +218,7 @@ void ${proto.prefix}_${packet.name.lower()}_bind(${packet.structName}* ${packet.
   *@param packet ptr to ${packet.structName}  containing packet
   *@return handling status
   */
-__attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.name.lower()}_handler(${packet.structName} * packet)
+__attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.name.lower()}_handler(${proto.prefix}_packet_t* ${packet.name})
 {
   /* NOTE : This function should not be modified, when the callback is needed,
           ${proto.prefix}_${packet.name.lower()}_handler  should be implemented in the user file

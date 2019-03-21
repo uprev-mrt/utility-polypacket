@@ -51,7 +51,6 @@ poly_service_t* SP_SERVICE;
 void sp_service_process()
 {
   static sp_packet_t metaPacket;
-  metaPacket.pPacket = &metaPacket.mPacket;
 
   HandlerStatus_e status = PACKET_UNHANDLED;
 
@@ -62,34 +61,22 @@ void sp_service_process()
     switch(metaPacket.mPacket.mDesc->mTypeId)
     {
       case SP_ACK_PACKET_ID:
-        metaPacket.mPayload.ack = (ack_packet_t*) malloc(sizeof(ack_packet_t));
-        sp_ack_bind(metaPacket.mPayload.ack, &metaPacket.mPacket, true);
-        status = sp_ack_handler(metaPacket.mPayload.ack);
+        status = sp_ack_handler(&metaPacket);
         break;
       case SP_SETDATA_PACKET_ID:
-        metaPacket.mPayload.setdata = (setdata_packet_t*) malloc(sizeof(setdata_packet_t));
-        sp_setdata_bind(metaPacket.mPayload.setdata, &metaPacket.mPacket, true);
-        status = sp_setdata_handler(metaPacket.mPayload.setdata);
+        status = sp_setdata_handler(&metaPacket);
         break;
       case SP_GETDATA_PACKET_ID:
-        metaPacket.mPayload.getdata = (getdata_packet_t*) malloc(sizeof(getdata_packet_t));
-        sp_getdata_bind(metaPacket.mPayload.getdata, &metaPacket.mPacket, true);
-        status = sp_getdata_handler(metaPacket.mPayload.getdata);
+        status = sp_getdata_handler(&metaPacket);
         break;
       case SP_RESPDATA_PACKET_ID:
-        metaPacket.mPayload.respdata = (respdata_packet_t*) malloc(sizeof(respdata_packet_t));
-        sp_respdata_bind(metaPacket.mPayload.respdata, &metaPacket.mPacket, true);
-        status = sp_respdata_handler(metaPacket.mPayload.respdata);
+        status = sp_respdata_handler(&metaPacket);
         break;
       case SP_BLOCKREQ_PACKET_ID:
-        metaPacket.mPayload.blockreq = (blockreq_packet_t*) malloc(sizeof(blockreq_packet_t));
-        sp_blockreq_bind(metaPacket.mPayload.blockreq, &metaPacket.mPacket, true);
-        status = sp_blockreq_handler(metaPacket.mPayload.blockreq);
+        status = sp_blockreq_handler(&metaPacket);
         break;
       case SP_BLOCKRESP_PACKET_ID:
-        metaPacket.mPayload.blockresp = (blockresp_packet_t*) malloc(sizeof(blockresp_packet_t));
-        sp_blockresp_bind(metaPacket.mPayload.blockresp, &metaPacket.mPacket, true);
-        status = sp_blockresp_handler(metaPacket.mPayload.blockresp);
+        status = sp_blockresp_handler(&metaPacket);
         break;
       default:
         //we should never get here
@@ -191,9 +178,9 @@ void sp_service_feed(int iface, uint8_t* data, int len)
   poly_service_feed(SP_SERVICE,iface,data,len);
 }
 
-HandlerStatus_e sp_service_send(int iface, poly_packet_t* packet)
+HandlerStatus_e sp_send(int iface, sp_packet_t* metaPacket)
 {
-  return poly_service_send(SP_SERVICE, iface, packet);
+  return poly_service_send(SP_SERVICE, iface, &metaPacket->mPacket);
 }
 
 /*******************************************************************************
@@ -211,36 +198,7 @@ sp_packet_t* new_sp_packet(poly_packet_desc_t* desc)
   sp_packet_t* newMetaPacket = (sp_packet_t*) malloc(sizeof(sp_packet_t));
 
   //create new unallocated packet
-  poly_packet_init(&newMetaPacket->mPacket, desc, false);
-  newMetaPacket->pPacket = &newMetaPacket->mPacket;
-
-  switch(newMetaPacket->mPacket.mDesc->mTypeId)
-  {
-    case SP_ACK_PACKET_ID:
-      newMetaPacket->mPayload.ack = (ack_packet_t*) malloc(sizeof(ack_packet_t));
-      sp_ack_bind(newMetaPacket->mPayload.ack, &newMetaPacket->mPacket, false);
-      break;
-    case SP_SETDATA_PACKET_ID:
-      newMetaPacket->mPayload.setdata = (setdata_packet_t*) malloc(sizeof(setdata_packet_t));
-      sp_setdata_bind(newMetaPacket->mPayload.setdata, &newMetaPacket->mPacket, false);
-      break;
-    case SP_GETDATA_PACKET_ID:
-      newMetaPacket->mPayload.getdata = (getdata_packet_t*) malloc(sizeof(getdata_packet_t));
-      sp_getdata_bind(newMetaPacket->mPayload.getdata, &newMetaPacket->mPacket, false);
-      break;
-    case SP_RESPDATA_PACKET_ID:
-      newMetaPacket->mPayload.respdata = (respdata_packet_t*) malloc(sizeof(respdata_packet_t));
-      sp_respdata_bind(newMetaPacket->mPayload.respdata, &newMetaPacket->mPacket, false);
-      break;
-    case SP_BLOCKREQ_PACKET_ID:
-      newMetaPacket->mPayload.blockreq = (blockreq_packet_t*) malloc(sizeof(blockreq_packet_t));
-      sp_blockreq_bind(newMetaPacket->mPayload.blockreq, &newMetaPacket->mPacket, false);
-      break;
-    case SP_BLOCKRESP_PACKET_ID:
-      newMetaPacket->mPayload.blockresp = (blockresp_packet_t*) malloc(sizeof(blockresp_packet_t));
-      sp_blockresp_bind(newMetaPacket->mPayload.blockresp, &newMetaPacket->mPacket, false);
-      break;
-  }
+  poly_packet_init(&newMetaPacket->mPacket, desc, true);
 
   return newMetaPacket;
 }
@@ -251,28 +209,6 @@ sp_packet_t* new_sp_packet(poly_packet_desc_t* desc)
   */
 void sp_teardown(sp_packet_t* metaPacket)
 {
-  switch(metaPacket->mPacket.mDesc->mTypeId)
-  {
-    case SP_ACK_PACKET_ID:
-    free(metaPacket->mPayload.ack);
-    break;
-    case SP_SETDATA_PACKET_ID:
-    free(metaPacket->mPayload.setdata);
-    break;
-    case SP_GETDATA_PACKET_ID:
-    free(metaPacket->mPayload.getdata);
-    break;
-    case SP_RESPDATA_PACKET_ID:
-    free(metaPacket->mPayload.respdata);
-    break;
-    case SP_BLOCKREQ_PACKET_ID:
-    free(metaPacket->mPayload.blockreq);
-    break;
-    case SP_BLOCKRESP_PACKET_ID:
-    free(metaPacket->mPayload.blockresp);
-    break;
-  }
-
   poly_packet_destroy(&metaPacket->mPacket);
 }
 
@@ -429,106 +365,6 @@ uint8_t* sp_getBlockdata(sp_packet_t* packet)
 
 
 /*******************************************************************************
-  Packet binders
-*******************************************************************************/
-/**
-  *@brief Binds struct to poly_service_t
-  *@param ack ptr to ack_packet_t to be bound
-  *@param packet packet to bind to
-  */
-void sp_ack_bind(ack_packet_t* ack, poly_packet_t* packet, bool copy)
-{
-  ack->pPacket = packet;
-
-
-}
-
-/**
-  *@brief Binds struct to poly_service_t
-  *@param setdata ptr to setdata_packet_t to be bound
-  *@param packet packet to bind to
-  */
-void sp_setdata_bind(setdata_packet_t* setdata, poly_packet_t* packet, bool copy)
-{
-  setdata->pPacket = packet;
-
-  poly_field_bind( poly_packet_get_field(packet, SP_SRC_FIELD), (uint8_t*) &setdata->mSrc, copy);
-  poly_field_bind( poly_packet_get_field(packet, SP_DST_FIELD), (uint8_t*) &setdata->mDst, copy);
-  poly_field_bind( poly_packet_get_field(packet, SP_SENSORA_FIELD), (uint8_t*) &setdata->mSensora, copy);
-  poly_field_bind( poly_packet_get_field(packet, SP_SENSORB_FIELD), (uint8_t*) &setdata->mSensorb, copy);
-  poly_field_bind( poly_packet_get_field(packet, SP_SENSORNAME_FIELD), (uint8_t*) &setdata->mSensorname, copy);
-
-}
-
-/**
-  *@brief Binds struct to poly_service_t
-  *@param getdata ptr to getdata_packet_t to be bound
-  *@param packet packet to bind to
-  */
-void sp_getdata_bind(getdata_packet_t* getdata, poly_packet_t* packet, bool copy)
-{
-  getdata->pPacket = packet;
-
-  poly_field_bind( poly_packet_get_field(packet, SP_SRC_FIELD), (uint8_t*) &getdata->mSrc, copy);
-  poly_field_bind( poly_packet_get_field(packet, SP_DST_FIELD), (uint8_t*) &getdata->mDst, copy);
-  poly_field_bind( poly_packet_get_field(packet, SP_SENSORA_FIELD), (uint8_t*) &getdata->mSensora, copy);
-  poly_field_bind( poly_packet_get_field(packet, SP_SENSORB_FIELD), (uint8_t*) &getdata->mSensorb, copy);
-  poly_field_bind( poly_packet_get_field(packet, SP_SENSORNAME_FIELD), (uint8_t*) &getdata->mSensorname, copy);
-
-}
-
-/**
-  *@brief Binds struct to poly_service_t
-  *@param respdata ptr to respdata_packet_t to be bound
-  *@param packet packet to bind to
-  */
-void sp_respdata_bind(respdata_packet_t* respdata, poly_packet_t* packet, bool copy)
-{
-  respdata->pPacket = packet;
-
-  poly_field_bind( poly_packet_get_field(packet, SP_SRC_FIELD), (uint8_t*) &respdata->mSrc, copy);
-  poly_field_bind( poly_packet_get_field(packet, SP_DST_FIELD), (uint8_t*) &respdata->mDst, copy);
-  poly_field_bind( poly_packet_get_field(packet, SP_SENSORA_FIELD), (uint8_t*) &respdata->mSensora, copy);
-  poly_field_bind( poly_packet_get_field(packet, SP_SENSORB_FIELD), (uint8_t*) &respdata->mSensorb, copy);
-  poly_field_bind( poly_packet_get_field(packet, SP_SENSORNAME_FIELD), (uint8_t*) &respdata->mSensorname, copy);
-
-}
-
-/**
-  *@brief Binds struct to poly_service_t
-  *@param blockreq ptr to blockreq_packet_t to be bound
-  *@param packet packet to bind to
-  */
-void sp_blockreq_bind(blockreq_packet_t* blockreq, poly_packet_t* packet, bool copy)
-{
-  blockreq->pPacket = packet;
-
-  poly_field_bind( poly_packet_get_field(packet, SP_SRC_FIELD), (uint8_t*) &blockreq->mSrc, copy);
-  poly_field_bind( poly_packet_get_field(packet, SP_DST_FIELD), (uint8_t*) &blockreq->mDst, copy);
-  poly_field_bind( poly_packet_get_field(packet, SP_BLOCKOFFSET_FIELD), (uint8_t*) &blockreq->mBlockoffset, copy);
-  poly_field_bind( poly_packet_get_field(packet, SP_BLOCKSIZE_FIELD), (uint8_t*) &blockreq->mBlocksize, copy);
-
-}
-
-/**
-  *@brief Binds struct to poly_service_t
-  *@param blockresp ptr to blockresp_packet_t to be bound
-  *@param packet packet to bind to
-  */
-void sp_blockresp_bind(blockresp_packet_t* blockresp, poly_packet_t* packet, bool copy)
-{
-  blockresp->pPacket = packet;
-
-  poly_field_bind( poly_packet_get_field(packet, SP_SRC_FIELD), (uint8_t*) &blockresp->mSrc, copy);
-  poly_field_bind( poly_packet_get_field(packet, SP_DST_FIELD), (uint8_t*) &blockresp->mDst, copy);
-  poly_field_bind( poly_packet_get_field(packet, SP_BLOCKOFFSET_FIELD), (uint8_t*) &blockresp->mBlockoffset, copy);
-  poly_field_bind( poly_packet_get_field(packet, SP_BLOCKSIZE_FIELD), (uint8_t*) &blockresp->mBlocksize, copy);
-  poly_field_bind( poly_packet_get_field(packet, SP_BLOCKDATA_FIELD), (uint8_t*) &blockresp->mBlockdata, copy);
-
-}
-
-
-/*******************************************************************************
   Weak packet handlers
 
   Do not modify these, just create your own without the '__weak' attribute
@@ -538,7 +374,7 @@ void sp_blockresp_bind(blockresp_packet_t* blockresp, poly_packet_t* packet, boo
   *@param packet ptr to ack_packet_t  containing packet
   *@return handling status
   */
-__attribute__((weak)) HandlerStatus_e sp_ack_handler(ack_packet_t * packet)
+__attribute__((weak)) HandlerStatus_e sp_ack_handler(sp_packet_t* ack)
 {
   /* NOTE : This function should not be modified, when the callback is needed,
           sp_ack_handler  should be implemented in the user file
@@ -550,7 +386,7 @@ __attribute__((weak)) HandlerStatus_e sp_ack_handler(ack_packet_t * packet)
   *@param packet ptr to setdata_packet_t  containing packet
   *@return handling status
   */
-__attribute__((weak)) HandlerStatus_e sp_setdata_handler(setdata_packet_t * packet)
+__attribute__((weak)) HandlerStatus_e sp_setdata_handler(sp_packet_t* SetData)
 {
   /* NOTE : This function should not be modified, when the callback is needed,
           sp_setdata_handler  should be implemented in the user file
@@ -562,7 +398,7 @@ __attribute__((weak)) HandlerStatus_e sp_setdata_handler(setdata_packet_t * pack
   *@param packet ptr to getdata_packet_t  containing packet
   *@return handling status
   */
-__attribute__((weak)) HandlerStatus_e sp_getdata_handler(getdata_packet_t * packet)
+__attribute__((weak)) HandlerStatus_e sp_getdata_handler(sp_packet_t* GetData)
 {
   /* NOTE : This function should not be modified, when the callback is needed,
           sp_getdata_handler  should be implemented in the user file
@@ -574,7 +410,7 @@ __attribute__((weak)) HandlerStatus_e sp_getdata_handler(getdata_packet_t * pack
   *@param packet ptr to respdata_packet_t  containing packet
   *@return handling status
   */
-__attribute__((weak)) HandlerStatus_e sp_respdata_handler(respdata_packet_t * packet)
+__attribute__((weak)) HandlerStatus_e sp_respdata_handler(sp_packet_t* RespData)
 {
   /* NOTE : This function should not be modified, when the callback is needed,
           sp_respdata_handler  should be implemented in the user file
@@ -586,7 +422,7 @@ __attribute__((weak)) HandlerStatus_e sp_respdata_handler(respdata_packet_t * pa
   *@param packet ptr to blockreq_packet_t  containing packet
   *@return handling status
   */
-__attribute__((weak)) HandlerStatus_e sp_blockreq_handler(blockreq_packet_t * packet)
+__attribute__((weak)) HandlerStatus_e sp_blockreq_handler(sp_packet_t* blockReq)
 {
   /* NOTE : This function should not be modified, when the callback is needed,
           sp_blockreq_handler  should be implemented in the user file
@@ -598,7 +434,7 @@ __attribute__((weak)) HandlerStatus_e sp_blockreq_handler(blockreq_packet_t * pa
   *@param packet ptr to blockresp_packet_t  containing packet
   *@return handling status
   */
-__attribute__((weak)) HandlerStatus_e sp_blockresp_handler(blockresp_packet_t * packet)
+__attribute__((weak)) HandlerStatus_e sp_blockresp_handler(sp_packet_t* blockResp)
 {
   /* NOTE : This function should not be modified, when the callback is needed,
           sp_blockresp_handler  should be implemented in the user file

@@ -10,7 +10,7 @@ int len;
 /*  Handler function for 'SetData' messages
  *  This is created by the service and declared '__weak__' so we just have to provide our own function to override
  */
-HandlerStatus_e sp_setdata_handler(setdata_packet_t * packet)
+HandlerStatus_e sp_setdata_handler(sp_packet_t* packet)
 {
 
   //convert the message to a json string

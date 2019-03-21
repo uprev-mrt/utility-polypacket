@@ -10,11 +10,6 @@
 ***********************************************************/
 #include "Utilities/PolyPacket/poly_service.h"
 
-//Define basic function macros
-#define ${proto.prefix}_print_json(msg,buf) poly_packet_print_json(msg->pPacket, buf, false)
-#define ${proto.prefix}_parse(msg,buf,len) poly_packet_parse_buffer(msg->pPacket, buf, len)
-#define ${proto.prefix}_pack(msg, buf) poly_packet_pack(msg->pPacket, buf)
-#define ${proto.prefix}_send(iface, msg) ${proto.prefix}_service_send(iface, msg->pPacket)
 
 % for field in proto.fields:
 % if field.isEnum:
@@ -40,27 +35,9 @@ extern poly_packet_desc_t* ${packet.globalName};
 extern poly_field_desc_t* ${field.globalName};
 % endfor
 
-% for packet in proto.packets:
-/*
- *@brief ${packet.desc}
- */
-typedef struct{
-  % for field in packet.fields:
-  ${field.getFieldDeclaration()}
-  % endfor
-  poly_packet_t* pPacket;
-}${packet.structName};
-
-% endfor
-
 typedef struct{
   poly_packet_t mPacket;
-  poly_packet_t* pPacket;
-  union{
-% for packet in proto.packets:
-    ${packet.structName}* ${packet.name.lower()};
-% endfor
-} mPayload;
+  bool mInitialized;
 }${proto.prefix}_packet_t;
 
 
@@ -92,10 +69,7 @@ void ${proto.prefix}_service_feed(int iface, uint8_t* data, int len);
   *@param metaPacket packet to be sent
   *@param iface index of interface to send on
   */
-HandlerStatus_e ${proto.prefix}_service_send( int iface, poly_packet_t* packet);
-
-
-
+HandlerStatus_e ${proto.prefix}_send( int iface, ${proto.prefix}_packet_t* metaPacket);
 
 
 /*******************************************************************************
@@ -106,6 +80,10 @@ ${proto.prefix}_packet_t* new_${proto.prefix}_packet(poly_packet_desc_t* desc);
 
 void ${proto.prefix}_teardown(${proto.prefix}_packet_t* metaPacket);
 void ${proto.prefix}_destroy(${proto.prefix}_packet_t* metaPacket);
+//Define basic function macros
+#define ${proto.prefix}_print_json(msg,buf) poly_packet_print_json(&msg->mPacket, buf, false)
+#define ${proto.prefix}_parse(msg,buf,len) poly_packet_parse_buffer(&msg->mPacket, buf, len)
+#define ${proto.prefix}_pack(msg, buf) poly_packet_pack(&msg->mPacket, buf)
 
 
 /*******************************************************************************
@@ -126,21 +104,12 @@ void ${proto.prefix}_set${field.name.capitalize()}(${proto.prefix}_packet_t* pac
 ${field.getParamType()} ${proto.prefix}_get${field.name.capitalize()}(${proto.prefix}_packet_t* packet);
 % endfor
 
-
-/*******************************************************************************
-  Packet binders
-*******************************************************************************/
-% for packet in proto.packets:
-void ${proto.prefix}_${packet.name.lower()}_bind(${packet.structName}* ${packet.name.lower()}, poly_packet_t* packet, bool copy);
-% endfor
-
-
 /*******************************************************************************
   Packet Handlers
 *******************************************************************************/
 % for packet in proto.packets:
 /*@brief Handler for ${packet.name} packets */
-HandlerStatus_e ${proto.prefix}_${packet.name.lower()}_handler(${packet.structName} * packet);
+HandlerStatus_e ${proto.prefix}_${packet.name.lower()}_handler(${proto.prefix}_packet_t* ${packet.name});
 % endfor
 
 HandlerStatus_e ${proto.prefix}_default_handler(${proto.prefix}_packet_t * packet);
