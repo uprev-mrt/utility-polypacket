@@ -244,19 +244,28 @@ ${field.getParamType()} ${proto.prefix}_get${field.name.capitalize()}(${proto.pr
   *@param packet ptr to ${packet.structName}  containing packet
   *@return handling status
   */
-%if packet.hasResponse:
-/*@brief Handler for ${packet.name} packets */
-__attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.name.lower()}_handler(${proto.prefix}_packet_t* ${packet.name}, ${proto.prefix}_packet_t* ${packet.response.name})
-%else:
-/*@brief Handler for ${packet.name} packets */
+%if not packet.hasResponse:
 __attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.name.lower()}_handler(${proto.prefix}_packet_t* ${packet.name})
-%endif
 {
+%else:
+__attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.name.lower()}_handler(${proto.prefix}_packet_t* ${packet.name}, ${proto.prefix}_packet_t* ${packet.response.name})
+{
+  //Set required Fields
+% for field in packet.response.fields:
+%if field.isRequired:
+  //${proto.prefix}_set${field.name}( value );                      //Set ${field.name} value
+%endif
+%endfor
+%endif
+
   /* NOTE : This function should not be modified, when the callback is needed,
           ${proto.prefix}_${packet.name.lower()}_handler  should be implemented in the user file
   */
+
   return PACKET_UNHANDLED;
 }
+
+
 % endfor
 
 /**
@@ -266,8 +275,10 @@ __attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.name.lower()}_han
   */
 __attribute__((weak)) HandlerStatus_e ${proto.prefix}_default_handler( ${proto.prefix}_packet_t * metaPacket)
 {
+
   /* NOTE : This function should not be modified, when the callback is needed,
           ${proto.prefix}_default_handler  should be implemented in the user file
   */
+  
   return PACKET_UNHANDLED;
 }

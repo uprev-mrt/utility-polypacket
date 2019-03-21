@@ -400,79 +400,109 @@ uint8_t* sp_getBlockdata(sp_packet_t* packet)
   *@param packet ptr to ack_packet_t  containing packet
   *@return handling status
   */
-/*@brief Handler for ack packets */
 __attribute__((weak)) HandlerStatus_e sp_ack_handler(sp_packet_t* ack)
 {
+
   /* NOTE : This function should not be modified, when the callback is needed,
           sp_ack_handler  should be implemented in the user file
   */
+
   return PACKET_UNHANDLED;
 }
+
+
 /**
   *@brief Handler for receiving setdata packets
   *@param packet ptr to setdata_packet_t  containing packet
   *@return handling status
   */
-/*@brief Handler for SetData packets */
 __attribute__((weak)) HandlerStatus_e sp_setdata_handler(sp_packet_t* SetData, sp_packet_t* RespData)
 {
+  //Set required Fields
+  //sp_setsrc( value );                      //Set src value
+  //sp_setdst( value );                      //Set dst value
+
   /* NOTE : This function should not be modified, when the callback is needed,
           sp_setdata_handler  should be implemented in the user file
   */
+
   return PACKET_UNHANDLED;
 }
+
+
 /**
   *@brief Handler for receiving getdata packets
   *@param packet ptr to getdata_packet_t  containing packet
   *@return handling status
   */
-/*@brief Handler for GetData packets */
 __attribute__((weak)) HandlerStatus_e sp_getdata_handler(sp_packet_t* GetData, sp_packet_t* RespData)
 {
+  //Set required Fields
+  //sp_setsrc( value );                      //Set src value
+  //sp_setdst( value );                      //Set dst value
+
   /* NOTE : This function should not be modified, when the callback is needed,
           sp_getdata_handler  should be implemented in the user file
   */
+
   return PACKET_UNHANDLED;
 }
+
+
 /**
   *@brief Handler for receiving respdata packets
   *@param packet ptr to respdata_packet_t  containing packet
   *@return handling status
   */
-/*@brief Handler for RespData packets */
 __attribute__((weak)) HandlerStatus_e sp_respdata_handler(sp_packet_t* RespData)
 {
+
   /* NOTE : This function should not be modified, when the callback is needed,
           sp_respdata_handler  should be implemented in the user file
   */
+
   return PACKET_UNHANDLED;
 }
+
+
 /**
   *@brief Handler for receiving blockreq packets
   *@param packet ptr to blockreq_packet_t  containing packet
   *@return handling status
   */
-/*@brief Handler for blockReq packets */
 __attribute__((weak)) HandlerStatus_e sp_blockreq_handler(sp_packet_t* blockReq, sp_packet_t* blockResp)
 {
+  //Set required Fields
+  //sp_setsrc( value );                      //Set src value
+  //sp_setdst( value );                      //Set dst value
+  //sp_setblockOffset( value );                      //Set blockOffset value
+  //sp_setblockSize( value );                      //Set blockSize value
+  //sp_setblockData( value );                      //Set blockData value
+
   /* NOTE : This function should not be modified, when the callback is needed,
           sp_blockreq_handler  should be implemented in the user file
   */
+
   return PACKET_UNHANDLED;
 }
+
+
 /**
   *@brief Handler for receiving blockresp packets
   *@param packet ptr to blockresp_packet_t  containing packet
   *@return handling status
   */
-/*@brief Handler for blockResp packets */
 __attribute__((weak)) HandlerStatus_e sp_blockresp_handler(sp_packet_t* blockResp)
 {
+
   /* NOTE : This function should not be modified, when the callback is needed,
           sp_blockresp_handler  should be implemented in the user file
   */
+
   return PACKET_UNHANDLED;
 }
+
+
 
 /**
   *@brief catch-all handler for any packet not handled by its default handler
@@ -481,8 +511,10 @@ __attribute__((weak)) HandlerStatus_e sp_blockresp_handler(sp_packet_t* blockRes
   */
 __attribute__((weak)) HandlerStatus_e sp_default_handler( sp_packet_t * metaPacket)
 {
+
   /* NOTE : This function should not be modified, when the callback is needed,
           sp_default_handler  should be implemented in the user file
   */
+  
   return PACKET_UNHANDLED;
 }
