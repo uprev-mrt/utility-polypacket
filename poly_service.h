@@ -69,6 +69,7 @@ typedef struct{
   int mDescCount;
   int mMaxDescs;
   int mMaxPacketSize;
+  bool mAutoAck;
   bool mStarted;
 }poly_service_t;
 
@@ -79,7 +80,7 @@ typedef struct{
   *@param interfaceCount number of interfaces to allocate
   *@return ptr to newly allocated service
   */
-poly_service_t* new_poly_service(int maxDescs, int interfaceCount);
+void poly_service_init(poly_service_t* service, int maxDescs, int interfaceCount);
 
 /**
   *@brief register packet descriptor with service

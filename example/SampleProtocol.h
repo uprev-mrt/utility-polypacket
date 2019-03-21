@@ -84,6 +84,12 @@ void sp_service_feed(int iface, uint8_t* data, int len);
   */
 HandlerStatus_e sp_send( int iface, sp_packet_t* metaPacket);
 
+/**
+  *@brief enables/disables the auto acknowledgement function of the service
+  *@param enable true enable auto acks, false disables them
+  */
+void sp_auto_ack(bool enable);
+
 
 /*******************************************************************************
   Meta-Packet Functions

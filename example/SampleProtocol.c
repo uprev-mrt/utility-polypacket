@@ -40,68 +40,11 @@ poly_field_desc_t* SP_BLOCKOFFSET_FIELD;
 poly_field_desc_t* SP_BLOCKSIZE_FIELD;
 poly_field_desc_t* SP_BLOCKDATA_FIELD;
 
-poly_service_t* SP_SERVICE;
+static poly_service_t SP_SERVICE;
 
 /*******************************************************************************
   Service Functions
 *******************************************************************************/
-/**
-  *@brief attempts to process data in buffers and parse out packets
-  */
-void sp_service_process()
-{
-  static sp_packet_t metaPacket;
-  static sp_packet_t metaResponse;
-
-  HandlerStatus_e status = PACKET_UNHANDLED;
-
-  if(poly_service_try_parse(SP_SERVICE, &metaPacket.mPacket) == PACKET_VALID)
-  {
-
-    //Dispatch packet
-    switch(metaPacket.mPacket.mDesc->mTypeId)
-    {
-      case SP_ACK_PACKET_ID:
-        poly_packet_init(&metaResponse.mPacket, SP_ACK_PACKET, true);
-        status = sp_ack_handler(&metaPacket);
-        break;
-      case SP_SETDATA_PACKET_ID:
-       poly_packet_init(&metaResponse.mPacket, SP_RESPDATA_PACKET,true);
-       status = sp_setdata_handler(&metaPacket , &metaResponse );
-        break;
-      case SP_GETDATA_PACKET_ID:
-       poly_packet_init(&metaResponse.mPacket, SP_RESPDATA_PACKET,true);
-       status = sp_getdata_handler(&metaPacket , &metaResponse );
-        break;
-      case SP_RESPDATA_PACKET_ID:
-        poly_packet_init(&metaResponse.mPacket, SP_ACK_PACKET, true);
-        status = sp_respdata_handler(&metaPacket);
-        break;
-      case SP_BLOCKREQ_PACKET_ID:
-       poly_packet_init(&metaResponse.mPacket, SP_BLOCKRESP_PACKET,true);
-       status = sp_blockreq_handler(&metaPacket , &metaResponse );
-        break;
-      case SP_BLOCKRESP_PACKET_ID:
-        poly_packet_init(&metaResponse.mPacket, SP_ACK_PACKET, true);
-        status = sp_blockresp_handler(&metaPacket);
-        break;
-      default:
-        //we should never get here
-        assert(false);
-        break;
-    }
-
-    //If the packet was not handled, throw it to the default handler
-    if(status == PACKET_UNHANDLED)
-      status = sp_default_handler(&metaPacket);
-
-    //If we are inside this scope, then the poly_packet_t was allocated and needs to be destroyed
-    poly_packet_destroy(&metaPacket.mPacket);
-    poly_packet_destroy(&metaResponse.mPacket);
-  }
-
-}
-
 
 /**
   *@brief initializes sp_protocol
@@ -109,8 +52,8 @@ void sp_service_process()
   */
 void sp_service_init(int interfaceCount)
 {
-
-  SP_SERVICE = new_poly_service(6, interfaceCount);
+  //initialize core service
+  poly_service_init(&SP_SERVICE,6, interfaceCount);
 
   //Build Packet Descriptors
   SP_ACK_PACKET = new_poly_packet_desc("ack", 0);
@@ -168,31 +111,97 @@ void sp_service_init(int interfaceCount)
 
 
   //Register packet descriptors with the service
-  poly_service_register_desc(SP_SERVICE, SP_ACK_PACKET);
-  poly_service_register_desc(SP_SERVICE, SP_SETDATA_PACKET);
-  poly_service_register_desc(SP_SERVICE, SP_GETDATA_PACKET);
-  poly_service_register_desc(SP_SERVICE, SP_RESPDATA_PACKET);
-  poly_service_register_desc(SP_SERVICE, SP_BLOCKREQ_PACKET);
-  poly_service_register_desc(SP_SERVICE, SP_BLOCKRESP_PACKET);
+  poly_service_register_desc(&SP_SERVICE, SP_ACK_PACKET);
+  poly_service_register_desc(&SP_SERVICE, SP_SETDATA_PACKET);
+  poly_service_register_desc(&SP_SERVICE, SP_GETDATA_PACKET);
+  poly_service_register_desc(&SP_SERVICE, SP_RESPDATA_PACKET);
+  poly_service_register_desc(&SP_SERVICE, SP_BLOCKREQ_PACKET);
+  poly_service_register_desc(&SP_SERVICE, SP_BLOCKRESP_PACKET);
 
-  poly_service_start(SP_SERVICE, 512);
+  poly_service_start(&SP_SERVICE, 512);
+
+}
+
+
+/**
+  *@brief attempts to process data in buffers and parse out packets
+  */
+void sp_service_process()
+{
+  static sp_packet_t metaPacket;
+  static sp_packet_t metaResponse;
+
+  HandlerStatus_e status = PACKET_UNHANDLED;
+
+  if(poly_service_try_parse(&SP_SERVICE, &metaPacket.mPacket) == PACKET_VALID)
+  {
+
+    //set response token with ack flag (this will persist even when packet it built)
+    metaResponse.mPacket.mHeader.mToken = metaPacket.mPacket.mHeader.mToken | POLY_ACK_FLAG;
+
+    //Dispatch packet
+    switch(metaPacket.mPacket.mDesc->mTypeId)
+    {
+      case SP_ACK_PACKET_ID:
+        poly_packet_build(&metaResponse.mPacket, SP_ACK_PACKET, true);
+        status = sp_ack_handler(&metaPacket);
+        break;
+      case SP_SETDATA_PACKET_ID:
+       poly_packet_build(&metaResponse.mPacket, SP_RESPDATA_PACKET,true);
+       status = sp_setdata_handler(&metaPacket , &metaResponse );
+        break;
+      case SP_GETDATA_PACKET_ID:
+       poly_packet_build(&metaResponse.mPacket, SP_RESPDATA_PACKET,true);
+       status = sp_getdata_handler(&metaPacket , &metaResponse );
+        break;
+      case SP_RESPDATA_PACKET_ID:
+        poly_packet_build(&metaResponse.mPacket, SP_ACK_PACKET, true);
+        status = sp_respdata_handler(&metaPacket);
+        break;
+      case SP_BLOCKREQ_PACKET_ID:
+       poly_packet_build(&metaResponse.mPacket, SP_BLOCKRESP_PACKET,true);
+       status = sp_blockreq_handler(&metaPacket , &metaResponse );
+        break;
+      case SP_BLOCKRESP_PACKET_ID:
+        poly_packet_build(&metaResponse.mPacket, SP_ACK_PACKET, true);
+        status = sp_blockresp_handler(&metaPacket);
+        break;
+      default:
+        //we should never get here
+        assert(false);
+        break;
+    }
+
+    //If the packet was not handled, throw it to the default handler
+    if(status == PACKET_UNHANDLED)
+      status = sp_default_handler(&metaPacket);
+
+    //If we are inside this scope, then the poly_packet_t was allocated and needs to be destroyed
+    poly_packet_clean(&metaPacket.mPacket);
+    poly_packet_clean(&metaResponse.mPacket);
+  }
 
 }
 
 
 void sp_service_register_tx( int iface, poly_tx_callback txCallBack)
 {
-  poly_service_register_tx_callback(SP_SERVICE, iface,txCallBack);
+  poly_service_register_tx_callback(&SP_SERVICE, iface,txCallBack);
 }
 
 void sp_service_feed(int iface, uint8_t* data, int len)
 {
-  poly_service_feed(SP_SERVICE,iface,data,len);
+  poly_service_feed(&SP_SERVICE,iface,data,len);
 }
 
 HandlerStatus_e sp_send(int iface, sp_packet_t* metaPacket)
 {
-  return poly_service_send(SP_SERVICE, iface, &metaPacket->mPacket);
+  return poly_service_send(&SP_SERVICE, iface, &metaPacket->mPacket);
+}
+
+void sp_auto_ack(bool enable)
+{
+  SP_SERVICE.mAutoAck = enable;
 }
 
 
@@ -211,7 +220,7 @@ sp_packet_t* new_sp_packet(poly_packet_desc_t* desc)
   sp_packet_t* newMetaPacket = (sp_packet_t*) malloc(sizeof(sp_packet_t));
 
   //create new unallocated packet
-  poly_packet_init(&newMetaPacket->mPacket, desc, true);
+  poly_packet_build(&newMetaPacket->mPacket, desc, true);
 
   return newMetaPacket;
 }
@@ -224,7 +233,7 @@ sp_packet_t* new_sp_packet(poly_packet_desc_t* desc)
 void sp_destroy(sp_packet_t* metaPacket)
 {
   //free internal poly_packet_t
-  poly_packet_destroy(&metaPacket->mPacket);
+  poly_packet_clean(&metaPacket->mPacket);
 
   //free memory
   free(metaPacket);

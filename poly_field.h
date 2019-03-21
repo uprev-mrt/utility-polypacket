@@ -102,13 +102,6 @@ void poly_field_init(poly_field_t* field, poly_field_desc_t* desc, bool allocate
 void poly_field_destroy(poly_field_t* field);
 
 /**
-  *@brief copies complete field over to another field
-  *@param src ptr to field to be copied
-  *@param dst ptr to field being written
-  */
-void poly_field_copy(poly_field_t* src, poly_field_t* dst);
-
-/**
   *@brief binds poly field to data in memory
   *@param field ptr to field
   *@param data ptr to data in memory

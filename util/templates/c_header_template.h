@@ -79,6 +79,12 @@ void ${proto.prefix}_service_feed(int iface, uint8_t* data, int len);
   */
 HandlerStatus_e ${proto.prefix}_send( int iface, ${proto.prefix}_packet_t* metaPacket);
 
+/**
+  *@brief enables/disables the auto acknowledgement function of the service
+  *@param enable true enable auto acks, false disables them
+  */
+void ${proto.prefix}_auto_ack(bool enable);
+
 
 /*******************************************************************************
   Meta-Packet Functions

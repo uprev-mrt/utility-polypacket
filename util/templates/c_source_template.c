@@ -28,55 +28,11 @@ poly_packet_desc_t* ${packet.globalName};
 poly_field_desc_t* ${field.globalName};
 % endfor
 
-poly_service_t* ${proto.service()};
+static poly_service_t ${proto.service()};
 
 /*******************************************************************************
   Service Functions
 *******************************************************************************/
-/**
-  *@brief attempts to process data in buffers and parse out packets
-  */
-void ${proto.prefix}_service_process()
-{
-  static ${proto.prefix}_packet_t metaPacket;
-  static ${proto.prefix}_packet_t metaResponse;
-
-  HandlerStatus_e status = PACKET_UNHANDLED;
-
-  if(poly_service_try_parse(${proto.service()}, &metaPacket.mPacket) == PACKET_VALID)
-  {
-
-    //Dispatch packet
-    switch(metaPacket.mPacket.mDesc->mTypeId)
-    {
-  % for packet in proto.packets:
-      case ${packet.globalName}_ID:
-      %if packet.hasResponse:
-       poly_packet_init(&metaResponse.mPacket, ${packet.response.globalName},true);
-       status = ${proto.prefix}_${packet.name.lower()}_handler(&metaPacket , &metaResponse );
-      %else:
-        poly_packet_init(&metaResponse.mPacket, ${proto.prefix.upper()}_ACK_PACKET, true);
-        status = ${proto.prefix}_${packet.name.lower()}_handler(&metaPacket);
-      %endif
-        break;
-  % endfor
-      default:
-        //we should never get here
-        assert(false);
-        break;
-    }
-
-    //If the packet was not handled, throw it to the default handler
-    if(status == PACKET_UNHANDLED)
-      status = ${proto.prefix}_default_handler(&metaPacket);
-
-    //If we are inside this scope, then the poly_packet_t was allocated and needs to be destroyed
-    poly_packet_destroy(&metaPacket.mPacket);
-    poly_packet_destroy(&metaResponse.mPacket);
-  }
-
-}
-
 
 /**
   *@brief initializes ${proto.prefix}_protocol
@@ -84,8 +40,8 @@ void ${proto.prefix}_service_process()
   */
 void ${proto.prefix}_service_init(int interfaceCount)
 {
-
-  ${proto.service()} = new_poly_service(${len(proto.packets)}, interfaceCount);
+  //initialize core service
+  poly_service_init(&${proto.service()},${len(proto.packets)}, interfaceCount);
 
   //Build Packet Descriptors
 % for packet in proto.packets:
@@ -109,27 +65,80 @@ void ${proto.prefix}_service_init(int interfaceCount)
 
   //Register packet descriptors with the service
 % for packet in proto.packets:
-  poly_service_register_desc(${proto.service()}, ${packet.globalName});
+  poly_service_register_desc(&${proto.service()}, ${packet.globalName});
 % endfor
 
-  poly_service_start(${proto.service()}, 512);
+  poly_service_start(&${proto.service()}, 512);
+
+}
+
+
+/**
+  *@brief attempts to process data in buffers and parse out packets
+  */
+void ${proto.prefix}_service_process()
+{
+  static ${proto.prefix}_packet_t metaPacket;
+  static ${proto.prefix}_packet_t metaResponse;
+
+  HandlerStatus_e status = PACKET_UNHANDLED;
+
+  if(poly_service_try_parse(&${proto.service()}, &metaPacket.mPacket) == PACKET_VALID)
+  {
+
+    //set response token with ack flag (this will persist even when packet it built)
+    metaResponse.mPacket.mHeader.mToken = metaPacket.mPacket.mHeader.mToken | POLY_ACK_FLAG;
+
+    //Dispatch packet
+    switch(metaPacket.mPacket.mDesc->mTypeId)
+    {
+  % for packet in proto.packets:
+      case ${packet.globalName}_ID:
+      %if packet.hasResponse:
+       poly_packet_build(&metaResponse.mPacket, ${packet.response.globalName},true);
+       status = ${proto.prefix}_${packet.name.lower()}_handler(&metaPacket , &metaResponse );
+      %else:
+        poly_packet_build(&metaResponse.mPacket, ${proto.prefix.upper()}_ACK_PACKET, true);
+        status = ${proto.prefix}_${packet.name.lower()}_handler(&metaPacket);
+      %endif
+        break;
+  % endfor
+      default:
+        //we should never get here
+        assert(false);
+        break;
+    }
+
+    //If the packet was not handled, throw it to the default handler
+    if(status == PACKET_UNHANDLED)
+      status = ${proto.prefix}_default_handler(&metaPacket);
+
+    //If we are inside this scope, then the poly_packet_t was allocated and needs to be destroyed
+    poly_packet_clean(&metaPacket.mPacket);
+    poly_packet_clean(&metaResponse.mPacket);
+  }
 
 }
 
 
 void ${proto.prefix}_service_register_tx( int iface, poly_tx_callback txCallBack)
 {
-  poly_service_register_tx_callback(${proto.service()}, iface,txCallBack);
+  poly_service_register_tx_callback(&${proto.service()}, iface,txCallBack);
 }
 
 void ${proto.prefix}_service_feed(int iface, uint8_t* data, int len)
 {
-  poly_service_feed(${proto.service()},iface,data,len);
+  poly_service_feed(&${proto.service()},iface,data,len);
 }
 
 HandlerStatus_e ${proto.prefix}_send(int iface, ${proto.prefix}_packet_t* metaPacket)
 {
-  return poly_service_send(${proto.service()}, iface, &metaPacket->mPacket);
+  return poly_service_send(&${proto.service()}, iface, &metaPacket->mPacket);
+}
+
+void ${proto.prefix}_auto_ack(bool enable)
+{
+  ${proto.service()}.mAutoAck = enable;
 }
 
 
@@ -148,7 +157,7 @@ ${proto.prefix}_packet_t* new_${proto.prefix}_packet(poly_packet_desc_t* desc)
   ${proto.prefix}_packet_t* newMetaPacket = (${proto.prefix}_packet_t*) malloc(sizeof(${proto.prefix}_packet_t));
 
   //create new unallocated packet
-  poly_packet_init(&newMetaPacket->mPacket, desc, true);
+  poly_packet_build(&newMetaPacket->mPacket, desc, true);
 
   return newMetaPacket;
 }
@@ -161,7 +170,7 @@ ${proto.prefix}_packet_t* new_${proto.prefix}_packet(poly_packet_desc_t* desc)
 void ${proto.prefix}_destroy(${proto.prefix}_packet_t* metaPacket)
 {
   //free internal poly_packet_t
-  poly_packet_destroy(&metaPacket->mPacket);
+  poly_packet_clean(&metaPacket->mPacket);
 
   //free memory
   free(metaPacket);

@@ -102,19 +102,6 @@ void poly_field_destroy(poly_field_t* field)
   }
 }
 
-void poly_field_copy(poly_field_t* src, poly_field_t* dst)
-{
-  assert(dst->mBound || dst->mAllocated);
-
-  //must be same type to copy
-  if(src->mDesc != dst->mDesc)
-    return;
-
-  memcpy(dst->mData, src->mData, src->mSize);
-  dst->mSize = src->mSize;
-  dst->mPresent = src->mPresent;
-}
-
 void poly_field_bind(poly_field_t* field, uint8_t* data, bool copy)
 {
   //if data is alread present, copy it first
