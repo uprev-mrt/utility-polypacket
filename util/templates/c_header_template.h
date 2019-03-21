@@ -2,7 +2,8 @@
   *@file ${proto.fileName}.h
   *@brief generated protocol source code
   *@author make_protocol.py
-  *@date 03/18/19
+  *@date ${proto.genTime}
+  *@hash ${proto.hash}
   */
 
 /***********************************************************
@@ -10,7 +11,11 @@
 ***********************************************************/
 #include "Utilities/PolyPacket/poly_service.h"
 
+#define ${proto.prefix.upper()}_SERVICE_HASH 0x${proto.hash}
 
+/*******************************************************************************
+  Enums
+*******************************************************************************/
 % for field in proto.fields:
 % if field.isEnum:
 /* Enums for ${field.name} field */
@@ -20,7 +25,6 @@ typedef enum{
   % endfor
   ${proto.prefix.upper()+"_"+field.name.upper()}_MAX_LIMIT
 } ${proto.prefix}_${field.name.lower()}_e;
-
 %if proto.snippets:
 //Switch Snippet
 /*
@@ -35,9 +39,13 @@ switch(${field.name.lower()})
 }
 */
 % endif
+
 % endif
 % endfor
 
+/*******************************************************************************
+  Bits/Flags
+*******************************************************************************/
 % for field in proto.fields:
 % if field.isMask:
 /* Flags for ${field.name} field */
@@ -47,11 +55,13 @@ typedef enum{
   % endfor
   ${proto.prefix.upper()+"_"+field.name.upper()}_MAX_LIMIT
 } ${proto.prefix}_${field.name.lower()}_e;
+
 % endif
 % endfor
 
-
-
+/*******************************************************************************
+  Global Descriptors
+*******************************************************************************/
 //Declare extern packet descriptors
 % for packet in proto.packets:
 extern poly_packet_desc_t* ${packet.globalName};
@@ -119,7 +129,7 @@ void ${proto.prefix}_auto_ack(bool enable);
 *******************************************************************************/
 
 /**
-  *@brief creates a new ${proto.prefix}_packet_t object OWNER IS RESPONSIBLE FOR DESTROYING
+  *@brief creates a new ${proto.prefix}_packet_t object OWNER IS RESPONSIBLE FOR CLEANING
   *@param desc ptr to packet descriptor to model packet from
   *@return ptr to new {proto.prefix}_packet_t
   */
@@ -127,10 +137,10 @@ ${proto.prefix}_packet_t* new_${proto.prefix}_packet(poly_packet_desc_t* desc);
 
 
 /**
-  *@brief recrusively destroys ${proto.prefix}_packet_t and its contents
-  *@param metaPacket metapacket to destroy
+  *@brief recrusively cleanss ${proto.prefix}_packet_t and its contents
+  *@param metaPacket metapacket to clean
   */
-void ${proto.prefix}_destroy(${proto.prefix}_packet_t* metaPacket);
+void ${proto.prefix}_clean(${proto.prefix}_packet_t* metaPacket);
 
 /**
   *@brief converts packet to json
@@ -163,7 +173,7 @@ void ${proto.prefix}_destroy(${proto.prefix}_packet_t* metaPacket);
   *@param field ptr to field descriptor
   *@return size of field
   */
-int ${proto.prefix}_getFieldLen(${proto.prefix}_packet_t* packet, poly_field_desc_t* fieldDesc );
+int ${proto.prefix}_fieldLen(${proto.prefix}_packet_t* packet, poly_field_desc_t* fieldDesc );
 
 /*******************************************************************************
   Meta-Packet setters

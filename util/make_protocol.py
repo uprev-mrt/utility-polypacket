@@ -88,7 +88,7 @@ class fieldDesc:
 
         self.format = 'FORMAT_DEFAULT'
 
-        if strType in ['flag','flags']:
+        if strType in ['flag','flags','mask','bits']:
             self.format = 'FORMAT_HEX'
             self.isMask = True
             strType = 'uint8_t'
@@ -501,6 +501,7 @@ def init_args():
     parser.add_argument('-c', '--pure_c', action='store_true', help='generate pure c code', default=False)
     parser.add_argument('-d', '--document', action='store_true', help='Enable documentation', default=False)
     parser.add_argument('-s', '--snippets', action='store_true', help='Adds helpful code snippets to files', default=False)
+    parser.add_argument('-u', '--updater', action='store_true', help='creates updater script', default=False)
 
 def main():
     global path
@@ -522,6 +523,15 @@ def main():
     protocol.genTime = now.strftime("%m/%d/%y")
 
     protocol.snippets = args.snippets
+
+    if(args.updater):
+        strArgs = ' '.join(sys.argv[1:])
+        fileText = "python make_protocol.py {0}".format(strArgs)
+        text_file = open( "update.cmd" , "w")
+        text_file.write(fileText)
+        #text_file.write(template.render(proto = protocol))
+        text_file.close()
+
 
     if(args.pure_c):
         buildTemplate(protocol, 'templates/c_header_template.h', path+"/" + protocol.fileName+".h")

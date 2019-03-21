@@ -163,7 +163,7 @@ void ${proto.prefix}_auto_ack(bool enable)
 /**
   *@brief creates a new meta packet and returns a pointer to it
   *@param desc packet descriptor
-  *@post creator is responsible for destroying with ${proto.prefix}_packet_destroy()
+  *@post creator is responsible for Cleaning with ${proto.prefix}_clean()
   *@return ptr to new meta packet
   */
 ${proto.prefix}_packet_t* new_${proto.prefix}_packet(poly_packet_desc_t* desc)
@@ -181,7 +181,7 @@ ${proto.prefix}_packet_t* new_${proto.prefix}_packet(poly_packet_desc_t* desc)
   *@brief frees memory allocated for metapacket
   *@param "metaPacket ptr to metaPacket
   */
-void ${proto.prefix}_destroy(${proto.prefix}_packet_t* metaPacket)
+void ${proto.prefix}_clean(${proto.prefix}_packet_t* metaPacket)
 {
   //free internal poly_packet_t
   poly_packet_clean(&metaPacket->mPacket);
@@ -190,7 +190,7 @@ void ${proto.prefix}_destroy(${proto.prefix}_packet_t* metaPacket)
   free(metaPacket);
 }
 
-int ${proto.prefix}_getFieldLen(${proto.prefix}_packet_t* packet, poly_field_desc_t* fieldDesc )
+int ${proto.prefix}_fieldLen(${proto.prefix}_packet_t* packet, poly_field_desc_t* fieldDesc )
 {
   poly_field_t* field = poly_packet_get_field(&packet->mPacket, ${field.globalName});
   return (int)field->mSize;
@@ -204,8 +204,18 @@ int ${proto.prefix}_getFieldLen(${proto.prefix}_packet_t* packet, poly_field_des
 
 % for field in proto.fields:
 %if field.isArray:
+/**
+*@brief Sets value(s) in ${field.name} field
+*@param packet ptr to ${proto.prefix}_packet
+*@param val ${field.getParamType()} to copy data from
+*/
 void ${proto.prefix}_set${field.camel()}(${proto.prefix}_packet_t* packet, const ${field.getParamType()} val)
 % else:
+/**
+  *@brief Sets value of ${field.name} field
+  *@param packet ptr to ${proto.prefix}_packet
+  *@param val ${field.getParamType()} to set field to
+  */
 void ${proto.prefix}_set${field.camel()}(${proto.prefix}_packet_t* packet, ${field.getParamType()} val)
 %endif
 {
@@ -224,6 +234,19 @@ void ${proto.prefix}_set${field.camel()}(${proto.prefix}_packet_t* packet, ${fie
 *******************************************************************************/
 
 % for field in proto.fields:
+%if field.isArray:
+/**
+  *@brief Gets value of ${field.name} field
+  *@param packet ptr to ${proto.prefix}_packet
+  *@return ${field.getParamType()} of data in field
+  */
+%else:
+/**
+  *@brief Gets value of ${field.name} field
+  *@param packet ptr to ${proto.prefix}_packet
+  *@return ${field.getParamType()} data from field
+  */
+%endif
 ${field.getParamType()} ${proto.prefix}_get${field.camel()}(${proto.prefix}_packet_t* packet)
 {
   ${field.getParamType()} val;
@@ -265,7 +288,7 @@ __attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.name}_handler(${p
   //Set required Fields
 % for field in packet.response.fields:
 %if field.isRequired:
-  //${proto.prefix}_set${field.camel}(${packet.response.name}, value );                   //Set ${field.name} value
+  //${proto.prefix}_set${field.camel()}(${packet.response.name}, value );                   //Set ${field.name} value
 %endif
 %endfor
 %endif
