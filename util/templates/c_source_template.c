@@ -31,7 +31,7 @@ poly_field_desc_t* ${field.globalName};
 poly_service_t* ${proto.service()};
 
 /*******************************************************************************
-  Service Process
+  Service Functions
 *******************************************************************************/
 /**
   *@brief attempts to process data in buffers and parse out packets
@@ -63,19 +63,12 @@ void ${proto.prefix}_service_process()
     if(status == PACKET_UNHANDLED)
       status = ${proto.prefix}_default_handler(&metaPacket);
 
-    ${proto.prefix}_teardown(&metaPacket);
+    //If we are inside this scope, then the poly_packet_t was allocated and needs to be destroyed
+    poly_packet_destroy(&metaPacket.mPacket);
   }
 
 }
 
-void ${proto.prefix}_service_register_tx( int iface, poly_tx_callback txCallBack)
-{
-  poly_service_register_tx_callback(${proto.service()}, iface,txCallBack);
-}
-
-/*******************************************************************************
-  Service initializer
-*******************************************************************************/
 
 /**
   *@brief initializes ${proto.prefix}_protocol
@@ -97,10 +90,13 @@ void ${proto.prefix}_service_init(int interfaceCount)
 % endfor
 
 % for packet in proto.packets:
-  //Settomg Field Descriptors for ${packet.name}
+% if len(packet.fields) > 0:
+  //Setting Field Descriptors for ${packet.name}
   % for field in packet.fields:
   poly_packet_desc_add_field(${packet.globalName} , ${field.globalName} , ${str(field.isRequired).lower()} );
   % endfor
+% endif
+
 % endfor
 
   //Register packet descriptors with the service
@@ -112,6 +108,12 @@ void ${proto.prefix}_service_init(int interfaceCount)
 
 }
 
+
+void ${proto.prefix}_service_register_tx( int iface, poly_tx_callback txCallBack)
+{
+  poly_service_register_tx_callback(${proto.service()}, iface,txCallBack);
+}
+
 void ${proto.prefix}_service_feed(int iface, uint8_t* data, int len)
 {
   poly_service_feed(${proto.service()},iface,data,len);
@@ -121,6 +123,7 @@ HandlerStatus_e ${proto.prefix}_send(int iface, ${proto.prefix}_packet_t* metaPa
 {
   return poly_service_send(${proto.service()}, iface, &metaPacket->mPacket);
 }
+
 
 /*******************************************************************************
   Meta packet
@@ -142,14 +145,6 @@ ${proto.prefix}_packet_t* new_${proto.prefix}_packet(poly_packet_desc_t* desc)
   return newMetaPacket;
 }
 
-/**
-  *@brief reset mega packet to a default state by freeing memory of payload
-  *@param "metaPacket ptr to metaPacket
-  */
-void ${proto.prefix}_teardown(${proto.prefix}_packet_t* metaPacket)
-{
-  poly_packet_destroy(&metaPacket->mPacket);
-}
 
 /**
   *@brief frees memory allocated for metapacket
@@ -157,8 +152,8 @@ void ${proto.prefix}_teardown(${proto.prefix}_packet_t* metaPacket)
   */
 void ${proto.prefix}_destroy(${proto.prefix}_packet_t* metaPacket)
 {
-  //teardown
-  ${proto.prefix}_teardown(metaPacket);
+  //free internal poly_packet_t
+  poly_packet_destroy(&metaPacket->mPacket);
 
   //free memory
   free(metaPacket);

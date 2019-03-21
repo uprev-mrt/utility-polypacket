@@ -81,14 +81,44 @@ HandlerStatus_e sp_send( int iface, sp_packet_t* metaPacket);
   Meta-Packet Functions
 *******************************************************************************/
 
+/**
+  *@brief creates a new sp_packet_t object OWNER IS RESPONSIBLE FOR DESTROYING
+  *@param desc ptr to packet descriptor to model packet from
+  *@return ptr to new {proto.prefix}_packet_t
+  */
 sp_packet_t* new_sp_packet(poly_packet_desc_t* desc);
 
-void sp_teardown(sp_packet_t* metaPacket);
+
+/**
+  *@brief recrusively destroys sp_packet_t and its contents
+  *@param metaPacket metapacket to destroy
+  */
 void sp_destroy(sp_packet_t* metaPacket);
-//Define basic function macros
-#define sp_print_json(msg,buf) poly_packet_print_json(&msg->mPacket, buf, false)
-#define sp_parse(msg,buf,len) poly_packet_parse_buffer(&msg->mPacket, buf, len)
-#define sp_pack(msg, buf) poly_packet_pack(&msg->mPacket, buf)
+
+/**
+  *@brief converts packet to json
+  *@param packet ptr to packet to convert
+  *@param buf buffer to store string
+  *@return length of string
+  */
+#define sp_print_json(packet,buf) poly_packet_print_json(&packet->mPacket, buf, false)
+
+/**
+  *@brief parses packet from a buffer of data
+  *@param packet ptr to packet to be built
+  *@param buf buffer to parse
+  *@return status of parse attempt
+  */
+#define sp_parse(packet,buf,len) poly_packet_parse_buffer(&packet->mPacket, buf, len)
+
+
+/**
+  *@brief packs packet into a byte array
+  *@param packet ptr to packet to be packed
+  *@param buf buffer to store data
+  *@return length of packed data
+  */
+#define sp_pack(packet, buf) poly_packet_pack(&packet->mPacket, buf)
 
 
 /*******************************************************************************
@@ -122,15 +152,21 @@ uint8_t* sp_getBlockdata(sp_packet_t* packet);
 *******************************************************************************/
 /*@brief Handler for ack packets */
 HandlerStatus_e sp_ack_handler(sp_packet_t* ack);
+
 /*@brief Handler for SetData packets */
 HandlerStatus_e sp_setdata_handler(sp_packet_t* SetData);
+
 /*@brief Handler for GetData packets */
 HandlerStatus_e sp_getdata_handler(sp_packet_t* GetData);
+
 /*@brief Handler for RespData packets */
 HandlerStatus_e sp_respdata_handler(sp_packet_t* RespData);
+
 /*@brief Handler for blockReq packets */
 HandlerStatus_e sp_blockreq_handler(sp_packet_t* blockReq);
+
 /*@brief Handler for blockResp packets */
 HandlerStatus_e sp_blockresp_handler(sp_packet_t* blockResp);
 
+/*@brief Catch-All Handler for unhandled packets */
 HandlerStatus_e sp_default_handler(sp_packet_t * packet);

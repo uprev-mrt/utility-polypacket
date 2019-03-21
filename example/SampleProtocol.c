@@ -43,7 +43,7 @@ poly_field_desc_t* SP_BLOCKDATA_FIELD;
 poly_service_t* SP_SERVICE;
 
 /*******************************************************************************
-  Service Process
+  Service Functions
 *******************************************************************************/
 /**
   *@brief attempts to process data in buffers and parse out packets
@@ -88,19 +88,12 @@ void sp_service_process()
     if(status == PACKET_UNHANDLED)
       status = sp_default_handler(&metaPacket);
 
-    sp_teardown(&metaPacket);
+    //If we are inside this scope, then the poly_packet_t was allocated and needs to be destroyed
+    poly_packet_destroy(&metaPacket.mPacket);
   }
 
 }
 
-void sp_service_register_tx( int iface, poly_tx_callback txCallBack)
-{
-  poly_service_register_tx_callback(SP_SERVICE, iface,txCallBack);
-}
-
-/*******************************************************************************
-  Service initializer
-*******************************************************************************/
 
 /**
   *@brief initializes sp_protocol
@@ -130,36 +123,41 @@ void sp_service_init(int interfaceCount)
   SP_BLOCKSIZE_FIELD = new_poly_field_desc("blockSize", TYPE_UINT32, 1, FORMAT_DEC);
   SP_BLOCKDATA_FIELD = new_poly_field_desc("blockData", TYPE_UINT8, 64, FORMAT_NONE);
 
-  //Settomg Field Descriptors for ack
-  //Settomg Field Descriptors for SetData
+
+  //Setting Field Descriptors for SetData
   poly_packet_desc_add_field(SP_SETDATA_PACKET , SP_SRC_FIELD , true );
   poly_packet_desc_add_field(SP_SETDATA_PACKET , SP_DST_FIELD , true );
   poly_packet_desc_add_field(SP_SETDATA_PACKET , SP_SENSORA_FIELD , false );
   poly_packet_desc_add_field(SP_SETDATA_PACKET , SP_SENSORB_FIELD , false );
   poly_packet_desc_add_field(SP_SETDATA_PACKET , SP_SENSORNAME_FIELD , false );
-  //Settomg Field Descriptors for GetData
+
+  //Setting Field Descriptors for GetData
   poly_packet_desc_add_field(SP_GETDATA_PACKET , SP_SRC_FIELD , true );
   poly_packet_desc_add_field(SP_GETDATA_PACKET , SP_DST_FIELD , true );
   poly_packet_desc_add_field(SP_GETDATA_PACKET , SP_SENSORA_FIELD , false );
   poly_packet_desc_add_field(SP_GETDATA_PACKET , SP_SENSORB_FIELD , false );
   poly_packet_desc_add_field(SP_GETDATA_PACKET , SP_SENSORNAME_FIELD , false );
-  //Settomg Field Descriptors for RespData
+
+  //Setting Field Descriptors for RespData
   poly_packet_desc_add_field(SP_RESPDATA_PACKET , SP_SRC_FIELD , true );
   poly_packet_desc_add_field(SP_RESPDATA_PACKET , SP_DST_FIELD , true );
   poly_packet_desc_add_field(SP_RESPDATA_PACKET , SP_SENSORA_FIELD , false );
   poly_packet_desc_add_field(SP_RESPDATA_PACKET , SP_SENSORB_FIELD , false );
   poly_packet_desc_add_field(SP_RESPDATA_PACKET , SP_SENSORNAME_FIELD , false );
-  //Settomg Field Descriptors for blockReq
+
+  //Setting Field Descriptors for blockReq
   poly_packet_desc_add_field(SP_BLOCKREQ_PACKET , SP_SRC_FIELD , true );
   poly_packet_desc_add_field(SP_BLOCKREQ_PACKET , SP_DST_FIELD , true );
   poly_packet_desc_add_field(SP_BLOCKREQ_PACKET , SP_BLOCKOFFSET_FIELD , true );
   poly_packet_desc_add_field(SP_BLOCKREQ_PACKET , SP_BLOCKSIZE_FIELD , true );
-  //Settomg Field Descriptors for blockResp
+
+  //Setting Field Descriptors for blockResp
   poly_packet_desc_add_field(SP_BLOCKRESP_PACKET , SP_SRC_FIELD , true );
   poly_packet_desc_add_field(SP_BLOCKRESP_PACKET , SP_DST_FIELD , true );
   poly_packet_desc_add_field(SP_BLOCKRESP_PACKET , SP_BLOCKOFFSET_FIELD , true );
   poly_packet_desc_add_field(SP_BLOCKRESP_PACKET , SP_BLOCKSIZE_FIELD , true );
   poly_packet_desc_add_field(SP_BLOCKRESP_PACKET , SP_BLOCKDATA_FIELD , true );
+
 
   //Register packet descriptors with the service
   poly_service_register_desc(SP_SERVICE, SP_ACK_PACKET);
@@ -173,6 +171,12 @@ void sp_service_init(int interfaceCount)
 
 }
 
+
+void sp_service_register_tx( int iface, poly_tx_callback txCallBack)
+{
+  poly_service_register_tx_callback(SP_SERVICE, iface,txCallBack);
+}
+
 void sp_service_feed(int iface, uint8_t* data, int len)
 {
   poly_service_feed(SP_SERVICE,iface,data,len);
@@ -182,6 +186,7 @@ HandlerStatus_e sp_send(int iface, sp_packet_t* metaPacket)
 {
   return poly_service_send(SP_SERVICE, iface, &metaPacket->mPacket);
 }
+
 
 /*******************************************************************************
   Meta packet
@@ -203,14 +208,6 @@ sp_packet_t* new_sp_packet(poly_packet_desc_t* desc)
   return newMetaPacket;
 }
 
-/**
-  *@brief reset mega packet to a default state by freeing memory of payload
-  *@param "metaPacket ptr to metaPacket
-  */
-void sp_teardown(sp_packet_t* metaPacket)
-{
-  poly_packet_destroy(&metaPacket->mPacket);
-}
 
 /**
   *@brief frees memory allocated for metapacket
@@ -218,8 +215,8 @@ void sp_teardown(sp_packet_t* metaPacket)
   */
 void sp_destroy(sp_packet_t* metaPacket)
 {
-  //teardown
-  sp_teardown(metaPacket);
+  //free internal poly_packet_t
+  poly_packet_destroy(&metaPacket->mPacket);
 
   //free memory
   free(metaPacket);

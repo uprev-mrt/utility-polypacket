@@ -76,14 +76,44 @@ HandlerStatus_e ${proto.prefix}_send( int iface, ${proto.prefix}_packet_t* metaP
   Meta-Packet Functions
 *******************************************************************************/
 
+/**
+  *@brief creates a new ${proto.prefix}_packet_t object OWNER IS RESPONSIBLE FOR DESTROYING
+  *@param desc ptr to packet descriptor to model packet from
+  *@return ptr to new {proto.prefix}_packet_t
+  */
 ${proto.prefix}_packet_t* new_${proto.prefix}_packet(poly_packet_desc_t* desc);
 
-void ${proto.prefix}_teardown(${proto.prefix}_packet_t* metaPacket);
+
+/**
+  *@brief recrusively destroys ${proto.prefix}_packet_t and its contents
+  *@param metaPacket metapacket to destroy
+  */
 void ${proto.prefix}_destroy(${proto.prefix}_packet_t* metaPacket);
-//Define basic function macros
-#define ${proto.prefix}_print_json(msg,buf) poly_packet_print_json(&msg->mPacket, buf, false)
-#define ${proto.prefix}_parse(msg,buf,len) poly_packet_parse_buffer(&msg->mPacket, buf, len)
-#define ${proto.prefix}_pack(msg, buf) poly_packet_pack(&msg->mPacket, buf)
+
+/**
+  *@brief converts packet to json
+  *@param packet ptr to packet to convert
+  *@param buf buffer to store string
+  *@return length of string
+  */
+#define ${proto.prefix}_print_json(packet,buf) poly_packet_print_json(&packet->mPacket, buf, false)
+
+/**
+  *@brief parses packet from a buffer of data
+  *@param packet ptr to packet to be built
+  *@param buf buffer to parse
+  *@return status of parse attempt
+  */
+#define ${proto.prefix}_parse(packet,buf,len) poly_packet_parse_buffer(&packet->mPacket, buf, len)
+
+
+/**
+  *@brief packs packet into a byte array
+  *@param packet ptr to packet to be packed
+  *@param buf buffer to store data
+  *@return length of packed data
+  */
+#define ${proto.prefix}_pack(packet, buf) poly_packet_pack(&packet->mPacket, buf)
 
 
 /*******************************************************************************
@@ -110,6 +140,7 @@ ${field.getParamType()} ${proto.prefix}_get${field.name.capitalize()}(${proto.pr
 % for packet in proto.packets:
 /*@brief Handler for ${packet.name} packets */
 HandlerStatus_e ${proto.prefix}_${packet.name.lower()}_handler(${proto.prefix}_packet_t* ${packet.name});
-% endfor
 
+% endfor
+/*@brief Catch-All Handler for unhandled packets */
 HandlerStatus_e ${proto.prefix}_default_handler(${proto.prefix}_packet_t * packet);
