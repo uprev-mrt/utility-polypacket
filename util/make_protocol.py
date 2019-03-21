@@ -53,6 +53,8 @@ cNameDict = {
      "int" : "int",
      "float" : "float",
      "double" : "double",
+     "enum" : "uint8_t",
+     "flag" : "uint8_t"
  }
 
 formatDict = {
@@ -64,18 +66,6 @@ formatDict = {
 }
 
 
-metaDoc = "### Header\n" +\
-          "Every Packet has a standard Header before the data\n\n" +\
-          "|***Byte***|0|1|2|3|4|5|6|\n" +\
-          "|---|---|---|---|---|---|---|---|\n" +\
-          "|***Field***<td colspan=\'1\'>***Id***<td colspan=\'2\'>***Len***<td colspan=\'2\'>***Token***<td colspan=\'2\'>***Checksum***\n" +\
-          "|***Type***<td colspan=\'1\'>uint8<td colspan=\'2\'>uint16<td colspan=\'2\'>uint16<td colspan=\'2\'>uint16\n\n" +\
-          ">***Id*** : The ID used to identify the type of packet, packet Ids are assigned and managed automatically<br/>\n" +\
-          ">***Len*** : This is the len of the packet data, this does not include the header and checksum<br/>\n" +\
-          ">***Token*** : A unique randomly generated token. Each packet is tokenized to provide functions like ack/retry and preventing duplicates <br/>\n" +\
-          ">***Checksum*** : A calculated checksum of the data in the packet\n" +\
-          "----\n"
-
 def crc(fileName):
     prev = 0
     for eachLine in open(fileName,"rb"):
@@ -83,11 +73,30 @@ def crc(fileName):
     return "%X"%(prev & 0xFFFFFFFF)
 
 
+class fieldVal:
+    def __init__(self, name):
+        self.name = name.upper()
+        self.desc = ""
+
 class fieldDesc:
     def __init__(self, name, strType):
-        self.enums = []
+        self.vals = []
         self.arrayLen = 1
-        self.isEnum = False;
+        self.isEnum = False
+        self.isMask = False
+        self.valsFormat = "0x%0.2X"
+
+        self.format = 'FORMAT_DEFAULT'
+
+        if strType in ['flag','flags','mask','bits']:
+            self.format = 'FORMAT_HEX'
+            self.isMask = True
+            strType = 'uint8_t'
+
+        if strType in ['enum','enums']:
+            self.format = 'FORMAT_HEX'
+            self.isEnum = True
+            strType = 'uint8_t'
 
         m = re.search('\[([0-9]*)\]', strType)
         if(m):
@@ -95,22 +104,29 @@ class fieldDesc:
                 self.arrayLen = int(m.group(1))
             strType = strType[0:m.start()]
 
-        #check if its an enum
-        m = re.search('enum\[(.*)\]', strType)
-        if(m):
-            strEnums = m.group(1)
-            if(strEnums != ''):
-                self.enums = [x.strip() for x in strEnums.split(',')]
-                self.isEnum = True
-            strType = 'uint8'
 
+        strType = strType.lower().replace('_t','')
 
+        self.setType(strType, self.arrayLen)
 
-        self.type = strType.lower().replace('_t','')
+        self.id = 0
+        self.name = name
+        self.globalName = "PP_FIELD_"+self.name.upper()
+        self.isVarLen = False
+        self.isRequired = False
+        self.desc = ""
+        self.memberName = "m"+ self.name.capitalize()
 
-        if not (self.type in cNameDict):
+    def camel(self):
+        return self.name[:1].capitalize() + self.name[1:]
+
+    def setType(self, type, len):
+
+        if not (type in cNameDict):
             print( "INVALID DATA TYPE!:  " + type)
 
+        self.arrayLen = len
+        self.type = type
         self.size = sizeDict[self.type] * self.arrayLen
         self.cType = cNameDict[self.type]
         self.cppType = self.cType
@@ -128,17 +144,23 @@ class fieldDesc:
             if(self.isArray):
                 self.cppType = self.cppType +"*"
 
-        self.id = 0
-        self.name = name
-        self.globalName = "PP_"+self.name.upper()+"_FIELD"
-        self.isVarLen = False
-        self.format = 'FORMAT_DEFAULT'
-        self.isRequired = False
-        self.desc = ""
-        self.memberName = "m"+ self.name.capitalize()
+    def addVal(self, val):
+        self.vals.append(val)
+
+        if self.isMask:
+            strType = 'uint8'
+            if len(self.vals) > 8:
+                self.valsFormat = "0x%0.4X"
+                strType = 'uint16'
+            if len(self.vals) > 16:
+                self.valsFormat = "0x%0.8X"
+                strType = 'uint32'
+            if len(self.vals) > 32:
+                print( "Error maximum flags per field is 32")
+            self.setType(strType,1)
 
     def setPrefix(self, prefix):
-        self.globalName = prefix.upper()+"_"+self.name.upper()+"_FIELD"
+        self.globalName = prefix.upper()+"_FIELD_"+self.name.upper()
 
     def getFieldDeclaration(self):
         output = io.StringIO()
@@ -161,7 +183,7 @@ class fieldDesc:
 class packetDesc:
     def __init__(self, name):
         self.name = name
-        self.globalName =  "PP_"+name.upper()+"_PACKET"
+        self.globalName =  "PP_PACKET_"+self.name.upper()
         self.className = name.capitalize() +"Packet"
         self.desc =""
         self.fields = []
@@ -170,14 +192,22 @@ class packetDesc:
         self.requests = {}
         self.standard = False
         self.structName = name.lower() + '_packet_t'
+        self.hasResponse = False
 
     def setPrefix(self, prefix):
-        self.globalName = prefix.upper()+"_"+self.name.upper()+"_PACKET"
+        self.globalName = prefix.upper()+"_PACKET_"+self.name.upper()
 
     def addField(self, field):
         field.id = self.fieldCount
         self.fields.append(field)
         self.fieldCount+=1
+
+    def postProcess(self):
+        if len(self.requests) > 0:
+            self.hasResponse = True;
+            self.response = self.protocol.getPacket(next(iter(self.requests.keys())))
+
+
 
     def getDocMd(self):
         output = io.StringIO()
@@ -273,6 +303,18 @@ class packetDesc:
         #write field description table
         for pfield in self.fields:
             output.write('>***'+ pfield.name+'*** : ' + pfield.desc +'<br/>\n')
+            if pfield.isMask:
+                for idx,val in enumerate(pfield.vals):
+                    strVal = pfield.valsFormat % (1 << idx)
+                    output.write('>> **{0}** : {1} - {2}<br/>\n'.format(strVal, val.name, val.desc))
+                output.write('>\n')
+
+            if pfield.isEnum:
+                for idx,val in enumerate(pfield.vals):
+                    strVal = pfield.valsFormat % (idx)
+                    output.write('>> **{0}** : {1} - {2}<br/>\n'.format(strVal, val.name, val.desc))
+                output.write('>\n')
+
         output.write('\n------\n')
 
         return output.getvalue();
@@ -298,12 +340,14 @@ class protocolDesc:
         self.packetIdx ={}
         self.packetId =0
         self.prefix = "pp";
+        self.snippets = False
 
     def service(self):
         return self.prefix.upper() +'_SERVICE'
 
     def addField(self,field):
         field.id = self.fieldId
+        field.protocol = self
         self.fields.append(field)
         self.fieldIdx[field.name] = self.fieldId
         self.fieldId+=1
@@ -311,10 +355,15 @@ class protocolDesc:
 
     def addPacket(self,packet):
         packet.packetId = self.packetId
+        packet.protocol = self
         packet.setPrefix(self.prefix)
         self.packets.append(packet)
         self.packetIdx[packet.name] = self.packetId
         self.packetId+=1
+
+    def getPacket(self, name):
+        if name in self.packetIdx:
+            return self.packets[self.packetIdx[name]]
 
 
 def addStandardPackets(protocol):
@@ -349,7 +398,6 @@ def parseXML(xmlfile):
         name = field.attrib['name']
         strType = field.attrib['type'];
 
-
         newField = fieldDesc(name, strType)
         newField.setPrefix(protocol.prefix)
 
@@ -365,6 +413,18 @@ def parseXML(xmlfile):
 
         if(name in protocol.fields):
             print( 'ERROR Duplicate Field Name!: ' + name)
+
+        #get vals if any
+        for val in field.findall('./Val'):
+            name = val.attrib['name']
+            newVal = fieldVal(name)
+
+            if('desc' in val.attrib):
+                newVal.desc = val.attrib['desc']
+
+            newField.addVal(newVal)
+
+
 
         protocol.addField(newField)
 
@@ -416,6 +476,10 @@ def parseXML(xmlfile):
             idx = protocol.packetIdx[request]
             protocol.packets[idx].respondsTo[packet.name] = 0
 
+    for packet in protocol.packets:
+        packet.postProcess()
+
+
     # return news items list
     return protocol
 
@@ -427,28 +491,6 @@ def buildTemplate(protocol, templateFile, outputFile):
     #text_file.write(template.render(proto = protocol))
     text_file.close()
 
-def createDoc(protocol, filename):
-    global path
-    output = io.StringIO()
-    output.write('# ' + protocol.name + '\n')
-    output.write('* Generated: '+now.strftime("%m/%d/%y")+'<br/>\n')
-    output.write('* CRC: '+protocol.hash+'\n\n')
-    output.write('##### ' + protocol.desc + '\n\n')
-    output.write('----\n')
-    output.write(metaDoc +'')
-    output.write('# Packet Types:\n\n')
-
-
-
-    for packet in protocol.packets:
-        output.write(packet.getDocMd())
-
-
-
-
-    text_file = open(filename, "w")
-    text_file.write(output.getvalue())
-    text_file.close()
 
 # Initialize the argument parser
 def init_args():
@@ -458,6 +500,8 @@ def init_args():
     parser.add_argument('-o', '--output', type=str, help='Output path', default="")
     parser.add_argument('-c', '--pure_c', action='store_true', help='generate pure c code', default=False)
     parser.add_argument('-d', '--document', action='store_true', help='Enable documentation', default=False)
+    parser.add_argument('-s', '--snippets', action='store_true', help='Adds helpful code snippets to files', default=False)
+    parser.add_argument('-u', '--updater', action='store_true', help='creates updater script', default=False)
 
 def main():
     global path
@@ -476,6 +520,18 @@ def main():
 
     protocol = parseXML(xmlFile)
     protocol.hash = fileCrc
+    protocol.genTime = now.strftime("%m/%d/%y")
+
+    protocol.snippets = args.snippets
+
+    if(args.updater):
+        strArgs = ' '.join(sys.argv[1:])
+        fileText = "python make_protocol.py {0}".format(strArgs)
+        text_file = open( "update.cmd" , "w")
+        text_file.write(fileText)
+        #text_file.write(template.render(proto = protocol))
+        text_file.close()
+
 
     if(args.pure_c):
         buildTemplate(protocol, 'templates/c_header_template.h', path+"/" + protocol.fileName+".h")
@@ -487,7 +543,7 @@ def main():
 
 
     if(args.document):
-        createDoc(protocol,path+"/" + protocol.fileName+".md")
+        buildTemplate(protocol, 'templates/doc_template.md', path+"/" + protocol.fileName+".md")
 
 if __name__ == "__main__":
     main()

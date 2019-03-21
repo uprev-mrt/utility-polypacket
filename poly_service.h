@@ -34,7 +34,7 @@ typedef enum HandlerStatus {
   PACKET_HANDLED,
   PACKET_ROUTED,
   PACKET_IGNORED,
-  PACKET_UNHANDLED
+  PACKET_NOT_HANDLED
 } HandlerStatus_e;
 
 typedef HandlerStatus_e (*poly_tx_callback)(uint8_t* data , int len);
@@ -49,14 +49,14 @@ typedef struct{
   ServiceParseState_e mParseState;
   fifo_t mPacketBuffer; //outgoing packet buffer
   bool mUpdate;         //flag set when there is new data to process
+  poly_tx_callback f_TxCallBack;
+  bool mHasCallBack;
   //diagnostic info
   int mPacketsIn;     //Total number of incoming packets parsed
   int mPacketsOut;    //Total packets sent on on spool
   int mRetries;       //total number of packet retries (no ack)
   int mFailures;      //total number of packets that failed (hit max retries )
   int mBitErrors;     //total number of bit errors (bad packet parse)
-  poly_tx_callback f_TxCallBack;
-  bool mHasCallBack;
 }poly_interface_t;
 
 /**
@@ -69,6 +69,7 @@ typedef struct{
   int mDescCount;
   int mMaxDescs;
   int mMaxPacketSize;
+  bool mAutoAck;
   bool mStarted;
 }poly_service_t;
 
@@ -79,7 +80,7 @@ typedef struct{
   *@param interfaceCount number of interfaces to allocate
   *@return ptr to newly allocated service
   */
-poly_service_t* new_poly_service(int maxDescs, int interfaceCount);
+void poly_service_init(poly_service_t* service, int maxDescs, int interfaceCount);
 
 /**
   *@brief register packet descriptor with service

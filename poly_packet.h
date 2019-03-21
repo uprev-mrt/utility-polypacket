@@ -26,6 +26,7 @@ typedef enum ParseStatus {
 
 
 #define PACKET_METADATA_SIZE (sizeof(poly_packet_hdr_t))
+#define POLY_ACK_FLAG 0x8000
 
 //[ 1 byte payloadId] [ 2 byte payload len ]  [2 byte token] [ mManifestSize bytes manifest] [n byte variable data ] [2 byte checksum]
 
@@ -60,7 +61,7 @@ typedef struct{
   poly_packet_desc_t* mDesc;     //prt to packet descriptor
   poly_field_t* mFields;        //array of fields contained in packet
   uint8_t mInterface;              //id of interface that packet is from/to
-  bool mFieldsAllocated;
+  bool mBuilt;                  //indicates if packet has already been built
 }poly_packet_t;
 
 
@@ -82,32 +83,17 @@ void poly_packet_desc_add_field(poly_packet_desc_t* desc, poly_field_desc_t* fie
 
 
 /**
-  *@brief creates a new poly_packet_t in memory and allocates memory for fields
-  *@param desc ptr to packet descriptor
-  *@param allocate whether or not to allocate the memory
-  *@return ptr to newly created poly_packet_t
-  */
-poly_packet_t new_poly_packet(poly_packet_desc_t* desc, bool allocate);
-
-/**
-  *@brief initializes a poly_packet from a descriptor
+  *@brief builds a poly_packet from a descriptor
   *@param desc ptr to packet descriptor
   *@param allocate whether or not to allocate the memory
   */
-void poly_packet_init(poly_packet_t* packet, poly_packet_desc_t* desc, bool allocate );
+void poly_packet_build(poly_packet_t* packet, poly_packet_desc_t* desc, bool allocate );
 
 /**
-  *@brief copies complete packet over to another packet
-  *@param src ptr to packet to be copied
-  *@param dst ptr to packet being written
+  *@brief cleans up all memory allocated by the packet (but not the packet itself)
+  *@param packet ptr to packet being cleaned
   */
-void poly_packet_copy( poly_packet_t* src, poly_packet_t* dst);
-
-/**
-  *@brief frees memory from packet
-  *@param packet ptr to packet being freed
-  */
-void poly_packet_destroy(poly_packet_t* packet);
+void poly_packet_clean(poly_packet_t* packet);
 
 /**
   *@brief gets ptr to field from descriptor

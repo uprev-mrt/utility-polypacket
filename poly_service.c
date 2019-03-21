@@ -12,10 +12,8 @@
 
 
 
-poly_service_t* new_poly_service(int maxDescs, int interfaceCount)
+void poly_service_init( poly_service_t* service, int maxDescs, int interfaceCount)
 {
-  //allocate service
-  poly_service_t* service = (poly_service_t*)malloc(sizeof(poly_service_t));
 
   //allocate interfaces
   service->mInterfaceCount = interfaceCount;
@@ -27,8 +25,7 @@ poly_service_t* new_poly_service(int maxDescs, int interfaceCount)
 
   service->mDescCount =0;
   service->mStarted = false;
-
-  return service;
+  service->mAutoAck = false;
 }
 
 
@@ -150,7 +147,7 @@ ParseStatus_e poly_service_try_parse_interface(poly_service_t* pService, poly_pa
             //Valid packet, Parse!
             fifo_peek_buf(&iface->mBytefifo, iface->mRaw, len );
 
-            poly_packet_init(packet, pService->mPacketDescs[iface->mCurrentHdr.mTypeId] ,true);
+            poly_packet_build(packet, pService->mPacketDescs[iface->mCurrentHdr.mTypeId] ,true);
 
             packet->mInterface = interface;
 
@@ -160,10 +157,11 @@ ParseStatus_e poly_service_try_parse_interface(poly_service_t* pService, poly_pa
             {
               case PACKET_VALID:
                 fifo_clear(&iface->mBytefifo, len); //remove these bytes from fifo
+                iface->mPacketsIn++;
                 break;
               default:
                 fifo_clear(&iface->mBytefifo, 1); //remove one byte
-              //  poly_packet_destroy(packet);
+                poly_packet_clean(packet);
                 break;
             }
           }
@@ -197,10 +195,10 @@ ParseStatus_e poly_service_try_parse(poly_service_t* pService, poly_packet_t* pa
 
 ParseStatus_e poly_service_send(poly_service_t* pService, int interface,  poly_packet_t* packet)
 {
-  ParseStatus_e status = PACKET_UNHANDLED;
+  ParseStatus_e status = PACKET_NOT_HANDLED;
    assert(interface < pService->mInterfaceCount);
    if(!pService->mInterfaces[interface].mHasCallBack)
-   return PACKET_UNHANDLED;
+   return PACKET_NOT_HANDLED;
 
    uint8_t data[packet->mDesc->mMaxPacketSize];
    int len = poly_packet_pack(packet, data);

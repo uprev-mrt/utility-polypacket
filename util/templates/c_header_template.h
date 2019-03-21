@@ -2,7 +2,8 @@
   *@file ${proto.fileName}.h
   *@brief generated protocol source code
   *@author make_protocol.py
-  *@date 03/18/19
+  *@date ${proto.genTime}
+  *@hash ${proto.hash}
   */
 
 /***********************************************************
@@ -10,25 +11,57 @@
 ***********************************************************/
 #include "Utilities/PolyPacket/poly_service.h"
 
-//Define basic function macros
-#define ${proto.prefix}_print_json(msg,buf) poly_packet_print_json(msg->pPacket, buf, false)
-#define ${proto.prefix}_parse(msg,buf,len) poly_packet_parse_buffer(msg->pPacket, buf, len)
-#define ${proto.prefix}_pack(msg, buf) poly_packet_pack(msg->pPacket, buf)
-#define ${proto.prefix}_send(iface, msg) ${proto.prefix}_service_send(iface, msg->pPacket)
+#define ${proto.prefix.upper()}_SERVICE_HASH 0x${proto.hash}
 
+/*******************************************************************************
+  Enums
+*******************************************************************************/
 % for field in proto.fields:
 % if field.isEnum:
+/* Enums for ${field.name} field */
 typedef enum{
-  % for t in field.enums:
-  ${proto.prefix.upper()+"_"+field.name.upper() + "_" + t.upper()},
+  % for val in field.vals:
+  ${proto.prefix.upper()+"_"+field.name.upper() + "_" + val.name.upper()},              /* ${val.desc} */
   % endfor
   ${proto.prefix.upper()+"_"+field.name.upper()}_MAX_LIMIT
 } ${proto.prefix}_${field.name.lower()}_e;
+%if proto.snippets:
+//Switch Snippet
+/*
+switch(${field.name.lower()})
+{
+% for val in field.vals:
+  case ${proto.prefix.upper()+"_"+field.name.upper() + "_" + val.name.upper()}:    // ${val.desc}
+    break;
+% endfor
+  default:
+    break;
+}
+*/
+% endif
+
 % endif
 % endfor
 
+/*******************************************************************************
+  Bits/Flags
+*******************************************************************************/
+% for field in proto.fields:
+% if field.isMask:
+/* Flags for ${field.name} field */
+typedef enum{
+  % for idx,val in enumerate(field.vals):
+  ${proto.prefix.upper()+"_"+field.name.upper() + "_" + val.name.upper()} = ${ field.valsFormat % (1 << idx)},    /* ${val.desc} */
+  % endfor
+  ${proto.prefix.upper()+"_"+field.name.upper()}_MAX_LIMIT
+} ${proto.prefix}_${field.name.lower()}_e;
 
+% endif
+% endfor
 
+/*******************************************************************************
+  Global Descriptors
+*******************************************************************************/
 //Declare extern packet descriptors
 % for packet in proto.packets:
 extern poly_packet_desc_t* ${packet.globalName};
@@ -40,27 +73,11 @@ extern poly_packet_desc_t* ${packet.globalName};
 extern poly_field_desc_t* ${field.globalName};
 % endfor
 
-% for packet in proto.packets:
-/*
- *@brief ${packet.desc}
+/*@brief The main type dealt with by the user
+ *@note just wraps a poly_packet to prevent mixing them when multiple protocol are in use
  */
 typedef struct{
-  % for field in packet.fields:
-  ${field.getFieldDeclaration()}
-  % endfor
-  poly_packet_t* pPacket;
-}${packet.structName};
-
-% endfor
-
-typedef struct{
-  poly_packet_t mPacket;
-  poly_packet_t* pPacket;
-  union{
-% for packet in proto.packets:
-    ${packet.structName}* ${packet.name.lower()};
-% endfor
-} mPayload;
+  poly_packet_t mPacket;    //internal packet structure
 }${proto.prefix}_packet_t;
 
 
@@ -85,6 +102,12 @@ void ${proto.prefix}_service_process();
   */
 void ${proto.prefix}_service_register_tx( int iface, poly_tx_callback txCallBack);
 
+/**
+  *@brief 'Feeds' bytes to service at given interface for processing
+  *@param iface index of interface to send on
+  *@param data data to be processed
+  *@param number of bytes
+  */
 void ${proto.prefix}_service_feed(int iface, uint8_t* data, int len);
 
 /**
@@ -92,30 +115,74 @@ void ${proto.prefix}_service_feed(int iface, uint8_t* data, int len);
   *@param metaPacket packet to be sent
   *@param iface index of interface to send on
   */
-HandlerStatus_e ${proto.prefix}_service_send( int iface, poly_packet_t* packet);
+HandlerStatus_e ${proto.prefix}_send( int iface, ${proto.prefix}_packet_t* metaPacket);
 
-
-
+/**
+  *@brief enables/disables the auto acknowledgement function of the service
+  *@param enable true enable auto acks, false disables them
+  */
+void ${proto.prefix}_auto_ack(bool enable);
 
 
 /*******************************************************************************
   Meta-Packet Functions
 *******************************************************************************/
 
+/**
+  *@brief creates a new ${proto.prefix}_packet_t object OWNER IS RESPONSIBLE FOR CLEANING
+  *@param desc ptr to packet descriptor to model packet from
+  *@return ptr to new {proto.prefix}_packet_t
+  */
 ${proto.prefix}_packet_t* new_${proto.prefix}_packet(poly_packet_desc_t* desc);
 
-void ${proto.prefix}_teardown(${proto.prefix}_packet_t* metaPacket);
-void ${proto.prefix}_destroy(${proto.prefix}_packet_t* metaPacket);
 
+/**
+  *@brief recrusively cleanss ${proto.prefix}_packet_t and its contents
+  *@param metaPacket metapacket to clean
+  */
+void ${proto.prefix}_clean(${proto.prefix}_packet_t* metaPacket);
+
+/**
+  *@brief converts packet to json
+  *@param packet ptr to packet to convert
+  *@param buf buffer to store string
+  *@return length of string
+  */
+#define ${proto.prefix}_print_json(packet,buf) poly_packet_print_json(&packet->mPacket, buf, false)
+
+/**
+  *@brief parses packet from a buffer of data
+  *@param packet ptr to packet to be built
+  *@param buf buffer to parse
+  *@return status of parse attempt
+  */
+#define ${proto.prefix}_parse(packet,buf,len) poly_packet_parse_buffer(&packet->mPacket, buf, len)
+
+
+/**
+  *@brief packs packet into a byte array
+  *@param packet ptr to packet to be packed
+  *@param buf buffer to store data
+  *@return length of packed data
+  */
+#define ${proto.prefix}_pack(packet, buf) poly_packet_pack(&packet->mPacket, buf)
+
+/**
+  *@brief gets the length of a give field in a packet
+  *@param packet ptr to ${proto.prefix}_packet_t
+  *@param field ptr to field descriptor
+  *@return size of field
+  */
+int ${proto.prefix}_fieldLen(${proto.prefix}_packet_t* packet, poly_field_desc_t* fieldDesc );
 
 /*******************************************************************************
   Meta-Packet setters
 *******************************************************************************/
 % for field in proto.fields:
   %if field.isArray:
-void ${proto.prefix}_set${field.name.capitalize()}(${proto.prefix}_packet_t* packet, const ${field.getParamType()} val);
+void ${proto.prefix}_set${field.camel()}(${proto.prefix}_packet_t* packet, const ${field.getParamType()} val);
   % else:
-void ${proto.prefix}_set${field.name.capitalize()}(${proto.prefix}_packet_t* packet, ${field.getParamType()} val);
+void ${proto.prefix}_set${field.camel()}(${proto.prefix}_packet_t* packet, ${field.getParamType()} val);
   % endif
 % endfor
 
@@ -127,20 +194,19 @@ ${field.getParamType()} ${proto.prefix}_get${field.name.capitalize()}(${proto.pr
 % endfor
 
 
-/*******************************************************************************
-  Packet binders
-*******************************************************************************/
-% for packet in proto.packets:
-void ${proto.prefix}_${packet.name.lower()}_bind(${packet.structName}* ${packet.name.lower()}, poly_packet_t* packet, bool copy);
-% endfor
-
 
 /*******************************************************************************
   Packet Handlers
 *******************************************************************************/
 % for packet in proto.packets:
+%if packet.hasResponse:
 /*@brief Handler for ${packet.name} packets */
-HandlerStatus_e ${proto.prefix}_${packet.name.lower()}_handler(${packet.structName} * packet);
-% endfor
+HandlerStatus_e ${proto.prefix}_${packet.name}_handler(${proto.prefix}_packet_t* ${proto.prefix}_${packet.name}, ${proto.prefix}_packet_t* ${proto.prefix}_${packet.response.name});
+%else:
+/*@brief Handler for ${packet.name} packets */
+HandlerStatus_e ${proto.prefix}_${packet.name}_handler(${proto.prefix}_packet_t* ${proto.prefix}_${packet.name});
+%endif
 
-HandlerStatus_e ${proto.prefix}_default_handler(${proto.prefix}_packet_t * packet);
+% endfor
+/*@brief Catch-All Handler for unhandled packets */
+HandlerStatus_e ${proto.prefix}_default_handler(${proto.prefix}_packet_t * ${proto.prefix}_packet);

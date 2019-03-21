@@ -28,56 +28,10 @@ poly_packet_desc_t* ${packet.globalName};
 poly_field_desc_t* ${field.globalName};
 % endfor
 
-poly_service_t* ${proto.service()};
+static poly_service_t ${proto.service()};
 
 /*******************************************************************************
-  Service Process
-*******************************************************************************/
-/**
-  *@brief attempts to process data in buffers and parse out packets
-  */
-void ${proto.prefix}_service_process()
-{
-  static ${proto.prefix}_packet_t metaPacket;
-  metaPacket.pPacket = &metaPacket.mPacket;
-
-  HandlerStatus_e status = PACKET_UNHANDLED;
-
-  if(poly_service_try_parse(${proto.service()}, &metaPacket.mPacket) == PACKET_VALID)
-  {
-
-    //Dispatch packet
-    switch(metaPacket.mPacket.mDesc->mTypeId)
-    {
-  % for packet in proto.packets:
-      case ${packet.globalName}_ID:
-        metaPacket.mPayload.${packet.name.lower()} = (${packet.structName}*) malloc(sizeof(${packet.structName}));
-        ${proto.prefix}_${packet.name.lower()}_bind(metaPacket.mPayload.${packet.name.lower()}, &metaPacket.mPacket, true);
-        status = ${proto.prefix}_${packet.name.lower()}_handler(metaPacket.mPayload.${packet.name.lower()});
-        break;
-  % endfor
-      default:
-        //we should never get here
-        assert(false);
-        break;
-    }
-
-    //If the packet was not handled, throw it to the default handler
-    if(status == PACKET_UNHANDLED)
-      status = ${proto.prefix}_default_handler(&metaPacket);
-
-    ${proto.prefix}_teardown(&metaPacket);
-  }
-
-}
-
-void ${proto.prefix}_service_register_tx( int iface, poly_tx_callback txCallBack)
-{
-  poly_service_register_tx_callback(${proto.service()}, iface,txCallBack);
-}
-
-/*******************************************************************************
-  Service initializer
+  Service Functions
 *******************************************************************************/
 
 /**
@@ -86,8 +40,8 @@ void ${proto.prefix}_service_register_tx( int iface, poly_tx_callback txCallBack
   */
 void ${proto.prefix}_service_init(int interfaceCount)
 {
-
-  ${proto.service()} = new_poly_service(${len(proto.packets)}, interfaceCount);
+  //initialize core service
+  poly_service_init(&${proto.service()},${len(proto.packets)}, interfaceCount);
 
   //Build Packet Descriptors
 % for packet in proto.packets:
@@ -100,30 +54,107 @@ void ${proto.prefix}_service_init(int interfaceCount)
 % endfor
 
 % for packet in proto.packets:
-  //Settomg Field Descriptors for ${packet.name}
+% if len(packet.fields) > 0:
+  //Setting Field Descriptors for ${packet.name}
   % for field in packet.fields:
   poly_packet_desc_add_field(${packet.globalName} , ${field.globalName} , ${str(field.isRequired).lower()} );
   % endfor
+% endif
+
 % endfor
 
   //Register packet descriptors with the service
 % for packet in proto.packets:
-  poly_service_register_desc(${proto.service()}, ${packet.globalName});
+  poly_service_register_desc(&${proto.service()}, ${packet.globalName});
 % endfor
 
-  poly_service_start(${proto.service()}, 512);
+  poly_service_start(&${proto.service()}, 512);
 
+}
+
+
+/**
+  *@brief attempts to process data in buffers and parse out packets
+  */
+void ${proto.prefix}_service_process()
+{
+  static ${proto.prefix}_packet_t packet;
+  static ${proto.prefix}_packet_t response;
+
+  HandlerStatus_e status = PACKET_NOT_HANDLED;
+
+  if(poly_service_try_parse(&${proto.service()}, &packet.mPacket) == PACKET_VALID)
+  {
+
+    //set response token with ack flag (this will persist even when packet it built)
+    response.mPacket.mHeader.mToken = packet.mPacket.mHeader.mToken | POLY_ACK_FLAG;
+
+    //Dispatch packet
+    switch(packet.mPacket.mDesc->mTypeId)
+    {
+  % for packet in proto.packets:
+      case ${packet.globalName}_ID:
+      %if packet.hasResponse:
+       poly_packet_build(&response.mPacket, ${packet.response.globalName},true);
+       status = ${proto.prefix}_${packet.name}_handler(&packet , &response );
+      %else:
+        status = ${proto.prefix}_${packet.name}_handler(&packet);
+      %endif
+        break;
+  % endfor
+      default:
+        //we should never get here
+        assert(false);
+        break;
+    }
+
+    //If this packet doe not have an explicit response and AutoAck is enabled, create an ack packet
+    if(( ${proto.prefix.upper()}_SERVICE.mAutoAck ) && (!response.mPacket.mBuilt))
+    {
+      poly_packet_build(&response.mPacket, ${proto.prefix.upper()}_PACKET_ACK,true);
+    }
+
+    //If the packet was not handled, throw it to the default handler
+    if(status == PACKET_NOT_HANDLED)
+    {
+      status = ${proto.prefix}_default_handler(&packet);
+    }
+
+
+    //If a response has been build and the status was not set to ignore, we send a response on the intrface it came from
+    if(( status == PACKET_HANDLED) && (response.mPacket.mBuilt) )
+    {
+      poly_service_send(&${proto.service()}, packet.mPacket.mInterface , &response.mPacket);
+    }
+
+    //Clean the packets
+    poly_packet_clean(&packet.mPacket);
+    poly_packet_clean(&response.mPacket);
+  }
+
+}
+
+
+void ${proto.prefix}_service_register_tx( int iface, poly_tx_callback txCallBack)
+{
+  poly_service_register_tx_callback(&${proto.service()}, iface,txCallBack);
 }
 
 void ${proto.prefix}_service_feed(int iface, uint8_t* data, int len)
 {
-  poly_service_feed(${proto.service()},iface,data,len);
+  poly_service_feed(&${proto.service()},iface,data,len);
 }
 
-HandlerStatus_e ${proto.prefix}_service_send(int iface, poly_packet_t* packet)
+HandlerStatus_e ${proto.prefix}_send(int iface, ${proto.prefix}_packet_t* metaPacket)
 {
-  return poly_service_send(${proto.service()}, iface, packet);
+  return poly_service_send(&${proto.service()}, iface, &metaPacket->mPacket);
 }
+
+void ${proto.prefix}_auto_ack(bool enable)
+{
+  ${proto.service()}.mAutoAck = enable;
+}
+
 
 /*******************************************************************************
   Meta packet
@@ -132,7 +163,7 @@ HandlerStatus_e ${proto.prefix}_service_send(int iface, poly_packet_t* packet)
 /**
   *@brief creates a new meta packet and returns a pointer to it
   *@param desc packet descriptor
-  *@post creator is responsible for destroying with ${proto.prefix}_packet_destroy()
+  *@post creator is responsible for Cleaning with ${proto.prefix}_clean()
   *@return ptr to new meta packet
   */
 ${proto.prefix}_packet_t* new_${proto.prefix}_packet(poly_packet_desc_t* desc)
@@ -140,51 +171,29 @@ ${proto.prefix}_packet_t* new_${proto.prefix}_packet(poly_packet_desc_t* desc)
   ${proto.prefix}_packet_t* newMetaPacket = (${proto.prefix}_packet_t*) malloc(sizeof(${proto.prefix}_packet_t));
 
   //create new unallocated packet
-  poly_packet_init(&newMetaPacket->mPacket, desc, false);
-  newMetaPacket->pPacket = &newMetaPacket->mPacket;
-
-  switch(newMetaPacket->mPacket.mDesc->mTypeId)
-  {
-% for packet in proto.packets:
-    case ${packet.globalName}_ID:
-      newMetaPacket->mPayload.${packet.name.lower()} = (${packet.structName}*) malloc(sizeof(${packet.structName}));
-      ${proto.prefix}_${packet.name.lower()}_bind(newMetaPacket->mPayload.${packet.name.lower()}, &newMetaPacket->mPacket, false);
-      break;
-% endfor
-  }
+  poly_packet_build(&newMetaPacket->mPacket, desc, true);
 
   return newMetaPacket;
 }
 
-/**
-  *@brief reset mega packet to a default state by freeing memory of payload
-  *@param "metaPacket ptr to metaPacket
-  */
-void ${proto.prefix}_teardown(${proto.prefix}_packet_t* metaPacket)
-{
-  switch(metaPacket->mPacket.mDesc->mTypeId)
-  {
-% for packet in proto.packets:
-    case ${packet.globalName}_ID:
-    free(metaPacket->mPayload.${packet.name.lower()});
-    break;
-% endfor
-  }
-
-  poly_packet_destroy(&metaPacket->mPacket);
-}
 
 /**
   *@brief frees memory allocated for metapacket
   *@param "metaPacket ptr to metaPacket
   */
-void ${proto.prefix}_destroy(${proto.prefix}_packet_t* metaPacket)
+void ${proto.prefix}_clean(${proto.prefix}_packet_t* metaPacket)
 {
-  //teardown
-  ${proto.prefix}_teardown(metaPacket);
+  //free internal poly_packet_t
+  poly_packet_clean(&metaPacket->mPacket);
 
   //free memory
   free(metaPacket);
+}
+
+int ${proto.prefix}_fieldLen(${proto.prefix}_packet_t* packet, poly_field_desc_t* fieldDesc )
+{
+  poly_field_t* field = poly_packet_get_field(&packet->mPacket, ${field.globalName});
+  return (int)field->mSize;
 }
 
 /*******************************************************************************
@@ -195,9 +204,19 @@ void ${proto.prefix}_destroy(${proto.prefix}_packet_t* metaPacket)
 
 % for field in proto.fields:
 %if field.isArray:
-void ${proto.prefix}_set${field.name.capitalize()}(${proto.prefix}_packet_t* packet, const ${field.getParamType()} val)
+/**
+*@brief Sets value(s) in ${field.name} field
+*@param packet ptr to ${proto.prefix}_packet
+*@param val ${field.getParamType()} to copy data from
+*/
+void ${proto.prefix}_set${field.camel()}(${proto.prefix}_packet_t* packet, const ${field.getParamType()} val)
 % else:
-void ${proto.prefix}_set${field.name.capitalize()}(${proto.prefix}_packet_t* packet, ${field.getParamType()} val)
+/**
+  *@brief Sets value of ${field.name} field
+  *@param packet ptr to ${proto.prefix}_packet
+  *@param val ${field.getParamType()} to set field to
+  */
+void ${proto.prefix}_set${field.camel()}(${proto.prefix}_packet_t* packet, ${field.getParamType()} val)
 %endif
 {
   poly_field_t* field = poly_packet_get_field(&packet->mPacket, ${field.globalName});
@@ -215,7 +234,20 @@ void ${proto.prefix}_set${field.name.capitalize()}(${proto.prefix}_packet_t* pac
 *******************************************************************************/
 
 % for field in proto.fields:
-${field.getParamType()} ${proto.prefix}_get${field.name.capitalize()}(${proto.prefix}_packet_t* packet)
+%if field.isArray:
+/**
+  *@brief Gets value of ${field.name} field
+  *@param packet ptr to ${proto.prefix}_packet
+  *@return ${field.getParamType()} of data in field
+  */
+%else:
+/**
+  *@brief Gets value of ${field.name} field
+  *@param packet ptr to ${proto.prefix}_packet
+  *@return ${field.getParamType()} data from field
+  */
+%endif
+${field.getParamType()} ${proto.prefix}_get${field.camel()}(${proto.prefix}_packet_t* packet)
 {
   ${field.getParamType()} val;
   poly_field_t* field = poly_packet_get_field(&packet->mPacket, ${field.globalName});
@@ -231,44 +263,42 @@ ${field.getParamType()} ${proto.prefix}_get${field.name.capitalize()}(${proto.pr
 
 
 /*******************************************************************************
-  Packet binders
-*******************************************************************************/
-% for packet in proto.packets:
-/**
-  *@brief Binds struct to poly_service_t
-  *@param ${packet.name.lower()} ptr to ${packet.structName} to be bound
-  *@param packet packet to bind to
-  */
-void ${proto.prefix}_${packet.name.lower()}_bind(${packet.structName}* ${packet.name.lower()}, poly_packet_t* packet, bool copy)
-{
-  ${packet.name.lower()}->pPacket = packet;
-
-% for field in packet.fields:
-  poly_field_bind( poly_packet_get_field(packet, ${field.globalName}), (uint8_t*) &${packet.name.lower()}->${field.memberName}, copy);
-% endfor
-
-}
-
-% endfor
-
-/*******************************************************************************
   Weak packet handlers
 
   Do not modify these, just create your own without the '__weak' attribute
 *******************************************************************************/
 % for packet in proto.packets:
+%if not packet.hasResponse:
 /**
-  *@brief Handler for receiving ${packet.name.lower()} packets
-  *@param packet ptr to ${packet.structName}  containing packet
+  *@brief Handler for receiving ${packet.name} packets
+  *@param ${packet.name} incoming ${packet.name} packet
   *@return handling status
   */
-__attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.name.lower()}_handler(${packet.structName} * packet)
+__attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.name}_handler(${proto.prefix}_packet_t* ${proto.prefix}_${packet.name})
 {
-  /* NOTE : This function should not be modified, when the callback is needed,
-          ${proto.prefix}_${packet.name.lower()}_handler  should be implemented in the user file
+%else:
+/**
+  *@brief Handler for receiving ${packet.name} packets
+  *@param ${packet.name} incoming ${packet.name} packet
+  *@param ${packet.response.name} ${packet.response.name} packet to respond with
+  *@return handling status
   */
-  return PACKET_UNHANDLED;
+__attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.name}_handler(${proto.prefix}_packet_t* ${proto.prefix}_${packet.name}, ${proto.prefix}_packet_t* ${proto.prefix}_${packet.response.name})
+{
+  //Set required Fields
+% for field in packet.response.fields:
+%if field.isRequired:
+  //${proto.prefix}_set${field.camel()}(${packet.response.name}, value );                   //Set ${field.name} value
+%endif
+%endfor
+%endif
+
+  /* NOTE : This function should not be modified! If needed,  It should be overridden in the application code */
+
+  return PACKET_NOT_HANDLED;
 }
+
+
 % endfor
 
 /**
@@ -276,10 +306,12 @@ __attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.name.lower()}_han
   *@param metaPacket ptr to ${proto.prefix}_packet_t containing packet
   *@return handling status
   */
-__attribute__((weak)) HandlerStatus_e ${proto.prefix}_default_handler( ${proto.prefix}_packet_t * metaPacket)
+__attribute__((weak)) HandlerStatus_e ${proto.prefix}_default_handler( ${proto.prefix}_packet_t * ${proto.prefix}_packet)
 {
+
   /* NOTE : This function should not be modified, when the callback is needed,
           ${proto.prefix}_default_handler  should be implemented in the user file
   */
-  return PACKET_UNHANDLED;
+
+  return PACKET_NOT_HANDLED;
 }
