@@ -49,6 +49,8 @@ typedef enum FieldFormat {
   FORMAT_NONE
 }eFieldFormat;
 
+#pragma pack(push)
+#pragma pack(1)
 /**
   *@brief Struct for variable field descriptor
   */
@@ -70,6 +72,8 @@ typedef struct{
   bool mBound;
   bool mAllocated;
 }poly_field_t;
+
+#pragma pack(pop)
 
 #ifdef __cplusplus
 extern "C"

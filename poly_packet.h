@@ -29,11 +29,12 @@ typedef enum ParseStatus {
 #define POLY_ACK_FLAG 0x8000
 
 //[ 1 byte payloadId] [ 2 byte payload len ]  [2 byte token] [ mManifestSize bytes manifest] [n byte variable data ] [2 byte checksum]
-
+#pragma pack(push)
+#pragma pack(1)
 /**
   *@brief Variable Packet Descriptor
   */
-typedef struct{
+typedef struct {
   uint8_t mTypeId;              //unique id for packet type
   const char* mName;            //friendly name for packet type
   poly_field_desc_t** mFields;  //Array of field descriptors
@@ -46,7 +47,7 @@ typedef struct{
 }poly_packet_desc_t;
 
 
-typedef struct{
+typedef struct {
   uint8_t mTypeId; //id of payload type
   uint16_t mDataLen;  //expected len of packet data (not including header and footer)
   uint16_t mToken;    //token for packet (used for acknowledgement/ echo cancellation in mesh nets)
@@ -56,7 +57,7 @@ typedef struct{
 /**
   *@brief Variable packet
   */
-typedef struct{
+typedef struct {
   poly_packet_hdr_t mHeader;
   poly_packet_desc_t* mDesc;     //prt to packet descriptor
   poly_field_t* mFields;        //array of fields contained in packet
@@ -64,6 +65,7 @@ typedef struct{
   bool mBuilt;                  //indicates if packet has already been built
 }poly_packet_t;
 
+#pragma pack(pop)
 
 /**
   *@brief creates a new packet descriptor

@@ -275,9 +275,9 @@ int poly_packet_pack(poly_packet_t* packet, uint8_t* data)
   packet->mHeader.mDataLen = idx - sizeof(poly_packet_hdr_t);
 
   //get checksum
-  for(int i =0; i < idx; i++)
+  for(int i = sizeof(poly_packet_hdr_t) ; i < idx; i++)
   {
-    packet->mHeader.mCheckSum +=  data[i + sizeof(poly_packet_hdr_t)];
+    packet->mHeader.mCheckSum +=  data[i];
   }
 
   memcpy((void*)&data[0], (void*)&packet->mHeader, sizeof(poly_packet_hdr_t));

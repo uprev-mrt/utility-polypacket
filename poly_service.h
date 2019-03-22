@@ -39,8 +39,10 @@ typedef enum HandlerStatus {
 
 typedef HandlerStatus_e (*poly_tx_callback)(uint8_t* data , int len);
 
+#pragma pack(push)
+#pragma pack(1)
 
-typedef struct{
+typedef struct {
   uint8_t* mRaw; //raw packet being parsed
   int mIdx;      //index of raw message
 
@@ -62,7 +64,7 @@ typedef struct{
 /**
   *@brief packet handling service
   */
-typedef struct{
+typedef struct {
   int mInterfaceCount;
   poly_interface_t* mInterfaces;
   poly_packet_desc_t** mPacketDescs;
@@ -73,7 +75,7 @@ typedef struct{
   bool mStarted;
 }poly_service_t;
 
-
+#pragma pack(pop)
 /**
   *@brief create new service
   *@param maxDesc max number of Packet descriptors in protocol
