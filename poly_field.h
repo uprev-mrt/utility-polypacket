@@ -16,6 +16,8 @@
 #define MRT_SPRINTF(f_, ...) sprintf((f_), __VA_ARGS__)
 #endif
 
+#define CHECKSUM_SEED 1738
+
 typedef enum FieldType {
   TYPE_UINT8,
   TYPE_UINT16,

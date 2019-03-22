@@ -63,6 +63,7 @@ void poly_packet_build(poly_packet_t* packet, poly_packet_desc_t* desc, bool all
   packet->mDesc = desc;
   packet->mInterface = 0;
   packet->mHeader.mTypeId = desc->mTypeId;
+  packet->mHeader.mToken = rand() & 0x7FFF;
 
   packet->mFields = (poly_field_t*) malloc(sizeof(poly_field_t) * desc->mFieldCount);
   packet->mBuilt = true;
@@ -128,7 +129,7 @@ ParseStatus_e poly_packet_parse_buffer(poly_packet_t* packet, uint8_t* data, int
 
   uint8_t manifestByte;         //current manifest byte
 
-  uint16_t checkSumComp =0; //calculated checksum
+  uint16_t checkSumComp =CHECKSUM_SEED; //calculated checksum
 
 
   //packet must be at least as long as the meta data required for each packet
@@ -219,7 +220,7 @@ int poly_packet_pack(poly_packet_t* packet, uint8_t* data)
 {
   int idx=0;
   poly_field_t* field;
-  packet->mHeader.mCheckSum =0;
+  packet->mHeader.mCheckSum = CHECKSUM_SEED;
   int manifestBit =0;        //bit offset for manifest
   uint8_t* manifestByte;         //current manifest byte
 

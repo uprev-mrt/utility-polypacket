@@ -193,7 +193,7 @@ class packetDesc:
         self.standard = False
         self.structName = name.lower() + '_packet_t'
         self.hasResponse = False
-        
+
     def camel(self):
         return self.name[:1].capitalize() + self.name[1:]
 
@@ -494,18 +494,15 @@ def buildTemplate(protocol, templateFile, outputFile):
     #text_file.write(template.render(proto = protocol))
     text_file.close()
 
-
 # Initialize the argument parser
 def init_args():
     global parser
     parser = argparse.ArgumentParser("Tool to generate code and documentation for PolyPacket protocol")
     parser.add_argument('-i', '--input', type=str, help='Xml file to parse', required=True)
     parser.add_argument('-o', '--output', type=str, help='Output path', default="")
-    parser.add_argument('-c', '--pure_c', action='store_true', help='generate pure c code', default=False)
-    parser.add_argument('-d', '--document', action='store_true', help='Enable documentation', default=False)
-    parser.add_argument('-a', '--applayer', action='store_true', help='Generates the app layer code to fill out', default=False)
+    parser.add_argument('-d', '--document', action='store_true', help='Enable documentation', default=True)
+    parser.add_argument('-a', '--app', action='store_true', help='Generates the app layer code to fill out', default=False)
     parser.add_argument('-s', '--snippets', action='store_true', help='Adds helpful code snippets to files', default=False)
-    parser.add_argument('-u', '--updater', action='store_true', help='creates updater script', default=False)
 
 def main():
     global path
@@ -528,27 +525,13 @@ def main():
 
     protocol.snippets = args.snippets
 
-    if(args.updater):
-        strArgs = ' '.join(sys.argv[1:])
-        fileText = "python make_protocol.py {0}".format(strArgs)
-        text_file = open( "update.cmd" , "w")
-        text_file.write(fileText)
-        #text_file.write(template.render(proto = protocol))
-        text_file.close()
 
+    buildTemplate(protocol, 'templates/c_header_template.h', path+"/" + protocol.fileName+".h")
+    buildTemplate(protocol, 'templates/c_source_template.c', path+"/" + protocol.fileName+".c")
 
-    if(args.pure_c):
-        buildTemplate(protocol, 'templates/c_header_template.h', path+"/" + protocol.fileName+".h")
-        buildTemplate(protocol, 'templates/c_source_template.c', path+"/" + protocol.fileName+".c")
-    else:
-        buildTemplate(protocol, 'templates/cpp_header_template.h', path+"/" + protocol.fileName+".h")
-        buildTemplate(protocol, 'templates/cpp_source_template.cpp', path+"/" + protocol.fileName+".c")
-
-    if(args.applayer):
+    if(args.app):
         buildTemplate(protocol, 'templates/app_template.h', path+"/app_" + protocol.name.lower() +".h")
         buildTemplate(protocol, 'templates/app_template.c', path+"/app_" + protocol.name.lower()+".c")
-
-
 
     if(args.document):
         buildTemplate(protocol, 'templates/doc_template.md', path+"/" + protocol.name+"_ICD.md")

@@ -141,7 +141,7 @@ ParseStatus_e poly_service_try_parse_interface(poly_service_t* pService, poly_pa
         if(iface->mBytefifo.mCount >= len)
         {
           //calculate checksum of data in the fifo, if it matches the checksum in the header, we have a valid packet
-          checksumComp =fifo_checksum(&iface->mBytefifo, sizeof(poly_packet_hdr_t), iface->mCurrentHdr.mDataLen );
+          checksumComp = CHECKSUM_SEED + fifo_checksum(&iface->mBytefifo, sizeof(poly_packet_hdr_t), iface->mCurrentHdr.mDataLen );
           if(checksumComp == iface->mCurrentHdr.mCheckSum)
           {
             //Valid packet, Parse!

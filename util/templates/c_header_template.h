@@ -1,6 +1,6 @@
 /**
   *@file ${proto.fileName}.h
-  *@brief generated protocol source code
+  *@brief generated code for ${proto.name} packet service
   *@author make_protocol.py
   *@date ${proto.genTime}
   *@hash ${proto.hash}

@@ -1,8 +1,8 @@
 /**
-  *@file ${proto.fileName}.cpp
-  *@brief generated protocol source code
+  *@file ${proto.fileName}.c
+  *@brief generated code for ${proto.name} packet service
   *@author make_protocol.py
-  *@date 03/18/19
+  *@date ${proto.genTime}
   */
 
 /***********************************************************
@@ -12,6 +12,9 @@
 #include "${proto.fileName}.h"
 #include <assert.h>
 
+#ifdef ${proto.prefix.upper()}_SERVICE_DEBUG
+char ${proto.prefix}_printBuf[512];
+#endif
 
 //Define packet IDs
 % for packet in proto.packets:
@@ -89,6 +92,12 @@ void ${proto.prefix}_service_process()
     //set response token with ack flag (this will persist even when packet it built)
     response.mPacket.mHeader.mToken = packet.mPacket.mHeader.mToken | POLY_ACK_FLAG;
 
+  #ifdef ${proto.prefix.upper()}_SERVICE_DEBUG
+    //If debug is enabled, print json of incoming packets
+    poly_packet_print_json(&packet.mPacket, ${proto.prefix}_printBuf, true );
+    printf("  IN <<< %s\n",${proto.prefix}_printBuf );
+  #endif
+
     //Dispatch packet
     switch(packet.mPacket.mDesc->mTypeId)
     {
@@ -124,7 +133,7 @@ void ${proto.prefix}_service_process()
     //If a response has been build and the status was not set to ignore, we send a response on the intrface it came from
     if(( status == PACKET_HANDLED) && (response.mPacket.mBuilt) )
     {
-      poly_service_send(&${proto.service()}, packet.mPacket.mInterface , &response.mPacket);
+      ${proto.prefix}_send(packet.mPacket.mInterface , &response);
     }
 
     //Clean the packets
@@ -147,7 +156,16 @@ void ${proto.prefix}_service_feed(int iface, uint8_t* data, int len)
 
 HandlerStatus_e ${proto.prefix}_send(int iface, ${proto.prefix}_packet_t* metaPacket)
 {
-  return poly_service_send(&${proto.service()}, iface, &metaPacket->mPacket);
+  HandlerStatus_e status;
+
+  status = poly_service_send(&${proto.service()}, iface, &metaPacket->mPacket);
+
+#ifdef ${proto.prefix.upper()}_SERVICE_DEBUG
+  //If debug is enabled, print json of outgoing packets
+  poly_packet_print_json(&metaPacket->mPacket, ${proto.prefix}_printBuf, true );
+  printf(" OUT >>> %s\n",${proto.prefix}_printBuf );
+#endif
+  return status;
 }
 
 void ${proto.prefix}_auto_ack(bool enable)
