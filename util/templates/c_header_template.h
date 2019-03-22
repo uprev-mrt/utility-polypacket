@@ -190,10 +190,24 @@ void ${proto.prefix}_set${field.camel()}(${proto.prefix}_packet_t* packet, ${fie
   Meta-Packet getters
 *******************************************************************************/
 % for field in proto.fields:
-${field.getParamType()} ${proto.prefix}_get${field.name.capitalize()}(${proto.prefix}_packet_t* packet);
+${field.getParamType()} ${proto.prefix}_get${field.camel()}(${proto.prefix}_packet_t* packet);
 % endfor
 
-
+/*******************************************************************************
+  Quick send functions
+*******************************************************************************/
+% for packet in proto.packets:
+HandlerStatus_e ${proto.prefix}_send${packet.camel()}(int iface\
+  %for idx,field in enumerate(packet.fields):
+,\
+  %if field.isArray:
+ const ${field.getParamType()} ${field.name}\
+  %else:
+ ${field.getParamType()} ${field.name}\
+  %endif
+  %endfor
+);
+% endfor
 
 /*******************************************************************************
   Packet Handlers

@@ -205,10 +205,10 @@ int ${proto.prefix}_fieldLen(${proto.prefix}_packet_t* packet, poly_field_desc_t
 % for field in proto.fields:
 %if field.isArray:
 /**
-*@brief Sets value(s) in ${field.name} field
-*@param packet ptr to ${proto.prefix}_packet
-*@param val ${field.getParamType()} to copy data from
-*/
+  *@brief Sets value(s) in ${field.name} field
+  *@param packet ptr to ${proto.prefix}_packet
+  *@param val ${field.getParamType()} to copy data from
+  */
 void ${proto.prefix}_set${field.camel()}(${proto.prefix}_packet_t* packet, const ${field.getParamType()} val)
 % else:
 /**
@@ -261,6 +261,50 @@ ${field.getParamType()} ${proto.prefix}_get${field.camel()}(${proto.prefix}_pack
 
 % endfor
 
+/*******************************************************************************
+  Quick send functions
+*******************************************************************************/
+
+% for packet in proto.packets:
+/**
+  *@brief sends ${packet.name} packet
+  *@param iface indec of interface to send packet to
+  %for field in packet.fields:
+  %if field.isArray:
+  *@param ${field.name} ${field.getParamType()} to ${field.name} field from
+  %else:
+  *@param ${field.name} value to set ${field.name} field to
+  %endif
+  %endfor
+  *@return status send attempt
+  */
+HandlerStatus_e ${proto.prefix}_send${packet.camel()}(int iface\
+  %for idx,field in enumerate(packet.fields):
+,\
+  %if field.isArray:
+ const ${field.getParamType()} ${field.name}\
+  %else:
+ ${field.getParamType()} ${field.name}\
+  %endif
+  %endfor
+)
+{
+  HandlerStatus_e status;
+  //create packet
+  ${proto.prefix}_packet_t* packet = new_${proto.prefix}_packet(${packet.globalName});
+
+  //set fields
+  %for field in packet.fields:
+  ${proto.prefix}_set${field.camel()}(packet, ${field.name});
+  %endfor
+
+  status = ${proto.prefix}_send(iface,packet); //send packet
+  ${proto.prefix}_clean(packet); //clean up packet
+  return status;
+}
+
+% endfor
+
 
 /*******************************************************************************
   Weak packet handlers
@@ -295,7 +339,7 @@ __attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.name}_handler(${p
   /*    Set required Fields in response  */
 % for field in packet.response.fields:
 %if field.isRequired:
-  //${proto.prefix}_set${field.camel()}(${packet.response.name}, value );                   //Set ${field.name} value
+  //${proto.prefix}_set${field.camel()}(${proto.prefix}_${packet.response.name}, value );                   //Set ${field.name} value
 %endif
 %endfor
 %endif

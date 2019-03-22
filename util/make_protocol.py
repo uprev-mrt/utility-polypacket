@@ -193,6 +193,9 @@ class packetDesc:
         self.standard = False
         self.structName = name.lower() + '_packet_t'
         self.hasResponse = False
+        
+    def camel(self):
+        return self.name[:1].capitalize() + self.name[1:]
 
     def setPrefix(self, prefix):
         self.globalName = prefix.upper()+"_PACKET_"+self.name.upper()
@@ -330,7 +333,7 @@ class packetDesc:
 class protocolDesc:
     def __init__(self, name):
         self.name = name
-        self.fileName = name+"Protocol"
+        self.fileName = name+"Service"
         self.desc = ""
         self.hash = ""
         self.fields = []
@@ -548,7 +551,7 @@ def main():
 
 
     if(args.document):
-        buildTemplate(protocol, 'templates/doc_template.md', path+"/" + protocol.fileName+".md")
+        buildTemplate(protocol, 'templates/doc_template.md', path+"/" + protocol.name+"_ICD.md")
 
 if __name__ == "__main__":
     main()

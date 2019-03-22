@@ -11,7 +11,7 @@
 
 #include "app_${proto.name.lower()}.h"
 
-static uint8_t iface0_rx_buf[512]
+static uint8_t iface0_rx_buf[512];
 
 static inline HandlerStatus_e iface0_write(uint8_t* data, int len)
 {
@@ -106,7 +106,7 @@ HandlerStatus_e ${proto.prefix}_${packet.name}_handler(${proto.prefix}_packet_t*
   /*    Set required Fields in response  */
 % for field in packet.response.fields:
 %if field.isRequired:
-  ${proto.prefix}_set${field.camel()}(${packet.response.name}, value );                   //Set ${field.name} value
+  //${proto.prefix}_set${field.camel()}(${proto.prefix}_${packet.response.name}, value );                   //Set ${field.name} value
 %endif
 %endfor
 %endif
