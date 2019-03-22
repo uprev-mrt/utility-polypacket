@@ -5,11 +5,11 @@
 
 extern "C"{
 
-#include "poly_field.c"
-#include "poly_packet.c"
-#include "poly_service.c"
+#include "../poly_field.c"
+#include "../poly_packet.c"
+#include "../poly_service.c"
 }
-#include "example/SampleProtocol.c"
+#include "../example/SampleProtocol.c"
 
 #include <gtest/gtest.h>
 

@@ -10,6 +10,7 @@ import sys
 import xml.etree.ElementTree as ET
 import re
 import io
+import os
 import copy
 import datetime
 import zlib
@@ -525,16 +526,18 @@ def main():
 
     protocol.snippets = args.snippets
 
+    #get path of this script so we can run remotely
+    script_dir = os.path.dirname(__file__)
 
-    buildTemplate(protocol, 'templates/c_header_template.h', path+"/" + protocol.fileName+".h")
-    buildTemplate(protocol, 'templates/c_source_template.c', path+"/" + protocol.fileName+".c")
+    buildTemplate(protocol, script_dir +'/templates/c_header_template.h', path+"/" + protocol.fileName+".h")
+    buildTemplate(protocol, script_dir +'/templates/c_source_template.c', path+"/" + protocol.fileName+".c")
 
     if(args.app):
-        buildTemplate(protocol, 'templates/app_template.h', path+"/app_" + protocol.name.lower() +".h")
-        buildTemplate(protocol, 'templates/app_template.c', path+"/app_" + protocol.name.lower()+".c")
+        buildTemplate(protocol, script_dir +'/templates/app_template.h', path+"/app_" + protocol.name.lower() +".h")
+        buildTemplate(protocol, script_dir +'/templates/app_template.c', path+"/app_" + protocol.name.lower()+".c")
 
     if(args.document):
-        buildTemplate(protocol, 'templates/doc_template.md', path+"/" + protocol.name+"_ICD.md")
+        buildTemplate(protocol, script_dir +'/templates/doc_template.md', path+"/" + protocol.name+"_ICD.md")
 
 if __name__ == "__main__":
     main()

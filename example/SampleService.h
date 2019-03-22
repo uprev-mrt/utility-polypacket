@@ -1,6 +1,6 @@
 /**
-  *@file SampleProtocol.h
-  *@brief generated protocol source code
+  *@file SampleService.h
+  *@brief generated code for Sample packet service
   *@author make_protocol.py
   *@date 03/22/19
   *@hash AD1ABF4A
@@ -159,11 +159,17 @@ void sp_setSensorName(sp_packet_t* packet, const char* val);
   Meta-Packet getters
 *******************************************************************************/
 uint8_t sp_getCmd(sp_packet_t* packet);
-int16_t sp_getSensora(sp_packet_t* packet);
-int sp_getSensorb(sp_packet_t* packet);
-char* sp_getSensorname(sp_packet_t* packet);
+int16_t sp_getSensorA(sp_packet_t* packet);
+int sp_getSensorB(sp_packet_t* packet);
+char* sp_getSensorName(sp_packet_t* packet);
 
-
+/*******************************************************************************
+  Quick send functions
+*******************************************************************************/
+HandlerStatus_e sp_sendAck(int iface);
+HandlerStatus_e sp_sendSendCmd(int iface, uint8_t cmd);
+HandlerStatus_e sp_sendGetData(int iface);
+HandlerStatus_e sp_sendData(int iface, int16_t sensorA, int sensorB, const char* sensorName);
 
 /*******************************************************************************
   Packet Handlers

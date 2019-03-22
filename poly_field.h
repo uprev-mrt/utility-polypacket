@@ -16,7 +16,11 @@
 #define MRT_SPRINTF(f_, ...) sprintf((f_), __VA_ARGS__)
 #endif
 
+//Seed the checksum so even in packets with no data (acks) still have a partial check
 #define CHECKSUM_SEED 1738
+
+#pragma pack(push)
+#pragma pack(1)
 
 typedef enum FieldType {
   TYPE_UINT8,
@@ -43,6 +47,8 @@ typedef enum FieldType {
 #define TYPE_INT32_T TYPE_INT32
 #define TYPE_INT64_T TYPE_INT64
 
+
+//Format used when printing field to json 
 typedef enum FieldFormat {
   FORMAT_DEFAULT,
   FORMAT_DEC,
@@ -51,8 +57,6 @@ typedef enum FieldFormat {
   FORMAT_NONE
 }eFieldFormat;
 
-#pragma pack(push)
-#pragma pack(1)
 /**
   *@brief Struct for variable field descriptor
   */

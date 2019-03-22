@@ -14,6 +14,10 @@ extern "C"
 {
 #endif
 
+//Ensure we pack structs
+#pragma pack(push)
+#pragma pack(1)
+
 
 typedef enum ParseStatus {
   PACKET_VALID = -400,
@@ -29,8 +33,6 @@ typedef enum ParseStatus {
 #define POLY_ACK_FLAG 0x8000
 
 //[ 1 byte payloadId] [ 2 byte payload len ]  [2 byte token] [ mManifestSize bytes manifest] [n byte variable data ] [2 byte checksum]
-#pragma pack(push)
-#pragma pack(1)
 /**
   *@brief Variable Packet Descriptor
   */

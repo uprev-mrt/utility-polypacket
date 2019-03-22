@@ -25,7 +25,7 @@ void poly_service_init( poly_service_t* service, int maxDescs, int interfaceCoun
 
   service->mDescCount =0;
   service->mStarted = false;
-  service->mAutoAck = false;
+  service->mAutoAck = true;
 }
 
 

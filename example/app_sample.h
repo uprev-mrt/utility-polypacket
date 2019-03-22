@@ -5,7 +5,7 @@
   *@date 03/22/19
   */
 
-#include "SampleProtocol.h"
+#include "SampleService.h"
 
 
 /**

@@ -11,7 +11,7 @@
 
 #include "app_sample.h"
 
-static uint8_t iface0_rx_buf[512]
+static uint8_t iface0_rx_buf[512];
 
 static inline HandlerStatus_e iface0_write(uint8_t* data, int len)
 {

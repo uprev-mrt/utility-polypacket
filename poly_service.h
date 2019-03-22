@@ -24,6 +24,10 @@ extern "C"
 {
 #endif
 
+//Ensure we pack structs
+#pragma pack(push)
+#pragma pack(1)
+
 typedef enum ServiceParseState {
   STATE_WAITING_FOR_HEADER,
   STATE_HEADER_FOUND,
@@ -39,19 +43,18 @@ typedef enum HandlerStatus {
 
 typedef HandlerStatus_e (*poly_tx_callback)(uint8_t* data , int len);
 
-#pragma pack(push)
-#pragma pack(1)
+
 
 typedef struct {
-  uint8_t* mRaw; //raw packet being parsed
-  int mIdx;      //index of raw message
+  uint8_t* mRaw;                    //raw packet being parsed
+  int mIdx;                         //index of cursor in raw message
 
-  fifo_t mBytefifo;       //fifo of incoming bytes
-  poly_packet_hdr_t mCurrentHdr; //header for current message candidate
+  fifo_t mBytefifo;                 //fifo of incoming bytes
+  poly_packet_hdr_t mCurrentHdr;    //header for current message candidate
   ServiceParseState_e mParseState;
-  fifo_t mPacketBuffer; //outgoing packet buffer
-  bool mUpdate;         //flag set when there is new data to process
-  poly_tx_callback f_TxCallBack;
+  fifo_t mPacketBuffer;             //outgoing packet buffer
+  bool mUpdate;                     //flag set when there is new data to process
+  poly_tx_callback f_TxCallBack;    //call back for writing bytes to interface
   bool mHasCallBack;
   //diagnostic info
   int mPacketsIn;     //Total number of incoming packets parsed
@@ -155,11 +158,6 @@ ParseStatus_e poly_service_try_parse(poly_service_t* pService, poly_packet_t* pa
   *@return "Return of the function"
   */
 ParseStatus_e poly_service_send(poly_service_t* pService, int interface,  poly_packet_t* packet);
-
-
-
-
-
 
 
 #ifdef __cplusplus
