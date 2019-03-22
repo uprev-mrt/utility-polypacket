@@ -330,7 +330,7 @@ class packetDesc:
 class protocolDesc:
     def __init__(self, name):
         self.name = name
-        self.fileName = name
+        self.fileName = name+"Protocol"
         self.desc = ""
         self.hash = ""
         self.fields = []
@@ -500,6 +500,7 @@ def init_args():
     parser.add_argument('-o', '--output', type=str, help='Output path', default="")
     parser.add_argument('-c', '--pure_c', action='store_true', help='generate pure c code', default=False)
     parser.add_argument('-d', '--document', action='store_true', help='Enable documentation', default=False)
+    parser.add_argument('-a', '--applayer', action='store_true', help='Generates the app layer code to fill out', default=False)
     parser.add_argument('-s', '--snippets', action='store_true', help='Adds helpful code snippets to files', default=False)
     parser.add_argument('-u', '--updater', action='store_true', help='creates updater script', default=False)
 
@@ -537,8 +538,12 @@ def main():
         buildTemplate(protocol, 'templates/c_header_template.h', path+"/" + protocol.fileName+".h")
         buildTemplate(protocol, 'templates/c_source_template.c', path+"/" + protocol.fileName+".c")
     else:
-        buildTemplate(protocol, 'templates/cpp_header_template.h', path+"/" + protocol.fileName+".hpp")
-        buildTemplate(protocol, 'templates/cpp_source_template.cpp', path+"/" + protocol.fileName+".cpp")
+        buildTemplate(protocol, 'templates/cpp_header_template.h', path+"/" + protocol.fileName+".h")
+        buildTemplate(protocol, 'templates/cpp_source_template.cpp', path+"/" + protocol.fileName+".c")
+
+    if(args.applayer):
+        buildTemplate(protocol, 'templates/app_template.h', path+"/app_" + protocol.name.lower() +".h")
+        buildTemplate(protocol, 'templates/app_template.c', path+"/app_" + protocol.name.lower()+".c")
 
 
 

@@ -2,7 +2,8 @@
   *@file SampleProtocol.h
   *@brief generated protocol source code
   *@author make_protocol.py
-  *@date 03/18/19
+  *@date 03/22/19
+  *@hash AD1ABF4A
   */
 
 /***********************************************************
@@ -10,35 +11,39 @@
 ***********************************************************/
 #include "Utilities/PolyPacket/poly_service.h"
 
+#define SP_SERVICE_HASH 0xAD1ABF4A
 
+/*******************************************************************************
+  Enums
+*******************************************************************************/
+/* Enums for cmd field */
 typedef enum{
-  SP_CMD_TEST,
-  SP_CMD_SEND,
-  SP_CMD_STOP,
+  SP_CMD_LED_ON,              /* turns on led */
+  SP_CMD_LED_OFF,              /* turns off led */
+  SP_CMD_RESET,              /* resets the device */
   SP_CMD_MAX_LIMIT
 } sp_cmd_e;
 
 
+/*******************************************************************************
+  Bits/Flags
+*******************************************************************************/
 
+/*******************************************************************************
+  Global Descriptors
+*******************************************************************************/
 //Declare extern packet descriptors
 extern poly_packet_desc_t* SP_PACKET_ACK;
-extern poly_packet_desc_t* SP_PACKET_SETDATA;
+extern poly_packet_desc_t* SP_PACKET_SENDCMD;
 extern poly_packet_desc_t* SP_PACKET_GETDATA;
-extern poly_packet_desc_t* SP_PACKET_RESPDATA;
-extern poly_packet_desc_t* SP_PACKET_BLOCKREQ;
-extern poly_packet_desc_t* SP_PACKET_BLOCKRESP;
+extern poly_packet_desc_t* SP_PACKET_DATA;
 
 
 //Declare extern field descriptors
-extern poly_field_desc_t* SP_FIELD_SRC;
-extern poly_field_desc_t* SP_FIELD_DST;
 extern poly_field_desc_t* SP_FIELD_CMD;
 extern poly_field_desc_t* SP_FIELD_SENSORA;
 extern poly_field_desc_t* SP_FIELD_SENSORB;
 extern poly_field_desc_t* SP_FIELD_SENSORNAME;
-extern poly_field_desc_t* SP_FIELD_BLOCKOFFSET;
-extern poly_field_desc_t* SP_FIELD_BLOCKSIZE;
-extern poly_field_desc_t* SP_FIELD_BLOCKDATA;
 
 /*@brief The main type dealt with by the user
  *@note just wraps a poly_packet to prevent mixing them when multiple protocol are in use
@@ -96,7 +101,7 @@ void sp_auto_ack(bool enable);
 *******************************************************************************/
 
 /**
-  *@brief creates a new sp_packet_t object OWNER IS RESPONSIBLE FOR DESTROYING
+  *@brief creates a new sp_packet_t object OWNER IS RESPONSIBLE FOR CLEANING
   *@param desc ptr to packet descriptor to model packet from
   *@return ptr to new {proto.prefix}_packet_t
   */
@@ -104,10 +109,10 @@ sp_packet_t* new_sp_packet(poly_packet_desc_t* desc);
 
 
 /**
-  *@brief recrusively destroys sp_packet_t and its contents
-  *@param metaPacket metapacket to destroy
+  *@brief recrusively cleanss sp_packet_t and its contents
+  *@param metaPacket metapacket to clean
   */
-void sp_destroy(sp_packet_t* metaPacket);
+void sp_clean(sp_packet_t* metaPacket);
 
 /**
   *@brief converts packet to json
@@ -134,53 +139,46 @@ void sp_destroy(sp_packet_t* metaPacket);
   */
 #define sp_pack(packet, buf) poly_packet_pack(&packet->mPacket, buf)
 
+/**
+  *@brief gets the length of a give field in a packet
+  *@param packet ptr to sp_packet_t
+  *@param field ptr to field descriptor
+  *@return size of field
+  */
+int sp_fieldLen(sp_packet_t* packet, poly_field_desc_t* fieldDesc );
 
 /*******************************************************************************
   Meta-Packet setters
 *******************************************************************************/
-void sp_setSrc(sp_packet_t* packet, uint16_t val);
-void sp_setDst(sp_packet_t* packet, uint16_t val);
 void sp_setCmd(sp_packet_t* packet, uint8_t val);
-void sp_setSensora(sp_packet_t* packet, int16_t val);
-void sp_setSensorb(sp_packet_t* packet, int val);
-void sp_setSensorname(sp_packet_t* packet, const char* val);
-void sp_setBlockoffset(sp_packet_t* packet, uint32_t val);
-void sp_setBlocksize(sp_packet_t* packet, uint32_t val);
-void sp_setBlockdata(sp_packet_t* packet, const uint8_t* val);
+void sp_setSensorA(sp_packet_t* packet, int16_t val);
+void sp_setSensorB(sp_packet_t* packet, int val);
+void sp_setSensorName(sp_packet_t* packet, const char* val);
 
 /*******************************************************************************
   Meta-Packet getters
 *******************************************************************************/
-uint16_t sp_getSrc(sp_packet_t* packet);
-uint16_t sp_getDst(sp_packet_t* packet);
 uint8_t sp_getCmd(sp_packet_t* packet);
 int16_t sp_getSensora(sp_packet_t* packet);
 int sp_getSensorb(sp_packet_t* packet);
 char* sp_getSensorname(sp_packet_t* packet);
-uint32_t sp_getBlockoffset(sp_packet_t* packet);
-uint32_t sp_getBlocksize(sp_packet_t* packet);
-uint8_t* sp_getBlockdata(sp_packet_t* packet);
+
+
 
 /*******************************************************************************
   Packet Handlers
 *******************************************************************************/
 /*@brief Handler for ack packets */
-HandlerStatus_e sp_ack_handler(sp_packet_t* ack);
+HandlerStatus_e sp_ack_handler(sp_packet_t* sp_ack);
 
-/*@brief Handler for SetData packets */
-HandlerStatus_e sp_setdata_handler(sp_packet_t* SetData, sp_packet_t* RespData);
+/*@brief Handler for SendCmd packets */
+HandlerStatus_e sp_SendCmd_handler(sp_packet_t* sp_SendCmd);
 
 /*@brief Handler for GetData packets */
-HandlerStatus_e sp_getdata_handler(sp_packet_t* GetData, sp_packet_t* RespData);
+HandlerStatus_e sp_GetData_handler(sp_packet_t* sp_GetData, sp_packet_t* sp_Data);
 
-/*@brief Handler for RespData packets */
-HandlerStatus_e sp_respdata_handler(sp_packet_t* RespData);
-
-/*@brief Handler for blockReq packets */
-HandlerStatus_e sp_blockreq_handler(sp_packet_t* blockReq, sp_packet_t* blockResp);
-
-/*@brief Handler for blockResp packets */
-HandlerStatus_e sp_blockresp_handler(sp_packet_t* blockResp);
+/*@brief Handler for Data packets */
+HandlerStatus_e sp_Data_handler(sp_packet_t* sp_Data);
 
 /*@brief Catch-All Handler for unhandled packets */
-HandlerStatus_e sp_default_handler(sp_packet_t * packet);
+HandlerStatus_e sp_default_handler(sp_packet_t * sp_packet);

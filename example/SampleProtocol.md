@@ -1,11 +1,9 @@
 # SampleProtocol
 * Generated: 03/21/19<br/>
-* CRC: 9C7E180C
+* CRC: CDAF75AE
 
-##### This is a sample protocol made up to demonstrate features of the PolyPacket code generation tool. The idea   is to have a tool that can automatically create parseable/serializable messaging for embedded systems.
+-----
 
-----
-### Header
 Every Packet has a standard Header before the data
 
 |***Byte***|0|1|2|3|4|5|6|
@@ -20,17 +18,7 @@ Every Packet has a standard Header before the data
 ----
 # Packet Types:
 
-### ack
 
-
-|***Byte***|
-|---|
-|***Field***
-|***Type***
-
-
-
-------
 ### SetData
 Message to set data in node
 
@@ -49,6 +37,9 @@ Message to set data in node
 >***sensorName*** : Name of sensor<br/>
 
 ------
+
+
+
 ### GetData
 Message to get data from node
 
@@ -67,6 +58,9 @@ Message to get data from node
 >***sensorName*** : Name of sensor<br/>
 
 ------
+
+
+
 ### RespData
 Response to get/set messages
 
@@ -85,6 +79,9 @@ Response to get/set messages
 >***sensorName*** : Name of sensor<br/>
 
 ------
+
+
+
 ### blockReq
 This packet is used to request a block of data from the host during Ota updates
 
@@ -102,6 +99,9 @@ This packet is used to request a block of data from the host during Ota updates
 >***blockSize*** : Size of block being requested <br/>
 
 ------
+
+
+
 ### blockResp
 This packet sends a block of ota data to the node as a response to a block request
 
@@ -120,3 +120,4 @@ This packet sends a block of ota data to the node as a response to a block reque
 >***blockData*** : actual data from memory<br/>
 
 ------
+

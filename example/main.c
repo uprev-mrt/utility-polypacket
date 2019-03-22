@@ -14,8 +14,8 @@ HandlerStatus_e sp_setdata_handler(sp_packet_t* SetData, sp_packet_t* RespData)
 {
   sp_setSrc(RespData,0xABCD );
   sp_setDst(RespData,0xCDEF);
-  sp_setSensora(RespData,32500);
-  sp_setSensorb(RespData,898989);
+  sp_setSensorA(RespData,32500);
+  sp_setSensorB(RespData,898989);
   //convert the message to a json string
   sp_print_json(SetData, printBuf);
   printf("handled! = %s\n", printBuf);
@@ -63,9 +63,9 @@ int main()
   //Set the fields in the message
   sp_setSrc(msg,0xABCD );
   sp_setDst(msg,0xCDEF);
-  sp_setSensora(msg,32500);
-  sp_setSensorb(msg,898989);
-  sp_setSensorname(msg, "This is my test string");
+  sp_setSensorA(msg,32500);
+  sp_setSensorB(msg,898989);
+  sp_setSensorName(msg, "This is my test string");
 
   //send data over the UART interface
   //sp_send(UART,msg);
@@ -83,7 +83,7 @@ int main()
 
   sp_service_feed(UART,buffer,len);
 
-  sp_destroy(msg);
+  sp_clean(msg);
 
   sp_service_process();
 
