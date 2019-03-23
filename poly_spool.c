@@ -18,6 +18,7 @@ void poly_spool_init(poly_spool_t* spool, int len)
   spool->mEntries = (spool_entry_t*)malloc(sizeof(spool_entry_t) * len);
   spool->mCount = 0;
   spool->mReadyCount =0;
+  spool->mWaitingCount =0;
   spool->mTimeOut = 400; //Doherty Threshold?
   spool->mMaxRetries = 10;
   spool->mLock  = false;
@@ -90,9 +91,6 @@ spool_status_e poly_spool_push(poly_spool_t* spool, poly_packet_t* packet, spool
     entry->mTimeOut = 0;
     entry->mState = SPOOL_STATE_READY;
     entry->mAttempts = 0;
-    entry->mAckType = ackType;
-    entry->mAckToken = token;
-    entry->f_ackCallback = cb;
 
     //copy in packet data
     memcpy((void*)entry->mPacket, (void*)packet, sizeof(poly_packet_t));
@@ -122,7 +120,7 @@ spool_status_e poly_spool_pop(poly_spool_t* spool, poly_packet_t* packet)
     entry = spool->mEntries[idx];
 
 
-    if(entry->mAckType == ACK_TYPE_TOKEN)
+    if(entry->mPacket.mAckType == ACK_TYPE_TOKEN)
     {
       //if ack type is token, then we generate a randome token and make sure it wont be 0 without the ack flag
       while(newToken ==0)
@@ -137,6 +135,7 @@ spool_status_e poly_spool_pop(poly_spool_t* spool, poly_packet_t* packet)
       entry->mTimeOut = spool->mTimeOut;
 
       entry->mState = ENTRY_STATE_WAITING;
+      spool->mWaitingCount ++;
       entry->mAttempts++;
     }
     else
@@ -183,6 +182,7 @@ bool poly_spool_ack(poly_spool_t* spool, poly_packet_t* response)
     {
       //match found, free entry
       spool->mEntries[i].mState = ENTRY_STATE_FREE;
+      spool->mWaitingCount--;
       spool->mCount--;
 
       match = true;
@@ -193,9 +193,9 @@ bool poly_spool_ack(poly_spool_t* spool, poly_packet_t* response)
   SPOOL_UNLOCK;
 
   //if we found a match and the entry has a callback, call it
-  if(match && (spool->mEntries[i].f_ackCallback != NULL))
+  if(match && (spool->mEntries[i].mPacket.f_mAckCallback != NULL))
   {
-    spool->mEntries[i].f_ackCallback(response);
+    spool->mEntries[i].mPacket.f_mAckCallback(response);
   }
 
   return match;
@@ -225,11 +225,13 @@ void poly_spool_tick(poly_spool_t* spool, int ms)
         {
           entry->mState = ENTRY_STATE_READY;
           spool->mReadyCount++;
+          spool->mWaitingCount--;
         }
         else //if we max out our retries, free the slot and note a failed message
         {
           entry->mState = ENTRY_STATE_FREE;
           spool->mCount--;
+          spool->mWaitingCount--;
           spool->mFailedMessages++;
         }
       }

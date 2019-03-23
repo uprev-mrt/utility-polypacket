@@ -136,6 +136,9 @@ void ${proto.prefix}_service_process()
       ${proto.prefix}_send(packet.mPacket.mInterface , &response);
     }
 
+    //despool any packets ready to go out
+    poly_service_despool(&${proto.service()});
+
     //Clean the packets
     poly_packet_clean(&packet.mPacket);
     poly_packet_clean(&response.mPacket);

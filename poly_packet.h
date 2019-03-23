@@ -18,6 +18,11 @@ extern "C"
 #pragma pack(push)
 #pragma pack(1)
 
+//forward declare struct so we can typedef callbacks
+struct poly_packet;
+
+typedef void (*packet_ack_cb)(poly_packet* response);
+typedef void (*packet_failed_cb)();
 
 typedef enum ParseStatus {
   PACKET_VALID = -400,
@@ -27,6 +32,13 @@ typedef enum ParseStatus {
   INVALID_PACKET_TYPE,
   PACKET_NONE
 } ParseStatus_e;
+
+//Spool entry ack type
+typedef enum{
+   ACK_TYPE_NONE,         //no ack needed
+   ACK_TYPE_TOKEN,        //request ack via token
+   ACK_TYPE_PASSTHROUGH  //pass through message, dont touch the token (used when relaying messages so the endpoints can handle ack/retry)
+} packet_ack_type_e;
 
 
 #define PACKET_METADATA_SIZE (sizeof(poly_packet_hdr_t))
@@ -49,7 +61,7 @@ typedef struct {
 }poly_packet_desc_t;
 
 
-typedef struct {
+typedef struct poly_packet{
   uint8_t mTypeId; //id of payload type
   uint16_t mDataLen;  //expected len of packet data (not including header and footer)
   uint16_t mToken;    //token for packet (used for acknowledgement/ echo cancellation in mesh nets)
@@ -61,10 +73,13 @@ typedef struct {
   */
 typedef struct {
   poly_packet_hdr_t mHeader;
-  poly_packet_desc_t* mDesc;     //prt to packet descriptor
-  poly_field_t* mFields;        //array of fields contained in packet
+  poly_packet_desc_t* mDesc;      //prt to packet descriptor
+  poly_field_t* mFields;          //array of fields contained in packet
   uint8_t mInterface;              //id of interface that packet is from/to
-  bool mBuilt;                  //indicates if packet has already been built
+  bool mBuilt;                    //indicates if packet has already been built
+  packet_ack_type_e mAckType;     //indicates what type of ack the packet should use
+  packet_ack_cb f_mAckCallback;   //callback for when packet is acknowledged
+  packet_failed_cb f_mFailedCallback; //callback for when the packet timesout
 }poly_packet_t;
 
 #pragma pack(pop)

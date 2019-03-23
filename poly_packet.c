@@ -64,6 +64,9 @@ void poly_packet_build(poly_packet_t* packet, poly_packet_desc_t* desc, bool all
   packet->mInterface = 0;
   packet->mHeader.mTypeId = desc->mTypeId;
   packet->mHeader.mToken = rand() & 0x7FFF;
+  packet->mAckType = ACK_TYPE_TOKEN;
+  packet->f_mAckCallback = NULL;
+  packet->f_mFailedCallback = NULL;
 
   packet->mFields = (poly_field_t*) malloc(sizeof(poly_field_t) * desc->mFieldCount);
   packet->mBuilt = true;

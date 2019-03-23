@@ -41,11 +41,10 @@ void poly_service_register_tx_callback(poly_service_t* pService, int interface, 
   assert(interface < pService->mInterfaceCount);
 
   pService->mInterfaces[interface].f_TxCallBack = callback;
-  pService->mInterfaces[interface].mHasCallBack = true;
 }
 
 
-void poly_service_start(poly_service_t* pService, int fifoDepth)
+void poly_service_start(poly_service_t* pService, int depth)
 {
 
   //find max packet size
@@ -64,12 +63,15 @@ void poly_service_start(poly_service_t* pService, int fifoDepth)
     pService->mInterfaces[i].mRetries = 0;
     pService->mInterfaces[i].mFailures = 0;
     pService->mInterfaces[i].mBitErrors = 0;
+    pService->mInterfaces[i].f_TxCallBack = NULL;
 
-    //set up buffers, make incoming byte buffer 2x max packet size
-    fifo_init(&pService->mInterfaces[i].mBytefifo, fifoDepth, sizeof(uint8_t));
+    //set up buffers for incoming data
+    fifo_init(&pService->mInterfaces[i].mBytefifo, depth, sizeof(uint8_t));
     pService->mInterfaces[i].mParseState= STATE_WAITING_FOR_HEADER;
     pService->mInterfaces[i].mRaw = (uint8_t*) malloc(pService->mMaxPacketSize);
 
+    //set up spool for outgoing
+    poly_spool_init(pService->mInterfaces[i].mOutSpool, depth);
   }
 
   pService->mStarted = true;
@@ -193,16 +195,50 @@ ParseStatus_e poly_service_try_parse(poly_service_t* pService, poly_packet_t* pa
   return retVal;
 }
 
-ParseStatus_e poly_service_send(poly_service_t* pService, int interface,  poly_packet_t* packet)
+ParseStatus_e poly_service_spool(poly_service_t* pService, int interface,  poly_packet_t* packet)
+{
+   ParseStatus_e status = PACKET_NOT_HANDLED;
+   assert(interface < pService->mInterfaceCount);
+
+   poly_interface_t* iface = &pService->mInterfaces[interface];
+
+
+   if(iface->f_TxCallBack == NULL)
+   {
+     return PACKET_NOT_HANDLED; /* no tx callback registered */
+   }
+
+   if(poly_spool_push(&iface->mOutSpool, packet) != SPOOL_OK)
+   {
+     return PACKET_NOT_HANDLED
+   }
+
+  return status;
+}
+
+ParseStatus_e poly_service_despool(poly_service_t* pService)
 {
   ParseStatus_e status = PACKET_NOT_HANDLED;
-   assert(interface < pService->mInterfaceCount);
-   if(!pService->mInterfaces[interface].mHasCallBack)
-   return PACKET_NOT_HANDLED;
+  poly_interface_t* iface;
+  poly_packet_t outPacket;
+  int len;
 
-   uint8_t data[packet->mDesc->mMaxPacketSize];
-   int len = poly_packet_pack(packet, data);
+  for(int i=0; i < pService->mInterfaceCount; i++)
+  {
+    iface = &pService->mInterfaces[interface];
+    if(iface->mOutSpool.mReadyCount > 0)
+    {
+      if(poly_spool_pop(&iface->mOutSpool, &outPacket) == SPOOL_OK)
+      {
+        uint8_t data[outPacket.mDesc->mMaxPacketSize];
+        len = poly_packet_pack(&outPacket, data);
 
-   status = pService->mInterfaces[interface].f_TxCallBack(data, len);
+        status = iface->f_TxCallBack(data,len)
+        break;
+      }
+    }
+
+  }
+
   return status;
 }

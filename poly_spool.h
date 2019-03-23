@@ -26,12 +26,6 @@ typedef enum{
   ENTRY_STATE_WAITING   //Entry was sent and is waiting for an ack or to timeout for a retry
 } spool_entry_state_e;
 
-//Spool entry ack type
-typedef enum{
-   ACK_TYPE_NONE,         //no ack needed
-   ACK_TYPE_TOKEN,        //request ack via token
-   ACK_TYPE_PASSTHROUGH  //pass through message, dont touch the token (used when relaying messages so the endpoints can handle ack/retry)
-} spool_entry_ack_type;
 
 //Status of spool actions
 typedef enum{
@@ -46,9 +40,7 @@ typedef struct{
     spool_entry_state_e mState;     //current state of entry
     int mTimeOut;                   //current state of timeout counter
     int mAttempts;                  //number of attempts to send this packet so far
-    uint8_t mAckType;               //type of ack requested for this packet
     poly_packet_t mPacket;          //actual packet being sent
-    spool_ack_cb f_ackCallback;     //callback function for when packet is acknowledged
   } poly_spool_entry_t;
 
   typedef struct{
@@ -56,6 +48,7 @@ typedef struct{
     int mMaxEntries;                //max number of entries in spool
     int mCount;                     //current number of entries in spool
     int mReadyCount;                //number of entries in the READY state
+    int mWaitingCount;              //number of entries waiting for acks
     int mTimeOut;                   //timeout for entries
     int mMaxRetries;                //maximum attempts for each packet before giving up
     uint8_t mLock;                  //lock bit/mutex //TODO add mutex support when available
@@ -81,12 +74,10 @@ void poly_spool_deinit(poly_spool_t* spool);
   *@brief pushes a new packet onto the spool
   *@param spool ptr to spool
   *@param packet packet to add to spool
-  *@param ackType type of ack for this packet (ACK_TYPE_TOKEN, ACK_TYPE_NONE, ACK_TYPE_PASSTHROUGH)
-  *@param cb callback to fire when ack is received (NULL for no callback)
   *@return SPOOL_OK push was successful
   *@return SPOOL_OVERFLOW spool was already full
   */
-spool_status_e poly_spool_push(poly_spool_t* spool, poly_packet_t* packet, spool_entry_ack_type ackType, spool_ack_cb cb );
+spool_status_e poly_spool_push(poly_spool_t* spool, poly_packet_t* packet );
 
 /**
   *@brief pulls

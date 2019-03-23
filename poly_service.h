@@ -15,6 +15,7 @@
 
 #include "Utilities/Fifo/fifo.h"
 #include "poly_packet.h"
+#include "poly_spool.h"
 
 
 
@@ -46,17 +47,17 @@ typedef HandlerStatus_e (*poly_tx_callback)(uint8_t* data , int len);
 
 
 typedef struct {
+  /*    Incoming      */
+  bool mUpdate;                     //flag set when there is new data to process
+  fifo_t mBytefifo;                 //fifo of incoming bytes
   uint8_t* mRaw;                    //raw packet being parsed
   int mIdx;                         //index of cursor in raw message
-
-  fifo_t mBytefifo;                 //fifo of incoming bytes
   poly_packet_hdr_t mCurrentHdr;    //header for current message candidate
-  ServiceParseState_e mParseState;
-  fifo_t mPacketBuffer;             //outgoing packet buffer
-  bool mUpdate;                     //flag set when there is new data to process
+  ServiceParseState_e mParseState;  //state of current parsing
+  /*    Outgoing      */
+  poly_spool_t mOutSpool;           //ack/rety spool for outgoing messages
   poly_tx_callback f_TxCallBack;    //call back for writing bytes to interface
-  bool mHasCallBack;
-  //diagnostic info
+  /*    Diagnostic      */
   int mPacketsIn;     //Total number of incoming packets parsed
   int mPacketsOut;    //Total packets sent on on spool
   int mRetries;       //total number of packet retries (no ack)
@@ -151,13 +152,21 @@ ParseStatus_e poly_service_try_parse_interface(poly_service_t* pService, poly_pa
 ParseStatus_e poly_service_try_parse(poly_service_t* pService, poly_packet_t* packet);
 
 /**
-  *@brief sends a packet over a give interface
-  *@param "Param description"
-  *@pre "Pre-conditions"
-  *@post "Post-conditions"
+  *@brief pushes a packet to the spool
+  *@param pService ptr to service
+  *@param int interface idx of interface to add packet to
+  *@param packet packet to add to spool
   *@return "Return of the function"
   */
-ParseStatus_e poly_service_send(poly_service_t* pService, int interface,  poly_packet_t* packet);
+ParseStatus_e poly_service_spool(poly_service_t* pService, int interface,  poly_packet_t* packet);
+
+/**
+  *@brief grabs next available packet from spool and sends it
+  *@param pService ptr to service 
+  */
+ParseStatus_e poly_service_despool(poly_service_t* pService);
+
+
 
 
 #ifdef __cplusplus
