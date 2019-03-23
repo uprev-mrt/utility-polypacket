@@ -10,59 +10,58 @@
 
 #define MEM_EXISTS( field) ((field->mAllocated) || (field->mBound))
 
-poly_field_desc_t* new_poly_field_desc(const char* name, eFieldType type, uint32_t len, eFieldFormat format)
+poly_field_desc_t* poly_field_desc_init(poly_field_desc_t* desc, const char* name, eFieldType type, uint32_t len, eFieldFormat format)
 {
-  poly_field_desc_t* new_desc = (poly_field_desc_t*) malloc(sizeof(poly_field_desc_t));
-  new_desc->mName = name;
-  new_desc->mFormat = FORMAT_DEC;
-  new_desc->mLen = len;
-  new_desc->mDataType = type;
+  desc->mName = name;
+  desc->mFormat = FORMAT_DEC;
+  desc->mLen = len;
+  desc->mDataType = type;
   if(len > 1)
   {
-    new_desc->mVarLen = true;
+    desc->mVarLen = true;
   }
   else
   {
-    new_desc->mVarLen = false;
+    desc->mVarLen = false;
   }
-  new_desc->mNullTerm = false;
+  desc->mNullTerm = false;
   switch(type)
   {
     case TYPE_UINT8:
-      new_desc->mObjSize=sizeof(uint8_t);
+      desc->mObjSize=sizeof(uint8_t);
       break;
     case TYPE_UINT16:
-      new_desc->mObjSize=sizeof(uint16_t);
+      desc->mObjSize=sizeof(uint16_t);
       break;
     case TYPE_UINT32:
-      new_desc->mObjSize=sizeof(uint32_t);
+      desc->mObjSize=sizeof(uint32_t);
       break;
     case TYPE_UINT64:
-      new_desc->mObjSize=sizeof(uint64_t);
+      desc->mObjSize=sizeof(uint64_t);
       break;
     case TYPE_INT8:
-      new_desc->mObjSize=sizeof(int8_t);
+      desc->mObjSize=sizeof(int8_t);
       break;
     case TYPE_INT16:
-      new_desc->mObjSize=sizeof(int16_t);
+      desc->mObjSize=sizeof(int16_t);
       break;
     case TYPE_INT32:
     case TYPE_INT:
-      new_desc->mObjSize=sizeof(int32_t);
+      desc->mObjSize=sizeof(int32_t);
       break;
     case TYPE_INT64:
-      new_desc->mObjSize=sizeof(int64_t);
+      desc->mObjSize=sizeof(int64_t);
       break;
     case TYPE_FLOAT:
-      new_desc->mObjSize=sizeof(float);
+      desc->mObjSize=sizeof(float);
       break;
     case TYPE_DOUBLE:
-      new_desc->mObjSize=sizeof(double);
+      desc->mObjSize=sizeof(double);
       break;
     case TYPE_STRING:
     case TYPE_CHAR:
-      new_desc->mObjSize=sizeof(char);  //strings are treated as arrays of characters
-      new_desc->mFormat = FORMAT_ASCII;
+      desc->mObjSize=sizeof(char);  //strings are treated as arrays of characters
+      desc->mFormat = FORMAT_ASCII;
       break;
     default:
       break;
@@ -70,10 +69,10 @@ poly_field_desc_t* new_poly_field_desc(const char* name, eFieldType type, uint32
 
   if(format != FORMAT_DEFAULT)
   {
-    new_desc->mFormat = format;
+    desc->mFormat = format;
   }
 
-  return new_desc;
+  return desc;
 }
 
 void poly_field_init(poly_field_t* field, poly_field_desc_t* desc, bool allocate)

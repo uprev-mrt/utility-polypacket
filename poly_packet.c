@@ -10,12 +10,11 @@
 
 
 
-poly_packet_desc_t* new_poly_packet_desc(const char* name, int maxFields)
+poly_packet_desc_t* poly_packet_desc_init(poly_packet_desc_t* desc, const char* name, int maxFields)
 {
   static int id =0;
 
   //build out new packet descriptor
-  poly_packet_desc_t* desc = (poly_packet_desc_t*)malloc(sizeof(poly_packet_desc_t));
   desc->mTypeId = id++;
   desc->mName = name;
   desc->mMaxFields = maxFields;
@@ -61,7 +60,7 @@ void poly_packet_build(poly_packet_t* packet, poly_packet_desc_t* desc, bool all
   packet->mInterface = 0;
   packet->mHeader.mTypeId = desc->mTypeId;
   packet->mHeader.mToken = rand() & 0x7FFF;
-  packet->mAckType = ACK_TYPE_TOKEN;
+  packet->mAckType = ACK_TYPE_NONE;//ACK_TYPE_TOKEN;
   packet->f_mAckCallback = NULL;
   packet->f_mFailedCallback = NULL;
 

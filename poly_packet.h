@@ -85,12 +85,12 @@ typedef struct poly_packet{
 #pragma pack(pop)
 
 /**
-  *@brief creates a new packet descriptor
+  *@brief initializes a packet descriptor
   *@param name firendly name for packet type
   *@param maxFields max number of fields in packet descriptor
-  *@return ptr to new packet descriptor
+  *@return ptr to packet descriptor
   */
-poly_packet_desc_t* new_poly_packet_desc(const char* name , int maxFields);
+poly_packet_desc_t* poly_packet_desc_init(poly_packet_desc_t* desc, const char* name , int maxFields);
 
 /**
   *@brief adds field descriptor to packet descriptor

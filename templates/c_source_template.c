@@ -31,6 +31,15 @@ poly_packet_desc_t* ${packet.globalName};
 poly_field_desc_t* ${field.globalName};
 % endfor
 
+//Global descriptors
+% for packet in proto.packets:
+poly_packet_desc_t _${packet.globalName};
+% endfor
+
+% for field in proto.fields:
+poly_field_desc_t _${field.globalName};
+% endfor
+
 static poly_service_t ${proto.service()};
 
 /*******************************************************************************
@@ -48,12 +57,12 @@ void ${proto.prefix}_service_init(int interfaceCount)
 
   //Build Packet Descriptors
 % for packet in proto.packets:
-  ${packet.globalName} = new_poly_packet_desc("${packet.name}", ${len(packet.fields)});
+  ${packet.globalName} = poly_packet_desc_init(&_${packet.globalName} ,"${packet.name}", ${len(packet.fields)});
 % endfor
 
   //Build Field Descriptors
 % for field in proto.fields:
-  ${field.globalName} = new_poly_field_desc("${field.name}", TYPE_${field.type.upper()}, ${field.arrayLen}, ${field.format.upper()});
+  ${field.globalName} = poly_field_desc_init( &_${field.globalName} ,"${field.name}", TYPE_${field.type.upper()}, ${field.arrayLen}, ${field.format.upper()});
 % endfor
 
 % for packet in proto.packets:

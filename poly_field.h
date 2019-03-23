@@ -48,7 +48,7 @@ typedef enum FieldType {
 #define TYPE_INT64_T TYPE_INT64
 
 
-//Format used when printing field to json 
+//Format used when printing field to json
 typedef enum FieldFormat {
   FORMAT_DEFAULT,
   FORMAT_DEC,
@@ -87,14 +87,14 @@ extern "C"
 #endif
 
 /**
-  *@brief Creates a new field descriptor
+  *@brief initializes a field descriptor
   *@param name friendly name for field
   *@param type type of data
   *@param len number of elements in field
   *@param format format type for stringifying
-  *@return ptr to new field descriptor
+  *@return ptr to  field descriptor
   */
-poly_field_desc_t* new_poly_field_desc(const char* name, eFieldType type, uint32_t len, eFieldFormat format);
+poly_field_desc_t* poly_field_desc_init(poly_field_desc_t* desc, const char* name, eFieldType type, uint32_t len, eFieldFormat format);
 
 /**
   *@brief initializes a new field
