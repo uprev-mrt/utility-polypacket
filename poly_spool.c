@@ -64,6 +64,13 @@ void poly_spool_deinit(poly_spool_t* spool)
   spool->mMaxEntries = 0;
   spool->mReadyCount =0;
   spool->mCount =0;
+  for(int i =0 ; i < spool->mMaxEntries; i++)
+  {
+    if(spool->mEntries[i].mState != ENTRY_STATE_FREE)
+    {
+      poly_packet_clean(&spool->mEntries[i].mPacket);
+    }
+  }
   free(spool->mEntries);
   SPOOL_UNLOCK;
 }
@@ -137,7 +144,7 @@ spool_status_e poly_spool_pop(poly_spool_t* spool, poly_packet_t* packet)
     }
     else
     {
-      //If we dont need to an ack, then we are done with this packet
+      //If we dont need an ack, then we are done with this packet
       entry->mState = ENTRY_STATE_FREE;
       spool->mCount--;
 

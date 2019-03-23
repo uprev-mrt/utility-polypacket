@@ -2,7 +2,7 @@
   *@file SampleService.h
   *@brief generated code for Sample packet service
   *@author make_protocol.py
-  *@date 03/22/19
+  *@date 03/23/19
   *@hash AD1ABF4A
   */
 
@@ -50,6 +50,8 @@ extern poly_field_desc_t* SP_FIELD_SENSORNAME;
  */
 typedef struct{
   poly_packet_t mPacket;    //internal packet structure
+  bool mSpooled;            //spooled data doesnt get cleaned, the spool owns it now
+  bool mBuilt;
 }sp_packet_t;
 
 
@@ -57,10 +59,17 @@ typedef struct{
   Service Functions
 *******************************************************************************/
 /**
-*@brief initializes protocol service
-*@param ifaces number of interfaces to use
-*/
+  *@brief initializes protocol service
+  *@param ifaces number of interfaces to use
+  */
 void sp_service_init(int interfaceCount);
+
+/**
+  *@brief tears down service
+  *@note probably not needed based on lifecycle of service
+  *@ but useful for detecting memory leaks 
+  */
+void sp_service_teardown();
 
 /**
   *@brief processes data in buffers
@@ -68,9 +77,9 @@ void sp_service_init(int interfaceCount);
 void sp_service_process();
 
 /**
-  *@brief sends packet over given interface
-  *@param metaPacket packet to be sent
-  *@param iface index of interface to send on
+  *@brief registers a callback to let the service know how to send bytes for a given interface
+  *@param iface index of interface to register with
+  *@param txCallBack a function pointer for the callback
   */
 void sp_service_register_tx( int iface, poly_tx_callback txCallBack);
 
@@ -84,10 +93,10 @@ void sp_service_feed(int iface, uint8_t* data, int len);
 
 /**
   *@brief sends packet over given interface
-  *@param metaPacket packet to be sent
+  *@param packet packet to be sent
   *@param iface index of interface to send on
   */
-HandlerStatus_e sp_send( int iface, sp_packet_t* metaPacket);
+HandlerStatus_e sp_send( int iface, sp_packet_t* packet);
 
 /**
   *@brief enables/disables the auto acknowledgement function of the service
@@ -101,18 +110,17 @@ void sp_auto_ack(bool enable);
 *******************************************************************************/
 
 /**
-  *@brief creates a new sp_packet_t object OWNER IS RESPONSIBLE FOR CLEANING
+  *@brief initializes a new {proto.prefix}_packet_t
   *@param desc ptr to packet descriptor to model packet from
-  *@return ptr to new {proto.prefix}_packet_t
   */
-sp_packet_t* new_sp_packet(poly_packet_desc_t* desc);
+void sp_packet_build(sp_packet_t* packet, poly_packet_desc_t* desc);
 
 
 /**
-  *@brief recrusively cleanss sp_packet_t and its contents
-  *@param metaPacket metapacket to clean
+  *@brief recrusively cleans packet and its contents if it still has ownership
+  *@param packet packet to clean
   */
-void sp_clean(sp_packet_t* metaPacket);
+void sp_clean(sp_packet_t* packet);
 
 /**
   *@brief converts packet to json
@@ -120,7 +128,7 @@ void sp_clean(sp_packet_t* metaPacket);
   *@param buf buffer to store string
   *@return length of string
   */
-#define sp_print_json(packet,buf) poly_packet_print_json(&packet->mPacket, buf, false)
+#define sp_print_json(packet,buf) poly_packet_print_json(&(packet)->mPacket, buf, false)
 
 /**
   *@brief parses packet from a buffer of data
@@ -128,7 +136,7 @@ void sp_clean(sp_packet_t* metaPacket);
   *@param buf buffer to parse
   *@return status of parse attempt
   */
-#define sp_parse(packet,buf,len) poly_packet_parse_buffer(&packet->mPacket, buf, len)
+#define sp_parse(packet,buf,len) poly_packet_parse_buffer(&(packet)->mPacket, buf, len)
 
 
 /**
@@ -137,7 +145,7 @@ void sp_clean(sp_packet_t* metaPacket);
   *@param buf buffer to store data
   *@return length of packed data
   */
-#define sp_pack(packet, buf) poly_packet_pack(&packet->mPacket, buf)
+#define sp_pack(packet, buf) poly_packet_pack(&(packet)->mPacket, buf)
 
 /**
   *@brief gets the length of a give field in a packet
@@ -165,6 +173,9 @@ char* sp_getSensorName(sp_packet_t* packet);
 
 /*******************************************************************************
   Quick send functions
+
+  These are convenience one-liner functions for sending messages.
+  They also handle their own clean up and are less bug prone than building your own packets
 *******************************************************************************/
 HandlerStatus_e sp_sendAck(int iface);
 HandlerStatus_e sp_sendSendCmd(int iface, uint8_t cmd);

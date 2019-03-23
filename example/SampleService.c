@@ -2,7 +2,7 @@
   *@file SampleService.c
   *@brief generated code for Sample packet service
   *@author make_protocol.py
-  *@date 03/22/19
+  *@date 03/23/19
   */
 
 /***********************************************************
@@ -12,8 +12,8 @@
 #include "SampleService.h"
 #include <assert.h>
 
-#ifdef SP_SERVICE_DEBUG
-char sp_printBuf[512];
+#if defined(POLY_PACKET_DEBUG_LVL)
+extern char POLY_DEBUG_PRINTBUF[512];
 #endif
 
 //Define packet IDs
@@ -34,6 +34,17 @@ poly_field_desc_t* SP_FIELD_SENSORA;
 poly_field_desc_t* SP_FIELD_SENSORB;
 poly_field_desc_t* SP_FIELD_SENSORNAME;
 
+//Global descriptors
+poly_packet_desc_t _SP_PACKET_ACK;
+poly_packet_desc_t _SP_PACKET_SENDCMD;
+poly_packet_desc_t _SP_PACKET_GETDATA;
+poly_packet_desc_t _SP_PACKET_DATA;
+
+poly_field_desc_t _SP_FIELD_CMD;
+poly_field_desc_t _SP_FIELD_SENSORA;
+poly_field_desc_t _SP_FIELD_SENSORB;
+poly_field_desc_t _SP_FIELD_SENSORNAME;
+
 static poly_service_t SP_SERVICE;
 
 /*******************************************************************************
@@ -50,16 +61,16 @@ void sp_service_init(int interfaceCount)
   poly_service_init(&SP_SERVICE,4, interfaceCount);
 
   //Build Packet Descriptors
-  SP_PACKET_ACK = new_poly_packet_desc("ack", 0);
-  SP_PACKET_SENDCMD = new_poly_packet_desc("SendCmd", 1);
-  SP_PACKET_GETDATA = new_poly_packet_desc("GetData", 0);
-  SP_PACKET_DATA = new_poly_packet_desc("Data", 3);
+  SP_PACKET_ACK = poly_packet_desc_init(&_SP_PACKET_ACK ,"ack", 0);
+  SP_PACKET_SENDCMD = poly_packet_desc_init(&_SP_PACKET_SENDCMD ,"SendCmd", 1);
+  SP_PACKET_GETDATA = poly_packet_desc_init(&_SP_PACKET_GETDATA ,"GetData", 0);
+  SP_PACKET_DATA = poly_packet_desc_init(&_SP_PACKET_DATA ,"Data", 3);
 
   //Build Field Descriptors
-  SP_FIELD_CMD = new_poly_field_desc("cmd", TYPE_UINT8, 1, FORMAT_HEX);
-  SP_FIELD_SENSORA = new_poly_field_desc("sensorA", TYPE_INT16, 1, FORMAT_DEC);
-  SP_FIELD_SENSORB = new_poly_field_desc("sensorB", TYPE_INT, 1, FORMAT_DEC);
-  SP_FIELD_SENSORNAME = new_poly_field_desc("sensorName", TYPE_STRING, 32, FORMAT_ASCII);
+  SP_FIELD_CMD = poly_field_desc_init( &_SP_FIELD_CMD ,"cmd", TYPE_UINT8, 1, FORMAT_HEX);
+  SP_FIELD_SENSORA = poly_field_desc_init( &_SP_FIELD_SENSORA ,"sensorA", TYPE_INT16, 1, FORMAT_DEC);
+  SP_FIELD_SENSORB = poly_field_desc_init( &_SP_FIELD_SENSORB ,"sensorB", TYPE_INT, 1, FORMAT_DEC);
+  SP_FIELD_SENSORNAME = poly_field_desc_init( &_SP_FIELD_SENSORNAME ,"sensorName", TYPE_STRING, 32, FORMAT_ASCII);
 
 
   //Setting Field Descriptors for SendCmd
@@ -83,6 +94,19 @@ void sp_service_init(int interfaceCount)
 }
 
 
+void sp_service_teardown()
+{
+  //deinit Packet Descriptors
+  SP_PACKET_ACK = poly_packet_desc_deinit(&_SP_PACKET_ACK);
+  SP_PACKET_SENDCMD = poly_packet_desc_deinit(&_SP_PACKET_SENDCMD);
+  SP_PACKET_GETDATA = poly_packet_desc_deinit(&_SP_PACKET_GETDATA);
+  SP_PACKET_DATA = poly_packet_desc_deinit(&_SP_PACKET_DATA);
+
+  //deinitialize core service
+  poly_service_deinit(&SP_SERVICE);
+
+}
+
 /**
   *@brief attempts to process data in buffers and parse out packets
   */
@@ -93,8 +117,16 @@ void sp_service_process()
 
   HandlerStatus_e status = PACKET_NOT_HANDLED;
 
+  //reset states of static packets
+  packet.mBuilt = false;
+  packet.mSpooled = false;
+  response.mSpooled = false;
+  response.mBuilt = false;
+
   if(poly_service_try_parse(&SP_SERVICE, &packet.mPacket) == PACKET_VALID)
   {
+    //if we get here, then the inner packet was built by the parser
+    packet.mBuilt = true;
 
     //set response token with ack flag (this will persist even when packet it built)
     response.mPacket.mHeader.mToken = packet.mPacket.mHeader.mToken | POLY_ACK_FLAG;
@@ -115,7 +147,7 @@ void sp_service_process()
         status = sp_SendCmd_handler(&packet);
         break;
       case SP_PACKET_GETDATA_ID:
-       poly_packet_build(&response.mPacket, SP_PACKET_DATA,true);
+       sp_packet_build(&response, SP_PACKET_DATA);
        status = sp_GetData_handler(&packet , &response );
         break;
       case SP_PACKET_DATA_ID:
@@ -130,7 +162,7 @@ void sp_service_process()
     //If this packet doe not have an explicit response and AutoAck is enabled, create an ack packet
     if(( SP_SERVICE.mAutoAck ) && (!response.mPacket.mBuilt))
     {
-      poly_packet_build(&response.mPacket, SP_PACKET_ACK,true);
+      sp_packet_build(&response, SP_PACKET_ACK);
     }
 
     //If the packet was not handled, throw it to the default handler
@@ -147,9 +179,12 @@ void sp_service_process()
     }
 
     //Clean the packets
-    poly_packet_clean(&packet.mPacket);
-    poly_packet_clean(&response.mPacket);
+    sp_clean(&packet);
+    sp_clean(&response);
   }
+  
+  //despool any packets ready to go out
+  poly_service_despool(&SP_SERVICE);
 
 }
 
@@ -164,17 +199,17 @@ void sp_service_feed(int iface, uint8_t* data, int len)
   poly_service_feed(&SP_SERVICE,iface,data,len);
 }
 
-HandlerStatus_e sp_send(int iface, sp_packet_t* metaPacket)
+HandlerStatus_e sp_send(int iface, sp_packet_t* packet)
 {
   HandlerStatus_e status;
 
-  status = poly_service_send(&SP_SERVICE, iface, &metaPacket->mPacket);
+  status = poly_service_spool(&SP_SERVICE, iface, &packet->mPacket);
 
-#ifdef SP_SERVICE_DEBUG
-  //If debug is enabled, print json of outgoing packets
-  poly_packet_print_json(&metaPacket->mPacket, sp_printBuf, true );
-  printf(" OUT >>> %s\n",sp_printBuf );
-#endif
+  if(status == PACKET_SPOOLED)
+  {
+    packet->mSpooled = true;
+  }
+
   return status;
 }
 
@@ -189,33 +224,31 @@ void sp_auto_ack(bool enable)
 *******************************************************************************/
 
 /**
-  *@brief creates a new meta packet and returns a pointer to it
-  *@param desc packet descriptor
-  *@post creator is responsible for Cleaning with sp_clean()
-  *@return ptr to new meta packet
+  *@brief initializes a new {proto.prefix}_packet_t
+  *@param desc ptr to packet descriptor to model packet from
   */
-sp_packet_t* new_sp_packet(poly_packet_desc_t* desc)
+void sp_packet_build(sp_packet_t* packet, poly_packet_desc_t* desc)
 {
-  sp_packet_t* newMetaPacket = (sp_packet_t*) malloc(sizeof(sp_packet_t));
-
-  //create new unallocated packet
-  poly_packet_build(&newMetaPacket->mPacket, desc, true);
-
-  return newMetaPacket;
+  //create new allocated packet
+  poly_packet_build(&packet->mPacket, desc, true);
+  packet->mBuilt = true;
+  packet->mSpooled = false;
 }
 
 
 /**
   *@brief frees memory allocated for metapacket
-  *@param "metaPacket ptr to metaPacket
+  *@param packet ptr to metaPacket
+  *
   */
-void sp_clean(sp_packet_t* metaPacket)
+void sp_clean(sp_packet_t* packet)
 {
-  //free internal poly_packet_t
-  poly_packet_clean(&metaPacket->mPacket);
+  //If the packet has been spooled, the spool is responsible for it now
+  if(packet->mBuilt && (!packet->mSpooled))
+  {
+    poly_packet_clean(&packet->mPacket);
+  }
 
-  //free memory
-  free(metaPacket);
 }
 
 int sp_fieldLen(sp_packet_t* packet, poly_field_desc_t* fieldDesc )
@@ -345,12 +378,13 @@ HandlerStatus_e sp_sendAck(int iface)
 {
   HandlerStatus_e status;
   //create packet
-  sp_packet_t* packet = new_sp_packet(SP_PACKET_ACK);
+  sp_packet_t packet;
+  sp_packet_build(&packet,SP_PACKET_ACK);
 
   //set fields
 
-  status = sp_send(iface,packet); //send packet
-  sp_clean(packet); //clean up packet
+  status = sp_send(iface,&packet); //send packet
+  sp_clean(&packet); //This will only free the underlying packet if the spooling was unsuccessful
   return status;
 }
 
@@ -364,13 +398,14 @@ HandlerStatus_e sp_sendSendCmd(int iface, uint8_t cmd)
 {
   HandlerStatus_e status;
   //create packet
-  sp_packet_t* packet = new_sp_packet(SP_PACKET_SENDCMD);
+  sp_packet_t packet;
+  sp_packet_build(&packet,SP_PACKET_SENDCMD);
 
   //set fields
-  sp_setCmd(packet, cmd);
+  sp_setCmd(&packet, cmd);
 
-  status = sp_send(iface,packet); //send packet
-  sp_clean(packet); //clean up packet
+  status = sp_send(iface,&packet); //send packet
+  sp_clean(&packet); //This will only free the underlying packet if the spooling was unsuccessful
   return status;
 }
 
@@ -383,12 +418,13 @@ HandlerStatus_e sp_sendGetData(int iface)
 {
   HandlerStatus_e status;
   //create packet
-  sp_packet_t* packet = new_sp_packet(SP_PACKET_GETDATA);
+  sp_packet_t packet;
+  sp_packet_build(&packet,SP_PACKET_GETDATA);
 
   //set fields
 
-  status = sp_send(iface,packet); //send packet
-  sp_clean(packet); //clean up packet
+  status = sp_send(iface,&packet); //send packet
+  sp_clean(&packet); //This will only free the underlying packet if the spooling was unsuccessful
   return status;
 }
 
@@ -404,15 +440,16 @@ HandlerStatus_e sp_sendData(int iface, int16_t sensorA, int sensorB, const char*
 {
   HandlerStatus_e status;
   //create packet
-  sp_packet_t* packet = new_sp_packet(SP_PACKET_DATA);
+  sp_packet_t packet;
+  sp_packet_build(&packet,SP_PACKET_DATA);
 
   //set fields
-  sp_setSensorA(packet, sensorA);
-  sp_setSensorB(packet, sensorB);
-  sp_setSensorName(packet, sensorName);
+  sp_setSensorA(&packet, sensorA);
+  sp_setSensorB(&packet, sensorB);
+  sp_setSensorName(&packet, sensorName);
 
-  status = sp_send(iface,packet); //send packet
-  sp_clean(packet); //clean up packet
+  status = sp_send(iface,&packet); //send packet
+  sp_clean(&packet); //This will only free the underlying packet if the spooling was unsuccessful
   return status;
 }
 

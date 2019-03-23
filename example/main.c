@@ -1,4 +1,4 @@
-#include "SampleProtocol.h"
+#include "SampleService.h"
 #include <stdio.h>
 
 uint8_t buffer[1024];
@@ -12,8 +12,7 @@ int len;
  */
 HandlerStatus_e sp_setdata_handler(sp_packet_t* SetData, sp_packet_t* RespData)
 {
-  sp_setSrc(RespData,0xABCD );
-  sp_setDst(RespData,0xCDEF);
+
   sp_setSensorA(RespData,32500);
   sp_setSensorB(RespData,898989);
   //convert the message to a json string
@@ -55,42 +54,49 @@ int main()
   /*register a TX function for the interface
    */
   sp_service_register_tx(UART, &mock_uart_send);
+  uint8_t ackData[] = {0x01,0x01,0x00,0x67,0x45,0xCA,0x06,0x00};
 
 
-  //create a new message
-  sp_packet_t* msg = new_sp_packet(SP_PACKET_SETDATA);
-
-  //Set the fields in the message
-  sp_setSrc(msg,0xABCD );
-  sp_setDst(msg,0xCDEF);
-  sp_setSensorA(msg,32500);
-  sp_setSensorB(msg,898989);
-  sp_setSensorName(msg, "This is my test string");
-
-  //send data over the UART interface
-  //sp_send(UART,msg);
-
-  int len = sp_pack(msg,buffer);
-
-  for(int i=0 ; i < len; i++)
-  {
-    printf(" %02X", buffer[i]);
-  }
-  printf("\n" );
-
-  sp_send(UART,msg);
-
-
-  sp_service_feed(UART,buffer,len);
-
-  sp_clean(msg);
-
+  //sp_service_feed(0,ackData, 8);
+  //sp_sendData(0, 32500,898989, "This is my test string");
+  //sp_sendGetData(0);
+  sp_sendSendCmd(0,0);
   sp_service_process();
+  sp_sendSendCmd(0,0);
+  sp_service_process();
+  sp_sendSendCmd(0,0);
+  sp_service_process();
+  sp_sendSendCmd(0,0);
+  sp_service_process();
+  sp_sendSendCmd(0,0);
+  sp_service_process();
+  sp_sendSendCmd(0,0);
+  sp_service_process();
+  sp_sendSendCmd(0,0);
+  sp_service_process();
+  sp_sendSendCmd(0,0);
+  sp_service_process();
+  sp_sendSendCmd(0,0);
+  sp_service_process();
+  sp_sendSendCmd(0,0);
+  sp_service_process();
+  sp_sendSendCmd(0,0);
+  sp_service_process();
+  sp_sendSendCmd(0,0);
+  sp_service_process();
+  //poly_packet_t msg;
+  //poly_packet_build(&msg, SP_PACKET_DATA, true);
 
-  while(1)
-  {
-    sp_service_process();
-  }
+  //poly_packet_clean(&msg);
+
+  // while(1)
+  // {
+  //     sp_sendSendCmd(0,0);
+  //     //sp_service_process();
+  //     sleep(0.1);
+  // }
+
+  sp_service_teardown();
 
   return 0;
 }

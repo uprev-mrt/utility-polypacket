@@ -12,8 +12,8 @@
 #include "${proto.fileName}.h"
 #include <assert.h>
 
-#ifdef ${proto.prefix.upper()}_SERVICE_DEBUG
-char ${proto.prefix}_printBuf[512];
+#if defined(POLY_PACKET_DEBUG_LVL)
+extern char POLY_DEBUG_PRINTBUF[512];
 #endif
 
 //Define packet IDs
@@ -85,6 +85,18 @@ void ${proto.prefix}_service_init(int interfaceCount)
 }
 
 
+void ${proto.prefix}_service_teardown()
+{
+  //deinit Packet Descriptors
+% for packet in proto.packets:
+  ${packet.globalName} = poly_packet_desc_deinit(&_${packet.globalName});
+% endfor
+
+  //deinitialize core service
+  poly_service_deinit(&${proto.service()});
+
+}
+
 /**
   *@brief attempts to process data in buffers and parse out packets
   */
@@ -95,8 +107,16 @@ void ${proto.prefix}_service_process()
 
   HandlerStatus_e status = PACKET_NOT_HANDLED;
 
+  //reset states of static packets
+  packet.mBuilt = false;
+  packet.mSpooled = false;
+  response.mSpooled = false;
+  response.mBuilt = false;
+
   if(poly_service_try_parse(&${proto.service()}, &packet.mPacket) == PACKET_VALID)
   {
+    //if we get here, then the inner packet was built by the parser
+    packet.mBuilt = true;
 
     //set response token with ack flag (this will persist even when packet it built)
     response.mPacket.mHeader.mToken = packet.mPacket.mHeader.mToken | POLY_ACK_FLAG;
@@ -113,7 +133,7 @@ void ${proto.prefix}_service_process()
   % for packet in proto.packets:
       case ${packet.globalName}_ID:
       %if packet.hasResponse:
-       poly_packet_build(&response.mPacket, ${packet.response.globalName},true);
+       ${proto.prefix}_packet_build(&response, ${packet.response.globalName});
        status = ${proto.prefix}_${packet.name}_handler(&packet , &response );
       %else:
         status = ${proto.prefix}_${packet.name}_handler(&packet);
@@ -129,7 +149,7 @@ void ${proto.prefix}_service_process()
     //If this packet doe not have an explicit response and AutoAck is enabled, create an ack packet
     if(( ${proto.prefix.upper()}_SERVICE.mAutoAck ) && (!response.mPacket.mBuilt))
     {
-      poly_packet_build(&response.mPacket, ${proto.prefix.upper()}_PACKET_ACK,true);
+      ${proto.prefix}_packet_build(&response, ${proto.prefix.upper()}_PACKET_ACK);
     }
 
     //If the packet was not handled, throw it to the default handler
@@ -145,13 +165,13 @@ void ${proto.prefix}_service_process()
       ${proto.prefix}_send(packet.mPacket.mInterface , &response);
     }
 
-    //despool any packets ready to go out
-    poly_service_despool(&${proto.service()});
-
     //Clean the packets
-    poly_packet_clean(&packet.mPacket);
-    poly_packet_clean(&response.mPacket);
+    ${proto.prefix}_clean(&packet);
+    ${proto.prefix}_clean(&response);
   }
+  
+  //despool any packets ready to go out
+  poly_service_despool(&${proto.service()});
 
 }
 
@@ -166,17 +186,17 @@ void ${proto.prefix}_service_feed(int iface, uint8_t* data, int len)
   poly_service_feed(&${proto.service()},iface,data,len);
 }
 
-HandlerStatus_e ${proto.prefix}_send(int iface, ${proto.prefix}_packet_t* metaPacket)
+HandlerStatus_e ${proto.prefix}_send(int iface, ${proto.prefix}_packet_t* packet)
 {
   HandlerStatus_e status;
 
-  status = poly_service_spool(&${proto.service()}, iface, &metaPacket->mPacket);
+  status = poly_service_spool(&${proto.service()}, iface, &packet->mPacket);
 
-#ifdef ${proto.prefix.upper()}_SERVICE_DEBUG
-  //If debug is enabled, print json of outgoing packets
-  poly_packet_print_json(&metaPacket->mPacket, ${proto.prefix}_printBuf, true );
-  printf(" OUT >>> %s\n",${proto.prefix}_printBuf );
-#endif
+  if(status == PACKET_SPOOLED)
+  {
+    packet->mSpooled = true;
+  }
+
   return status;
 }
 
@@ -191,36 +211,31 @@ void ${proto.prefix}_auto_ack(bool enable)
 *******************************************************************************/
 
 /**
-  *@brief creates a new meta packet and returns a pointer to it
-  *@param desc packet descriptor
-  *@post creator is responsible for Cleaning with ${proto.prefix}_clean()
-  *@return ptr to new meta packet
+  *@brief initializes a new {proto.prefix}_packet_t
+  *@param desc ptr to packet descriptor to model packet from
   */
-${proto.prefix}_packet_t* new_${proto.prefix}_packet(poly_packet_desc_t* desc)
+void ${proto.prefix}_packet_build(${proto.prefix}_packet_t* packet, poly_packet_desc_t* desc)
 {
-  ${proto.prefix}_packet_t* newMetaPacket = (${proto.prefix}_packet_t*) malloc(sizeof(${proto.prefix}_packet_t));
-
-  //create new unallocated packet
-  poly_packet_build(&newMetaPacket->mPacket, desc, true);
-
-  return newMetaPacket;
+  //create new allocated packet
+  poly_packet_build(&packet->mPacket, desc, true);
+  packet->mBuilt = true;
+  packet->mSpooled = false;
 }
 
 
 /**
   *@brief frees memory allocated for metapacket
-  *@param "metaPacket ptr to metaPacket
+  *@param packet ptr to metaPacket
   *
-  * NOTE:only use this if you created a packet with new_${proto.prefix}_packet() and did NOT send it
-  * When a packet is sent the spool takes ownership and handles memory
   */
-void ${proto.prefix}_clean(${proto.prefix}_packet_t* metaPacket)
+void ${proto.prefix}_clean(${proto.prefix}_packet_t* packet)
 {
-  //free internal poly_packet_t
-  poly_packet_clean(&metaPacket->mPacket);
+  //If the packet has been spooled, the spool is responsible for it now
+  if(packet->mBuilt && (!packet->mSpooled))
+  {
+    poly_packet_clean(&packet->mPacket);
+  }
 
-  //free memory
-  free(metaPacket);
 }
 
 int ${proto.prefix}_fieldLen(${proto.prefix}_packet_t* packet, poly_field_desc_t* fieldDesc )
@@ -324,13 +339,16 @@ HandlerStatus_e ${proto.prefix}_send${packet.camel()}(int iface\
 {
   HandlerStatus_e status;
   //create packet
-  ${proto.prefix}_packet_t* packet = new_${proto.prefix}_packet(${packet.globalName});
+  ${proto.prefix}_packet_t packet;
+  ${proto.prefix}_packet_build(&packet,${packet.globalName});
+
   //set fields
   %for field in packet.fields:
-  ${proto.prefix}_set${field.camel()}(packet, ${field.name});
+  ${proto.prefix}_set${field.camel()}(&packet, ${field.name});
   %endfor
-  status = ${proto.prefix}_send(iface,packet); //send packet
-  free(packet); //free packet, we dont destroy the enternal packet, the spool handles that
+
+  status = ${proto.prefix}_send(iface,&packet); //send packet
+  ${proto.prefix}_clean(&packet); //This will only free the underlying packet if the spooling was unsuccessful
   return status;
 }
 

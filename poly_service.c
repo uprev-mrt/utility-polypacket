@@ -10,7 +10,9 @@
 #include "poly_service.h"
 #include <assert.h>
 
-
+#if defined(POLY_PACKET_DEBUG_LVL)
+extern char POLY_DEBUG_PRINTBUF[512];
+#endif
 
 void poly_service_init( poly_service_t* service, int maxDescs, int interfaceCount)
 {
@@ -28,10 +30,32 @@ void poly_service_init( poly_service_t* service, int maxDescs, int interfaceCoun
   service->mAutoAck = true;
 }
 
+void poly_service_deinit(poly_service_t* service)
+{
+  //deinitialize interfaces
+  for(int i=0; i < service->mInterfaceCount;i++)
+  {
+    //set up buffers for incoming data
+    fifo_deinit(&service->mInterfaces[i].mBytefifo);
+
+    free(service->mInterfaces[i].mRaw);
+
+    //set up spool for outgoing
+    poly_spool_deinit(&service->mInterfaces[i].mOutSpool);
+  }
+
+  free(service->mInterfaces);
+  //free(service->mPacketDescs); /* this causes an invalid free. this is an unlikely use case but should be investigater */
+}
+
 
 void poly_service_register_desc(poly_service_t* pService, poly_packet_desc_t* pDesc)
 {
   assert(pService->mDescCount < pService->mMaxDescs);
+
+  #if defined(POLY_PACKET_DEBUG_LVL) && POLY_PACKET_DEBUG_LVL > 1
+  printf("Packet Descriptor: %s  fieldCount: %d (%d optional) , manifestSize: %d , mMaxPacketSize: %d\n", pDesc->mName, pDesc->mFieldCount,pDesc->mOptionalFieldCount, pDesc->mManifestSize, pDesc->mMaxPacketSize );
+  #endif
 
   pService->mPacketDescs[pService->mDescCount++] = pDesc;
 }
@@ -213,7 +237,7 @@ ParseStatus_e poly_service_spool(poly_service_t* pService, int interface,  poly_
      return PACKET_NOT_HANDLED;
    }
 
-  return status;
+  return PACKET_SPOOLED;
 }
 
 ParseStatus_e poly_service_despool(poly_service_t* pService)
@@ -232,6 +256,21 @@ ParseStatus_e poly_service_despool(poly_service_t* pService)
       {
         uint8_t data[outPacket.mDesc->mMaxPacketSize];
         len = poly_packet_pack(&outPacket, data);
+
+        #if defined(POLY_PACKET_DEBUG_LVL)
+          //If debug is enabled, print json of outgoing packets
+          #if POLY_PACKET_DEBUG_LVL == 1
+          poly_packet_print_json(&outPacket, POLY_DEBUG_PRINTBUF, false );
+          printf(" OUT >>> %s\n",POLY_DEBUG_PRINTBUF );
+          #elif POLY_PACKET_DEBUG_LVL > 1
+          poly_packet_print_json(&outPacket, POLY_DEBUG_PRINTBUF, true );
+          printf(" OUT >>> %s\n",POLY_DEBUG_PRINTBUF );
+          #endif
+          #if POLY_PACKET_DEBUG_LVL > 2
+          poly_packet_print_packed(&outPacket, POLY_DEBUG_PRINTBUF);
+          printf(" OUT >>> %s\n\n", POLY_DEBUG_PRINTBUF );
+          #endif
+        #endif
 
         status = iface->f_TxCallBack(data,len);
         break;

@@ -10,6 +10,10 @@
 
 #ifdef __cplusplus
 
+#if defined(POLY_PACKET_DEBUG_LVL)
+extern char POLY_DEBUG_PRINTBUF[512];
+#endif
+
 extern "C"
 {
 #endif
@@ -91,6 +95,7 @@ typedef struct poly_packet{
   *@return ptr to packet descriptor
   */
 poly_packet_desc_t* poly_packet_desc_init(poly_packet_desc_t* desc, const char* name , int maxFields);
+poly_packet_desc_t* poly_packet_desc_deinit(poly_packet_desc_t* desc);
 
 /**
   *@brief adds field descriptor to packet descriptor
@@ -162,6 +167,22 @@ int poly_packet_pack(poly_packet_t* packet, uint8_t* data);
   *@retun len of string
   */
 int poly_packet_print_json(poly_packet_t* packet, char* buf, bool printHeader);
+
+
+/**
+  *@brief prints hex array of packed packet (mainly useful for debug)
+  *@param packet ptr to packet
+  *@param buf buffer to print to
+  *@retun len of string
+  */
+int poly_packet_print_packed(poly_packet_t* packet, char* buf);
+
+/**
+  *@brief updates the header for the packet
+  *@param packet ptr to packet to update
+  *@return total length of packet including header
+  */
+int poly_packet_update_header(poly_packet_t* packet);
 
 /**
   *@brief updates the header for the packet

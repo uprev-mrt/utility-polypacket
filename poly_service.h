@@ -35,6 +35,7 @@ typedef enum ServiceParseState {
 }ServiceParseState_e;
 
 typedef enum HandlerStatus {
+  PACKET_SPOOLED,
   PACKET_SENT,
   PACKET_HANDLED,
   PACKET_ROUTED,
@@ -87,6 +88,12 @@ typedef struct {
   *@return ptr to newly allocated service
   */
 void poly_service_init(poly_service_t* service, int maxDescs, int interfaceCount);
+
+/**
+  *@brief deinitialize service
+  *@param service ptr to service
+  */
+void poly_service_deinit(poly_service_t* service);
 
 /**
   *@brief register packet descriptor with service
@@ -162,7 +169,7 @@ ParseStatus_e poly_service_spool(poly_service_t* pService, int interface,  poly_
 
 /**
   *@brief grabs next available packet from spool and sends it
-  *@param pService ptr to service 
+  *@param pService ptr to service
   */
 ParseStatus_e poly_service_despool(poly_service_t* pService);
 

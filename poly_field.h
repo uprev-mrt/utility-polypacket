@@ -95,6 +95,7 @@ extern "C"
   *@return ptr to  field descriptor
   */
 poly_field_desc_t* poly_field_desc_init(poly_field_desc_t* desc, const char* name, eFieldType type, uint32_t len, eFieldFormat format);
+poly_field_desc_t* poly_field_desc_deinit(poly_field_desc_t* desc);
 
 /**
   *@brief initializes a new field
