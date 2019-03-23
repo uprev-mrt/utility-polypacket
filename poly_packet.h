@@ -158,9 +158,17 @@ int poly_packet_pack(poly_packet_t* packet, uint8_t* data);
   *@brief prints json representation of packet to a buffer
   *@param packet ptr to packet
   *@param buf buffer to print to
+  *@param printHeader indicates if the header data should be printed
   *@retun len of string
   */
-int poly_packet_print_json(poly_packet_t* packet, char* buf, bool printMeta);
+int poly_packet_print_json(poly_packet_t* packet, char* buf, bool printHeader);
+
+/**
+  *@brief updates the header for the packet
+  *@param packet ptr to packet to update
+  *@return total length of packet including header
+  */
+int poly_packet_update_header(poly_packet_t* packet);
 
 #ifdef __cplusplus
 }

@@ -123,14 +123,6 @@ spool_status_e poly_spool_pop(poly_spool_t* spool, poly_packet_t* packet)
 
     if(entry->mPacket.mAckType == ACK_TYPE_TOKEN)
     {
-      //if ack type is token, then we generate a randome token and make sure it wont be 0 without the ack flag
-      while(newToken ==0)
-      {
-        newToken = rand() & SPOOL_TOKEN_MASK;
-      }
-
-      //set the token with the ack request flag so the receiver knows to ack
-      entry->mPacket.mHeader.mToken = newToken | SPOOL_TOKEN_ACK_REQ;
 
       //reset the timeout counter to the spools timeout setting
       entry->mTimeOut = spool->mTimeOut;

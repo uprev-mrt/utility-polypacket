@@ -286,23 +286,35 @@ int poly_packet_pack(poly_packet_t* packet, uint8_t* data)
   return idx;
 }
 
-int poly_packet_print_json(poly_packet_t* packet, char* buf, bool printMeta)
+int poly_packet_print_json(poly_packet_t* packet, char* buf, bool printHeader)
 {
   int idx =0;
   poly_field_t* field;
   bool first = true;
 
+  //this generally means we built the packet and its never been packed,
+  // so the header hasnt been set
+  if(packet->mHeader.mCheckSum == 0)
+  {
+    poly_packet_update_header(packet);
+  }
+
   idx+= MRT_SPRINTF(&buf[idx],"{");
 
-  if(printMeta)
+  idx += MRT_SPRINTF(&buf[idx]," \"packetType\" : \"%s\" ,", packet->mDesc->mName);
+
+  if(printHeader)
   {
     idx += MRT_SPRINTF(&buf[idx]," \"typeId\" : \"%02X\" ,", packet->mHeader.mTypeId);
     idx += MRT_SPRINTF(&buf[idx]," \"token\" : \%04X\" ,", packet->mHeader.mToken);
     idx += MRT_SPRINTF(&buf[idx]," \"checksum\" : \"%04X\" ,", packet->mHeader.mCheckSum);
-    idx += MRT_SPRINTF(&buf[idx]," \"len\" : %d , ", packet->mHeader.mDataLen);
+    idx += MRT_SPRINTF(&buf[idx]," \"len\" : %d ", packet->mHeader.mDataLen);
   }
 
-  idx += MRT_SPRINTF(&buf[idx]," \"packetType\" : \"%s\" ,", packet->mDesc->mName);
+  if(packet->mDesc->mFieldCount > 0)
+  {
+    idx += MRT_SPRINTF(&buf[idx]," ,");
+  }
 
   for(int i=0; i < packet->mDesc->mFieldCount; i++)
   {
@@ -323,4 +335,16 @@ int poly_packet_print_json(poly_packet_t* packet, char* buf, bool printMeta)
   idx+= MRT_SPRINTF(&buf[idx],"}");
 
   return idx;
+}
+
+int poly_packet_update_header(poly_packet_t* packet)
+{
+
+  uint8_t data[packet->mDesc->mMaxPacketSize];
+
+  //easiest way to get the meta data is to pack the message
+  //Its not very effecient but this should be a rare use-case, mainly for debugging
+  int len = poly_packet_pack(packet, data);
+
+  return len;
 }
