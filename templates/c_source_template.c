@@ -161,7 +161,7 @@ HandlerStatus_e ${proto.prefix}_send(int iface, ${proto.prefix}_packet_t* metaPa
 {
   HandlerStatus_e status;
 
-  status = poly_service_send(&${proto.service()}, iface, &metaPacket->mPacket);
+  status = poly_service_spool(&${proto.service()}, iface, &metaPacket->mPacket);
 
 #ifdef ${proto.prefix.upper()}_SERVICE_DEBUG
   //If debug is enabled, print json of outgoing packets
@@ -201,6 +201,9 @@ ${proto.prefix}_packet_t* new_${proto.prefix}_packet(poly_packet_desc_t* desc)
 /**
   *@brief frees memory allocated for metapacket
   *@param "metaPacket ptr to metaPacket
+  *
+  * NOTE:only use this if you created a packet with new_${proto.prefix}_packet() and did NOT send it
+  * When a packet is sent the spool takes ownership and handles memory
   */
 void ${proto.prefix}_clean(${proto.prefix}_packet_t* metaPacket)
 {
@@ -313,14 +316,12 @@ HandlerStatus_e ${proto.prefix}_send${packet.camel()}(int iface\
   HandlerStatus_e status;
   //create packet
   ${proto.prefix}_packet_t* packet = new_${proto.prefix}_packet(${packet.globalName});
-
   //set fields
   %for field in packet.fields:
   ${proto.prefix}_set${field.camel()}(packet, ${field.name});
   %endfor
-
   status = ${proto.prefix}_send(iface,packet); //send packet
-  ${proto.prefix}_clean(packet); //clean up packet
+  free(packet); //free packet, we dont destroy the enternal packet, the spool handles that
   return status;
 }
 

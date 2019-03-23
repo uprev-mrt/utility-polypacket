@@ -57,9 +57,6 @@ void poly_packet_desc_add_field(poly_packet_desc_t* desc, poly_field_desc_t* fie
 
 void poly_packet_build(poly_packet_t* packet, poly_packet_desc_t* desc, bool allocate )
 {
-  if(packet->mBuilt)
-    poly_packet_clean(packet);
-
   packet->mDesc = desc;
   packet->mInterface = 0;
   packet->mHeader.mTypeId = desc->mTypeId;

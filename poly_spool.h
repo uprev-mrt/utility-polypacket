@@ -41,7 +41,7 @@ typedef struct{
     int mTimeOut;                   //current state of timeout counter
     int mAttempts;                  //number of attempts to send this packet so far
     poly_packet_t mPacket;          //actual packet being sent
-  } poly_spool_entry_t;
+  } spool_entry_t;
 
   typedef struct{
     spool_entry_t* mEntries;        //entries in spool
@@ -91,11 +91,11 @@ spool_status_e poly_spool_pop(poly_spool_t* spool, poly_packet_t* packet);
 /**
   *@brief passes an ack token to the spool to check for matches
   *@param spool ptr to spool
-  *@param ackToken token to register. If it matches any waiting entries, they will be freed
+  *@param response response packet to check token of
   *@return true if matching request token was found
   *@return false if no match is found
   */
-bool poly_spool_ack(poly_spool_t* spool, SPOOL_TOKEN_TYPE ackToken);
+bool poly_spool_ack(poly_spool_t* spool, poly_packet_t* response);
 
 /**
   *@brief increments the time for the spool so it can check timeouts

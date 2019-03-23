@@ -71,7 +71,7 @@ void poly_service_start(poly_service_t* pService, int depth)
     pService->mInterfaces[i].mRaw = (uint8_t*) malloc(pService->mMaxPacketSize);
 
     //set up spool for outgoing
-    poly_spool_init(pService->mInterfaces[i].mOutSpool, depth);
+    poly_spool_init(&pService->mInterfaces[i].mOutSpool, depth);
   }
 
   pService->mStarted = true;
@@ -210,7 +210,7 @@ ParseStatus_e poly_service_spool(poly_service_t* pService, int interface,  poly_
 
    if(poly_spool_push(&iface->mOutSpool, packet) != SPOOL_OK)
    {
-     return PACKET_NOT_HANDLED
+     return PACKET_NOT_HANDLED;
    }
 
   return status;
@@ -225,7 +225,7 @@ ParseStatus_e poly_service_despool(poly_service_t* pService)
 
   for(int i=0; i < pService->mInterfaceCount; i++)
   {
-    iface = &pService->mInterfaces[interface];
+    iface = &pService->mInterfaces[i];
     if(iface->mOutSpool.mReadyCount > 0)
     {
       if(poly_spool_pop(&iface->mOutSpool, &outPacket) == SPOOL_OK)
@@ -233,7 +233,7 @@ ParseStatus_e poly_service_despool(poly_service_t* pService)
         uint8_t data[outPacket.mDesc->mMaxPacketSize];
         len = poly_packet_pack(&outPacket, data);
 
-        status = iface->f_TxCallBack(data,len)
+        status = iface->f_TxCallBack(data,len);
         break;
       }
     }

@@ -8,7 +8,8 @@
 #include "poly_spool.h"
 #include <assert.h>
 
-
+#define SPOOL_LOCK //while(pFifo->lock){delay_ms(1);} pFifo->lock = 1
+#define SPOOL_UNLOCK //spool->mLock = 0
 void poly_spool_init(poly_spool_t* spool, int len)
 {
   SPOOL_LOCK;
@@ -68,7 +69,7 @@ void poly_spool_deinit(poly_spool_t* spool)
 }
 
 
-spool_status_e poly_spool_push(poly_spool_t* spool, poly_packet_t* packet, spool_entry_ack_type ackType , spool_ack_cb cb )
+spool_status_e poly_spool_push(poly_spool_t* spool, poly_packet_t* packet )
 {
   SPOOL_LOCK;
   spool_status_e status;
@@ -89,11 +90,11 @@ spool_status_e poly_spool_push(poly_spool_t* spool, poly_packet_t* packet, spool
     //reset entry properties
     entry = &spool->mEntries[idx];
     entry->mTimeOut = 0;
-    entry->mState = SPOOL_STATE_READY;
+    entry->mState = ENTRY_STATE_READY;
     entry->mAttempts = 0;
 
     //copy in packet data
-    memcpy((void*)entry->mPacket, (void*)packet, sizeof(poly_packet_t));
+    memcpy((void*) &entry->mPacket, (void*)packet, sizeof(poly_packet_t));
 
     //increment counts
     spool->mCount++;
@@ -117,7 +118,7 @@ spool_status_e poly_spool_pop(poly_spool_t* spool, poly_packet_t* packet)
 
   if(idx > ENTRY_NONE)
   {
-    entry = spool->mEntries[idx];
+    entry = &spool->mEntries[idx];
 
 
     if(entry->mPacket.mAckType == ACK_TYPE_TOKEN)
@@ -137,24 +138,33 @@ spool_status_e poly_spool_pop(poly_spool_t* spool, poly_packet_t* packet)
       entry->mState = ENTRY_STATE_WAITING;
       spool->mWaitingCount ++;
       entry->mAttempts++;
+
+      //copy the packet out
+      memcpy((void*)packet, (void*)&entry->mPacket, sizeof(poly_packet_t) );
+
     }
     else
     {
       //If we dont need to an ack, then we are done with this packet
       entry->mState = ENTRY_STATE_FREE;
       spool->mCount--;
+
+      //copy the packet out
+      memcpy((void*)packet, (void*)&entry->mPacket, sizeof(poly_packet_t) );
+
+      //destroy the packet data
+      poly_packet_clean(&entry->mPacket);
+
     }
 
     spool->mReadyCount--;
 
-    //copy the packet out
-    memcpy((void*)packet, (void*)entry->mPacket, sizeof(poly_packet_t) );
     status = SPOOL_OK;
 
   }
   else
   {
-    status = SPOOL_UNDERFLOW
+    status = SPOOL_UNDERFLOW;
   }
 
   SPOOL_UNLOCK;
@@ -166,8 +176,9 @@ bool poly_spool_ack(poly_spool_t* spool, poly_packet_t* response)
 {
   bool match = false;
   int i;
+  uint16_t ackToken = response->mHeader.mToken;
   //if the token is 0 or is an ack request, we ignore it
-  if((ack_token == 0) || (ack_token & SPOOL_TOKEN_ACK_REQ))
+  if((ackToken == 0) || (ackToken & SPOOL_TOKEN_ACK_REQ))
   {
     return false;
   }
@@ -182,6 +193,10 @@ bool poly_spool_ack(poly_spool_t* spool, poly_packet_t* response)
     {
       //match found, free entry
       spool->mEntries[i].mState = ENTRY_STATE_FREE;
+
+      //destroy the packet data
+      poly_packet_clean(&spool->mEntries[i].mPacket);
+
       spool->mWaitingCount--;
       spool->mCount--;
 
@@ -207,9 +222,9 @@ void poly_spool_tick(poly_spool_t* spool, int ms)
   SPOOL_LOCK;
   spool_entry_t* entry;
 
-  for(int i=0; i < spool->mSize; i++)
+  for(int i=0; i < spool->mMaxEntries; i++)
   {
-    entry = &c->mEntries[i];
+    entry = &spool->mEntries[i];
 
     //time only matters to waiting entries
     if(entry->mState == ENTRY_STATE_WAITING)
@@ -229,6 +244,9 @@ void poly_spool_tick(poly_spool_t* spool, int ms)
         }
         else //if we max out our retries, free the slot and note a failed message
         {
+          //destroy the packet data
+          poly_packet_clean(&entry->mPacket);
+
           entry->mState = ENTRY_STATE_FREE;
           spool->mCount--;
           spool->mWaitingCount--;

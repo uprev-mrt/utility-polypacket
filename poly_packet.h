@@ -21,7 +21,7 @@ extern "C"
 //forward declare struct so we can typedef callbacks
 struct poly_packet;
 
-typedef void (*packet_ack_cb)(poly_packet* response);
+typedef void (*packet_ack_cb)(struct poly_packet* response);
 typedef void (*packet_failed_cb)();
 
 typedef enum ParseStatus {
@@ -61,7 +61,7 @@ typedef struct {
 }poly_packet_desc_t;
 
 
-typedef struct poly_packet{
+typedef struct {
   uint8_t mTypeId; //id of payload type
   uint16_t mDataLen;  //expected len of packet data (not including header and footer)
   uint16_t mToken;    //token for packet (used for acknowledgement/ echo cancellation in mesh nets)
@@ -71,7 +71,7 @@ typedef struct poly_packet{
 /**
   *@brief Variable packet
   */
-typedef struct {
+typedef struct poly_packet{
   poly_packet_hdr_t mHeader;
   poly_packet_desc_t* mDesc;      //prt to packet descriptor
   poly_field_t* mFields;          //array of fields contained in packet
