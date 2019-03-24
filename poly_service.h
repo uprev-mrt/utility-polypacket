@@ -25,9 +25,6 @@ extern "C"
 {
 #endif
 
-//Ensure we pack structs
-#pragma pack(push)
-#pragma pack(1)
 
 typedef enum ServiceParseState {
   STATE_WAITING_FOR_HEADER,
@@ -80,7 +77,6 @@ typedef struct {
   bool mStarted;
 }poly_service_t;
 
-#pragma pack(pop)
 /**
   *@brief create new service
   *@param maxDesc max number of Packet descriptors in protocol

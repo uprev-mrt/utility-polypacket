@@ -23,7 +23,7 @@ void poly_service_init( poly_service_t* service, int maxDescs, int interfaceCoun
 
   //allocate packet descriptors
   service->mMaxDescs = maxDescs;
-  service->mPacketDescs = (poly_packet_desc_t**) malloc(sizeof(poly_packet_desc_t*));
+  service->mPacketDescs = (poly_packet_desc_t**) malloc(maxDescs * sizeof(poly_packet_desc_t*));
 
   service->mDescCount =0;
   service->mStarted = false;
@@ -45,7 +45,7 @@ void poly_service_deinit(poly_service_t* service)
   }
 
   free(service->mInterfaces);
-  //free(service->mPacketDescs); /* this causes an invalid free. this is an unlikely use case but should be investigater */
+  free(service->mPacketDescs); /* this causes an invalid free. this is an unlikely use case but should be investigater */
 }
 
 
@@ -213,6 +213,20 @@ ParseStatus_e poly_service_try_parse(poly_service_t* pService, poly_packet_t* pa
     if (poly_service_try_parse_interface(pService, packet,i) == PACKET_VALID)
     {
       retVal=  PACKET_VALID;
+      #if defined(POLY_PACKET_DEBUG_LVL) && POLY_PACKET_DEBUG_LVL >0
+        //If debug is enabled, print json of outgoing packets
+        #if POLY_PACKET_DEBUG_LVL == 1
+        poly_packet_print_json(packet, POLY_DEBUG_PRINTBUF, false );
+        printf("  IN <<< %s\n\n",POLY_DEBUG_PRINTBUF );
+        #elif POLY_PACKET_DEBUG_LVL > 1
+        poly_packet_print_json(packet, POLY_DEBUG_PRINTBUF, true );
+        printf("  IN <<< %s\n\n",POLY_DEBUG_PRINTBUF);
+        #endif
+        #if POLY_PACKET_DEBUG_LVL > 2
+        poly_packet_print_packed(packet, POLY_DEBUG_PRINTBUF);
+        printf("  IN <<< %s\n\n", POLY_DEBUG_PRINTBUF );
+        #endif
+      #endif
       break;
     }
   }
