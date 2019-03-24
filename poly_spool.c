@@ -30,6 +30,7 @@ void poly_spool_init(poly_spool_t* spool, int len)
   for(int i=0; i < len; i++)
   {
     spool->mEntries[i].mState = ENTRY_STATE_FREE;
+    spool->mEntries[i].mTrash = false;
   }
 
   SPOOL_UNLOCK;
@@ -66,7 +67,7 @@ void poly_spool_deinit(poly_spool_t* spool)
   spool->mCount =0;
   for(int i =0 ; i < spool->mMaxEntries; i++)
   {
-    if(spool->mEntries[i].mState != ENTRY_STATE_FREE)
+    if((spool->mEntries[i].mState != ENTRY_STATE_FREE) || (spool->mEntries[i].mTrash))
     {
       poly_packet_clean(&spool->mEntries[i].mPacket);
     }
@@ -94,8 +95,13 @@ spool_status_e poly_spool_push(poly_spool_t* spool, poly_packet_t* packet )
 
   if(idx > ENTRY_NONE)
   {
-    //reset entry properties
     entry = &spool->mEntries[idx];
+
+    //If entry still has trash, clean it
+    if(entry->mTrash)
+      poly_packet_clean(&entry->mPacket);
+
+    //reset entry properties
     entry->mTimeOut = 0;
     entry->mState = ENTRY_STATE_READY;
     entry->mAttempts = 0;
@@ -152,7 +158,7 @@ spool_status_e poly_spool_pop(poly_spool_t* spool, poly_packet_t* packet)
       memcpy((void*)packet, (void*)&entry->mPacket, sizeof(poly_packet_t) );
 
       //destroy the packet data
-      poly_packet_clean(&entry->mPacket);
+      entry->mTrash = true;
 
     }
 

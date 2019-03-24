@@ -75,8 +75,6 @@ void poly_packet_build(poly_packet_t* packet, poly_packet_desc_t* desc, bool all
   packet->f_mAckCallback = NULL;
   packet->f_mFailedCallback = NULL;
 
-  printf(" size of field: %d", sizeof(poly_field_t));
-
   packet->mFields = (poly_field_t*) malloc(sizeof(poly_field_t) * desc->mFieldCount);
   packet->mBuilt = true;
   for(int i=0; i< desc->mFieldCount; i++)

@@ -184,6 +184,7 @@ ParseStatus_e poly_service_try_parse_interface(poly_service_t* pService, poly_pa
               case PACKET_VALID:
                 fifo_clear(&iface->mBytefifo, len); //remove these bytes from fifo
                 iface->mPacketsIn++;
+                iface->mParseState = STATE_WAITING_FOR_HEADER;
                 break;
               default:
                 fifo_clear(&iface->mBytefifo, 1); //remove one byte
@@ -257,7 +258,7 @@ ParseStatus_e poly_service_despool(poly_service_t* pService)
         uint8_t data[outPacket.mDesc->mMaxPacketSize];
         len = poly_packet_pack(&outPacket, data);
 
-        #if defined(POLY_PACKET_DEBUG_LVL)
+        #if defined(POLY_PACKET_DEBUG_LVL) && POLY_PACKET_DEBUG_LVL >0
           //If debug is enabled, print json of outgoing packets
           #if POLY_PACKET_DEBUG_LVL == 1
           poly_packet_print_json(&outPacket, POLY_DEBUG_PRINTBUF, false );

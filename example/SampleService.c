@@ -131,10 +131,19 @@ void sp_service_process()
     //set response token with ack flag (this will persist even when packet it built)
     response.mPacket.mHeader.mToken = packet.mPacket.mHeader.mToken | POLY_ACK_FLAG;
 
-  #ifdef SP_SERVICE_DEBUG
-    //If debug is enabled, print json of incoming packets
-    poly_packet_print_json(&packet.mPacket, sp_printBuf, true );
-    printf("  IN <<< %s\n",sp_printBuf );
+  #if defined(POLY_PACKET_DEBUG_LVL) && POLY_PACKET_DEBUG_LVL >0
+    //If debug is enabled, print json of outgoing packets
+    #if POLY_PACKET_DEBUG_LVL == 1
+    poly_packet_print_json(&packet.mPacket, POLY_DEBUG_PRINTBUF, false );
+    printf("  IN <<< %s\n\n",POLY_DEBUG_PRINTBUF );
+    #elif POLY_PACKET_DEBUG_LVL > 1
+    poly_packet_print_json(&packet.mPacket, POLY_DEBUG_PRINTBUF, true );
+    printf("  IN <<< %s\n\n",POLY_DEBUG_PRINTBUF);
+    #endif
+    #if POLY_PACKET_DEBUG_LVL > 2
+    poly_packet_print_packed(&packet.mPacket, POLY_DEBUG_PRINTBUF);
+    printf("  IN <<< %s\n\n", POLY_DEBUG_PRINTBUF );
+    #endif
   #endif
 
     //Dispatch packet
@@ -182,7 +191,7 @@ void sp_service_process()
     sp_clean(&packet);
     sp_clean(&response);
   }
-  
+
   //despool any packets ready to go out
   poly_service_despool(&SP_SERVICE);
 

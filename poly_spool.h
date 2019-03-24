@@ -41,6 +41,7 @@ typedef struct{
     int mTimeOut;                   //current state of timeout counter
     int mAttempts;                  //number of attempts to send this packet so far
     poly_packet_t mPacket;          //actual packet being sent
+    bool mTrash;                    //if entry was set to free but not cleaned yet
   } spool_entry_t;
 
   typedef struct{
