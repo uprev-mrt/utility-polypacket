@@ -7,5 +7,6 @@ add_library(
   poly_packet.c
   poly_field.c
   poly_service.c
+  poly_spool.c
   ../Fifo/fifo.c
   )

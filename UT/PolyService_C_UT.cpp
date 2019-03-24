@@ -8,9 +8,8 @@ extern "C"{
 #include "../poly_field.c"
 #include "../poly_packet.c"
 #include "../poly_service.c"
-#include "../poly_spool.c"
-#include "../example/SampleService.c"
 }
+#include "../example/SampleService.c"
 
 #include <gtest/gtest.h>
 

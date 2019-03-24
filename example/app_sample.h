@@ -2,7 +2,7 @@
   *@file app_sample.cpp
   *@brief generated protocol source code
   *@author make_protocol.py
-  *@date 03/22/19
+  *@date 03/23/19
   */
 
 #include "SampleService.h"

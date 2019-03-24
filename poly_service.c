@@ -10,7 +10,9 @@
 #include "poly_service.h"
 #include <assert.h>
 
-
+#if defined(POLY_PACKET_DEBUG_LVL)
+extern char POLY_DEBUG_PRINTBUF[512];
+#endif
 
 void poly_service_init( poly_service_t* service, int maxDescs, int interfaceCount)
 {
@@ -28,10 +30,32 @@ void poly_service_init( poly_service_t* service, int maxDescs, int interfaceCoun
   service->mAutoAck = true;
 }
 
+void poly_service_deinit(poly_service_t* service)
+{
+  //deinitialize interfaces
+  for(int i=0; i < service->mInterfaceCount;i++)
+  {
+    //set up buffers for incoming data
+    fifo_deinit(&service->mInterfaces[i].mBytefifo);
+
+    free(service->mInterfaces[i].mRaw);
+
+    //set up spool for outgoing
+    poly_spool_deinit(&service->mInterfaces[i].mOutSpool);
+  }
+
+  free(service->mInterfaces);
+  //free(service->mPacketDescs); /* this causes an invalid free. this is an unlikely use case but should be investigater */
+}
+
 
 void poly_service_register_desc(poly_service_t* pService, poly_packet_desc_t* pDesc)
 {
   assert(pService->mDescCount < pService->mMaxDescs);
+
+  #if defined(POLY_PACKET_DEBUG_LVL) && POLY_PACKET_DEBUG_LVL > 1
+  printf("Packet Descriptor: %s  fieldCount: %d (%d optional) , manifestSize: %d , mMaxPacketSize: %d\n", pDesc->mName, pDesc->mFieldCount,pDesc->mOptionalFieldCount, pDesc->mManifestSize, pDesc->mMaxPacketSize );
+  #endif
 
   pService->mPacketDescs[pService->mDescCount++] = pDesc;
 }
@@ -41,11 +65,10 @@ void poly_service_register_tx_callback(poly_service_t* pService, int interface, 
   assert(interface < pService->mInterfaceCount);
 
   pService->mInterfaces[interface].f_TxCallBack = callback;
-  pService->mInterfaces[interface].mHasCallBack = true;
 }
 
 
-void poly_service_start(poly_service_t* pService, int fifoDepth)
+void poly_service_start(poly_service_t* pService, int depth)
 {
 
   //find max packet size
@@ -64,12 +87,15 @@ void poly_service_start(poly_service_t* pService, int fifoDepth)
     pService->mInterfaces[i].mRetries = 0;
     pService->mInterfaces[i].mFailures = 0;
     pService->mInterfaces[i].mBitErrors = 0;
+    pService->mInterfaces[i].f_TxCallBack = NULL;
 
-    //set up buffers, make incoming byte buffer 2x max packet size
-    fifo_init(&pService->mInterfaces[i].mBytefifo, fifoDepth, sizeof(uint8_t));
+    //set up buffers for incoming data
+    fifo_init(&pService->mInterfaces[i].mBytefifo, depth, sizeof(uint8_t));
     pService->mInterfaces[i].mParseState= STATE_WAITING_FOR_HEADER;
     pService->mInterfaces[i].mRaw = (uint8_t*) malloc(pService->mMaxPacketSize);
 
+    //set up spool for outgoing
+    poly_spool_init(&pService->mInterfaces[i].mOutSpool, depth);
   }
 
   pService->mStarted = true;
@@ -158,6 +184,7 @@ ParseStatus_e poly_service_try_parse_interface(poly_service_t* pService, poly_pa
               case PACKET_VALID:
                 fifo_clear(&iface->mBytefifo, len); //remove these bytes from fifo
                 iface->mPacketsIn++;
+                iface->mParseState = STATE_WAITING_FOR_HEADER;
                 break;
               default:
                 fifo_clear(&iface->mBytefifo, 1); //remove one byte
@@ -193,16 +220,65 @@ ParseStatus_e poly_service_try_parse(poly_service_t* pService, poly_packet_t* pa
   return retVal;
 }
 
-ParseStatus_e poly_service_send(poly_service_t* pService, int interface,  poly_packet_t* packet)
+ParseStatus_e poly_service_spool(poly_service_t* pService, int interface,  poly_packet_t* packet)
+{
+   ParseStatus_e status = PACKET_NOT_HANDLED;
+   assert(interface < pService->mInterfaceCount);
+
+   poly_interface_t* iface = &pService->mInterfaces[interface];
+
+
+   if(iface->f_TxCallBack == NULL)
+   {
+     return PACKET_NOT_HANDLED; /* no tx callback registered */
+   }
+
+   if(poly_spool_push(&iface->mOutSpool, packet) != SPOOL_OK)
+   {
+     return PACKET_NOT_HANDLED;
+   }
+
+  return PACKET_SPOOLED;
+}
+
+ParseStatus_e poly_service_despool(poly_service_t* pService)
 {
   ParseStatus_e status = PACKET_NOT_HANDLED;
-   assert(interface < pService->mInterfaceCount);
-   if(!pService->mInterfaces[interface].mHasCallBack)
-   return PACKET_NOT_HANDLED;
+  poly_interface_t* iface;
+  poly_packet_t outPacket;
+  int len;
 
-   uint8_t data[packet->mDesc->mMaxPacketSize];
-   int len = poly_packet_pack(packet, data);
+  for(int i=0; i < pService->mInterfaceCount; i++)
+  {
+    iface = &pService->mInterfaces[i];
+    if(iface->mOutSpool.mReadyCount > 0)
+    {
+      if(poly_spool_pop(&iface->mOutSpool, &outPacket) == SPOOL_OK)
+      {
+        uint8_t data[outPacket.mDesc->mMaxPacketSize];
+        len = poly_packet_pack(&outPacket, data);
 
-   status = pService->mInterfaces[interface].f_TxCallBack(data, len);
+        #if defined(POLY_PACKET_DEBUG_LVL) && POLY_PACKET_DEBUG_LVL >0
+          //If debug is enabled, print json of outgoing packets
+          #if POLY_PACKET_DEBUG_LVL == 1
+          poly_packet_print_json(&outPacket, POLY_DEBUG_PRINTBUF, false );
+          printf(" OUT >>> %s\n",POLY_DEBUG_PRINTBUF );
+          #elif POLY_PACKET_DEBUG_LVL > 1
+          poly_packet_print_json(&outPacket, POLY_DEBUG_PRINTBUF, true );
+          printf(" OUT >>> %s\n",POLY_DEBUG_PRINTBUF );
+          #endif
+          #if POLY_PACKET_DEBUG_LVL > 2
+          poly_packet_print_packed(&outPacket, POLY_DEBUG_PRINTBUF);
+          printf(" OUT >>> %s\n\n", POLY_DEBUG_PRINTBUF );
+          #endif
+        #endif
+
+        status = iface->f_TxCallBack(data,len);
+        break;
+      }
+    }
+
+  }
+
   return status;
 }

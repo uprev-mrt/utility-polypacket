@@ -78,6 +78,8 @@ extern poly_field_desc_t* ${field.globalName};
  */
 typedef struct{
   poly_packet_t mPacket;    //internal packet structure
+  bool mSpooled;            //spooled data doesnt get cleaned, the spool owns it now
+  bool mBuilt;
 }${proto.prefix}_packet_t;
 
 
@@ -85,10 +87,17 @@ typedef struct{
   Service Functions
 *******************************************************************************/
 /**
-*@brief initializes protocol service
-*@param ifaces number of interfaces to use
-*/
+  *@brief initializes protocol service
+  *@param ifaces number of interfaces to use
+  */
 void ${proto.prefix}_service_init(int interfaceCount);
+
+/**
+  *@brief tears down service
+  *@note probably not needed based on lifecycle of service
+  *@ but useful for detecting memory leaks 
+  */
+void ${proto.prefix}_service_teardown();
 
 /**
   *@brief processes data in buffers
@@ -96,9 +105,9 @@ void ${proto.prefix}_service_init(int interfaceCount);
 void ${proto.prefix}_service_process();
 
 /**
-  *@brief sends packet over given interface
-  *@param metaPacket packet to be sent
-  *@param iface index of interface to send on
+  *@brief registers a callback to let the service know how to send bytes for a given interface
+  *@param iface index of interface to register with
+  *@param txCallBack a function pointer for the callback
   */
 void ${proto.prefix}_service_register_tx( int iface, poly_tx_callback txCallBack);
 
@@ -112,10 +121,10 @@ void ${proto.prefix}_service_feed(int iface, uint8_t* data, int len);
 
 /**
   *@brief sends packet over given interface
-  *@param metaPacket packet to be sent
+  *@param packet packet to be sent
   *@param iface index of interface to send on
   */
-HandlerStatus_e ${proto.prefix}_send( int iface, ${proto.prefix}_packet_t* metaPacket);
+HandlerStatus_e ${proto.prefix}_send( int iface, ${proto.prefix}_packet_t* packet);
 
 /**
   *@brief enables/disables the auto acknowledgement function of the service
@@ -129,18 +138,17 @@ void ${proto.prefix}_auto_ack(bool enable);
 *******************************************************************************/
 
 /**
-  *@brief creates a new ${proto.prefix}_packet_t object OWNER IS RESPONSIBLE FOR CLEANING
+  *@brief initializes a new {proto.prefix}_packet_t
   *@param desc ptr to packet descriptor to model packet from
-  *@return ptr to new {proto.prefix}_packet_t
   */
-${proto.prefix}_packet_t* new_${proto.prefix}_packet(poly_packet_desc_t* desc);
+void ${proto.prefix}_packet_build(${proto.prefix}_packet_t* packet, poly_packet_desc_t* desc);
 
 
 /**
-  *@brief recrusively cleanss ${proto.prefix}_packet_t and its contents
-  *@param metaPacket metapacket to clean
+  *@brief recrusively cleans packet and its contents if it still has ownership
+  *@param packet packet to clean
   */
-void ${proto.prefix}_clean(${proto.prefix}_packet_t* metaPacket);
+void ${proto.prefix}_clean(${proto.prefix}_packet_t* packet);
 
 /**
   *@brief converts packet to json
@@ -148,7 +156,7 @@ void ${proto.prefix}_clean(${proto.prefix}_packet_t* metaPacket);
   *@param buf buffer to store string
   *@return length of string
   */
-#define ${proto.prefix}_print_json(packet,buf) poly_packet_print_json(&packet->mPacket, buf, false)
+#define ${proto.prefix}_print_json(packet,buf) poly_packet_print_json(&(packet)->mPacket, buf, false)
 
 /**
   *@brief parses packet from a buffer of data
@@ -156,7 +164,7 @@ void ${proto.prefix}_clean(${proto.prefix}_packet_t* metaPacket);
   *@param buf buffer to parse
   *@return status of parse attempt
   */
-#define ${proto.prefix}_parse(packet,buf,len) poly_packet_parse_buffer(&packet->mPacket, buf, len)
+#define ${proto.prefix}_parse(packet,buf,len) poly_packet_parse_buffer(&(packet)->mPacket, buf, len)
 
 
 /**
@@ -165,7 +173,7 @@ void ${proto.prefix}_clean(${proto.prefix}_packet_t* metaPacket);
   *@param buf buffer to store data
   *@return length of packed data
   */
-#define ${proto.prefix}_pack(packet, buf) poly_packet_pack(&packet->mPacket, buf)
+#define ${proto.prefix}_pack(packet, buf) poly_packet_pack(&(packet)->mPacket, buf)
 
 /**
   *@brief gets the length of a give field in a packet
@@ -195,6 +203,9 @@ ${field.getParamType()} ${proto.prefix}_get${field.camel()}(${proto.prefix}_pack
 
 /*******************************************************************************
   Quick send functions
+
+  These are convenience one-liner functions for sending messages.
+  They also handle their own clean up and are less bug prone than building your own packets
 *******************************************************************************/
 % for packet in proto.packets:
 HandlerStatus_e ${proto.prefix}_send${packet.camel()}(int iface\

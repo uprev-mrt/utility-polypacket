@@ -10,6 +10,10 @@
 
 #ifdef __cplusplus
 
+#if defined(POLY_PACKET_DEBUG_LVL)
+extern char POLY_DEBUG_PRINTBUF[512];
+#endif
+
 extern "C"
 {
 #endif
@@ -18,6 +22,11 @@ extern "C"
 #pragma pack(push)
 #pragma pack(1)
 
+//forward declare struct so we can typedef callbacks
+struct poly_packet;
+
+typedef void (*packet_ack_cb)(struct poly_packet* response);
+typedef void (*packet_failed_cb)();
 
 typedef enum ParseStatus {
   PACKET_VALID = -400,
@@ -27,6 +36,13 @@ typedef enum ParseStatus {
   INVALID_PACKET_TYPE,
   PACKET_NONE
 } ParseStatus_e;
+
+//Spool entry ack type
+typedef enum{
+   ACK_TYPE_NONE,         //no ack needed
+   ACK_TYPE_TOKEN,        //request ack via token
+   ACK_TYPE_PASSTHROUGH  //pass through message, dont touch the token (used when relaying messages so the endpoints can handle ack/retry)
+} packet_ack_type_e;
 
 
 #define PACKET_METADATA_SIZE (sizeof(poly_packet_hdr_t))
@@ -59,23 +75,27 @@ typedef struct {
 /**
   *@brief Variable packet
   */
-typedef struct {
+typedef struct poly_packet{
   poly_packet_hdr_t mHeader;
-  poly_packet_desc_t* mDesc;     //prt to packet descriptor
-  poly_field_t* mFields;        //array of fields contained in packet
+  poly_packet_desc_t* mDesc;      //prt to packet descriptor
+  poly_field_t* mFields;          //array of fields contained in packet
   uint8_t mInterface;              //id of interface that packet is from/to
-  bool mBuilt;                  //indicates if packet has already been built
+  bool mBuilt;                    //indicates if packet has already been built
+  packet_ack_type_e mAckType;     //indicates what type of ack the packet should use
+  packet_ack_cb f_mAckCallback;   //callback for when packet is acknowledged
+  packet_failed_cb f_mFailedCallback; //callback for when the packet timesout
 }poly_packet_t;
 
 #pragma pack(pop)
 
 /**
-  *@brief creates a new packet descriptor
+  *@brief initializes a packet descriptor
   *@param name firendly name for packet type
   *@param maxFields max number of fields in packet descriptor
-  *@return ptr to new packet descriptor
+  *@return ptr to packet descriptor
   */
-poly_packet_desc_t* new_poly_packet_desc(const char* name , int maxFields);
+poly_packet_desc_t* poly_packet_desc_init(poly_packet_desc_t* desc, const char* name , int maxFields);
+poly_packet_desc_t* poly_packet_desc_deinit(poly_packet_desc_t* desc);
 
 /**
   *@brief adds field descriptor to packet descriptor
@@ -143,9 +163,33 @@ int poly_packet_pack(poly_packet_t* packet, uint8_t* data);
   *@brief prints json representation of packet to a buffer
   *@param packet ptr to packet
   *@param buf buffer to print to
+  *@param printHeader indicates if the header data should be printed
   *@retun len of string
   */
-int poly_packet_print_json(poly_packet_t* packet, char* buf, bool printMeta);
+int poly_packet_print_json(poly_packet_t* packet, char* buf, bool printHeader);
+
+
+/**
+  *@brief prints hex array of packed packet (mainly useful for debug)
+  *@param packet ptr to packet
+  *@param buf buffer to print to
+  *@retun len of string
+  */
+int poly_packet_print_packed(poly_packet_t* packet, char* buf);
+
+/**
+  *@brief updates the header for the packet
+  *@param packet ptr to packet to update
+  *@return total length of packet including header
+  */
+int poly_packet_update_header(poly_packet_t* packet);
+
+/**
+  *@brief updates the header for the packet
+  *@param packet ptr to packet to update
+  *@return total length of packet including header
+  */
+int poly_packet_update_header(poly_packet_t* packet);
 
 #ifdef __cplusplus
 }

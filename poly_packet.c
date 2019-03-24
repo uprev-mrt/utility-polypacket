@@ -8,14 +8,15 @@
 #include "poly_packet.h"
 #include <assert.h>
 
+#if defined(POLY_PACKET_DEBUG_LVL)
+char POLY_DEBUG_PRINTBUF[512];
+#endif
 
-
-poly_packet_desc_t* new_poly_packet_desc(const char* name, int maxFields)
+poly_packet_desc_t* poly_packet_desc_init(poly_packet_desc_t* desc, const char* name, int maxFields)
 {
   static int id =0;
 
   //build out new packet descriptor
-  poly_packet_desc_t* desc = (poly_packet_desc_t*)malloc(sizeof(poly_packet_desc_t));
   desc->mTypeId = id++;
   desc->mName = name;
   desc->mMaxFields = maxFields;
@@ -24,7 +25,15 @@ poly_packet_desc_t* new_poly_packet_desc(const char* name, int maxFields)
   desc->mRequirementMap = (bool*) malloc(sizeof(bool) * desc->mMaxFields);
   desc->mMaxPacketSize = PACKET_METADATA_SIZE;
 
+
   return desc;
+}
+
+poly_packet_desc_t* poly_packet_desc_deinit(poly_packet_desc_t* desc)
+{
+  if(desc->mMaxFields > 0)
+    free(desc->mFields);
+    free(desc->mRequirementMap);
 }
 
 void poly_packet_desc_add_field(poly_packet_desc_t* desc, poly_field_desc_t* fieldDesc, bool required)
@@ -50,20 +59,21 @@ void poly_packet_desc_add_field(poly_packet_desc_t* desc, poly_field_desc_t* fie
     }
 
     //recalculate manifest size
-    desc->mManifestSize = (desc->mFieldCount +8)/8;
+    desc->mManifestSize = ( desc->mOptionalFieldCount +7)/8;
   }
 }
 
 
 void poly_packet_build(poly_packet_t* packet, poly_packet_desc_t* desc, bool allocate )
 {
-  if(packet->mBuilt)
-    poly_packet_clean(packet);
-
   packet->mDesc = desc;
   packet->mInterface = 0;
   packet->mHeader.mTypeId = desc->mTypeId;
   packet->mHeader.mToken = rand() & 0x7FFF;
+  packet->mHeader.mCheckSum = 0;
+  packet->mAckType = ACK_TYPE_NONE;// until we put in the auto/ack retry timing
+  packet->f_mAckCallback = NULL;
+  packet->f_mFailedCallback = NULL;
 
   packet->mFields = (poly_field_t*) malloc(sizeof(poly_field_t) * desc->mFieldCount);
   packet->mBuilt = true;
@@ -76,9 +86,6 @@ void poly_packet_build(poly_packet_t* packet, poly_packet_desc_t* desc, bool all
 
 void poly_packet_clean(poly_packet_t* packet)
 {
-  //if it hasnt been built yet, there is nothing to clean
-  if(!packet->mBuilt)
-    return;
 
   //destroy all fields
   for(int i=0; i < packet->mDesc->mFieldCount; i++)
@@ -286,23 +293,35 @@ int poly_packet_pack(poly_packet_t* packet, uint8_t* data)
   return idx;
 }
 
-int poly_packet_print_json(poly_packet_t* packet, char* buf, bool printMeta)
+int poly_packet_print_json(poly_packet_t* packet, char* buf, bool printHeader)
 {
   int idx =0;
   poly_field_t* field;
   bool first = true;
 
+  //this generally means we built the packet and its never been packed,
+  // so the header hasnt been set
+  if(packet->mHeader.mCheckSum == 0)
+  {
+    poly_packet_update_header(packet);
+  }
+
   idx+= MRT_SPRINTF(&buf[idx],"{");
 
-  if(printMeta)
+  idx += MRT_SPRINTF(&buf[idx]," \"packetType\" : \"%s\" ,", packet->mDesc->mName);
+
+  if(printHeader)
   {
     idx += MRT_SPRINTF(&buf[idx]," \"typeId\" : \"%02X\" ,", packet->mHeader.mTypeId);
     idx += MRT_SPRINTF(&buf[idx]," \"token\" : \%04X\" ,", packet->mHeader.mToken);
     idx += MRT_SPRINTF(&buf[idx]," \"checksum\" : \"%04X\" ,", packet->mHeader.mCheckSum);
-    idx += MRT_SPRINTF(&buf[idx]," \"len\" : %d , ", packet->mHeader.mDataLen);
+    idx += MRT_SPRINTF(&buf[idx]," \"len\" : %d ", packet->mHeader.mDataLen);
   }
 
-  idx += MRT_SPRINTF(&buf[idx]," \"packetType\" : \"%s\" ,", packet->mDesc->mName);
+  if(packet->mDesc->mFieldCount > 0)
+  {
+    idx += MRT_SPRINTF(&buf[idx]," ,");
+  }
 
   for(int i=0; i < packet->mDesc->mFieldCount; i++)
   {
@@ -323,4 +342,33 @@ int poly_packet_print_json(poly_packet_t* packet, char* buf, bool printMeta)
   idx+= MRT_SPRINTF(&buf[idx],"}");
 
   return idx;
+}
+
+int poly_packet_print_packed(poly_packet_t* packet, char* buf)
+{
+  uint8_t data[packet->mDesc->mMaxPacketSize];
+  int strLen = 0;
+
+  //pack data
+  int len = poly_packet_pack(packet, data);
+
+  //print it to buffer
+  for(int i=0; i < len; i++)
+  {
+    strLen+= MRT_SPRINTF(&buf[strLen], " %02X", data[i]);
+  }
+
+  return strLen;
+}
+
+int poly_packet_update_header(poly_packet_t* packet)
+{
+
+  uint8_t data[packet->mDesc->mMaxPacketSize];
+
+  //easiest way to get the meta data is to pack the message
+  //Its not very effecient but this should be a rare use-case, mainly for debugging
+  int len = poly_packet_pack(packet, data);
+
+  return len;
 }

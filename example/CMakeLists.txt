@@ -15,6 +15,7 @@ add_definitions(-DUNIT_TESTING_ENABLED)
 add_definitions(
     -fmax-errors=5
     -g
+    -DPOLY_PACKET_DEBUG_LVL=3
     )
 
 add_library(
@@ -25,6 +26,7 @@ add_library(
   ../poly_field.c
   ../poly_service.h
   ../poly_service.c
+  ../poly_spool.c
   ../../../Utilities/Fifo/fifo.c
   )
 
@@ -32,7 +34,7 @@ add_library(
 add_executable(
   example
   main.c
-  SampleProtocol.c
-  SampleProtocol.h
+  SampleService.c
+
   )
 target_link_libraries(example PolyPacket)
