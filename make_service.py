@@ -498,12 +498,13 @@ def buildTemplate(protocol, templateFile, outputFile):
     #text_file.write(template.render(proto = protocol))
     text_file.close()
 
-def genUtility(protocol, script_dir, path):
+def genUtility(protocol, xmlFile, script_dir, path):
     srcPath = path +"src/"
     libPath = path +"src/lib/"
     buildPath = path+"build/"
     polyPath = path+"MrT/Modules/Utilities/PolyPacket"
     fifoPath = path+"MrT/Modules/Utilities/Fifo"
+    xmlPath = os.path.dirname(xmlFile)
 
     if not os.path.isdir(path):
         os.makedirs(path)
@@ -513,6 +514,10 @@ def genUtility(protocol, script_dir, path):
         os.makedirs(polyPath)
         os.makedirs(fifoPath)
         os.system('cp '+ script_dir+'/poly_* '+ polyPath)
+        os.system('cp -r '+ script_dir+'/templates '+ polyPath)
+        os.system('cp '+ script_dir+'/make_service.py '+ polyPath)
+        os.system('cp '+ xmlFile +' '+ path)
+        os.system('cp '+ xmlPath +'/'+ protocol.name+"_ICD.md "+ path)
         os.system('cp '+ script_dir+'/CMakeLists.txt '+ polyPath)
         os.system('cp '+ script_dir+'/linux_uart/linux_uart* '+ libPath)
         os.system('cp '+ script_dir+'/../Fifo/fifo.h '+ fifoPath)
@@ -563,6 +568,7 @@ def main():
 
     #get path of this script so we can run remotely
     script_dir = os.path.dirname(__file__)
+    xmlPath = os.path.dirname(xmlFile)
 
     protocol.scriptDir = script_dir
 
@@ -574,10 +580,10 @@ def main():
         buildTemplate(protocol, script_dir +'/templates/app_template.c', path+"/app_" + protocol.name.lower()+".c")
 
     if(args.document):
-        buildTemplate(protocol, script_dir +'/templates/doc_template.md', path+"/" + protocol.name+"_ICD.md")
+        buildTemplate(protocol, script_dir +'/templates/doc_template.md', xmlPath+"/" + protocol.name+"_ICD.md")
 
     if(args.utility):
-        genUtility(protocol, script_dir, path+"/" + protocol.name + "_utility/")
+        genUtility(protocol,xmlFile, script_dir, path+"/" + protocol.name + "_utility/")
 
 
 if __name__ == "__main__":
