@@ -15,6 +15,7 @@ import copy
 import datetime
 import zlib
 import argparse
+from shutil import copyfile
 from mako.template import Template
 
 args = None
@@ -345,6 +346,8 @@ class protocolDesc:
         self.packetId =0
         self.prefix = "pp";
         self.snippets = False
+        self.genUtility = False
+        self.scriptDir =""
 
     def service(self):
         return self.prefix.upper() +'_SERVICE'
@@ -495,6 +498,37 @@ def buildTemplate(protocol, templateFile, outputFile):
     #text_file.write(template.render(proto = protocol))
     text_file.close()
 
+def genUtility(protocol, script_dir, path):
+    srcPath = path +"src/"
+    libPath = path +"src/lib/"
+    buildPath = path+"build/"
+    polyPath = path+"MrT/Modules/Utilities/PolyPacket"
+    fifoPath = path+"MrT/Modules/Utilities/Fifo"
+
+    if not os.path.isdir(path):
+        os.makedirs(path)
+        os.makedirs(srcPath)
+        os.makedirs(libPath)
+        os.makedirs(buildPath)
+        os.makedirs(polyPath)
+        os.makedirs(fifoPath)
+        os.system('cp '+ script_dir+'/poly_* '+ polyPath)
+        os.system('cp '+ script_dir+'/CMakeLists.txt '+ polyPath)
+        os.system('cp '+ script_dir+'/linux_uart/linux_uart* '+ libPath)
+        os.system('cp '+ script_dir+'/../Fifo/fifo.h '+ fifoPath)
+        os.system('cp '+ script_dir+'/../Fifo/fifo.c '+ fifoPath)
+        os.system('cp '+ script_dir+'/../Fifo/CMakeLists.txt '+ fifoPath)
+
+
+    protocol.genUtility = True
+    buildTemplate(protocol, script_dir +'/templates/cmake_template.txt', path + 'CMakeLists.txt')
+    buildTemplate(protocol, script_dir +'/templates/c_header_template.h', libPath + protocol.fileName+".h")
+    buildTemplate(protocol, script_dir +'/templates/c_source_template.c', libPath + protocol.fileName+".c")
+    buildTemplate(protocol, script_dir +'/templates/app_template.h', srcPath+"app_" + protocol.name.lower() +".h")
+    buildTemplate(protocol, script_dir +'/templates/app_template.c', srcPath+"app_" + protocol.name.lower()+".c")
+    buildTemplate(protocol, script_dir +'/templates/util_main_template.c', srcPath+"main.c")
+    protocol.genUtility = False #set this back in case someone does this out of order
+
 # Initialize the argument parser
 def init_args():
     global parser
@@ -504,6 +538,7 @@ def init_args():
     parser.add_argument('-d', '--document', action='store_true', help='Enable documentation', default=True)
     parser.add_argument('-a', '--app', action='store_true', help='Generates the app layer code to fill out', default=False)
     parser.add_argument('-s', '--snippets', action='store_true', help='Adds helpful code snippets to files', default=False)
+    parser.add_argument('-u', '--utility', action='store_true', help='Generates Linux host utility application', default=False)
 
 def main():
     global path
@@ -529,6 +564,8 @@ def main():
     #get path of this script so we can run remotely
     script_dir = os.path.dirname(__file__)
 
+    protocol.scriptDir = script_dir
+
     buildTemplate(protocol, script_dir +'/templates/c_header_template.h', path+"/" + protocol.fileName+".h")
     buildTemplate(protocol, script_dir +'/templates/c_source_template.c', path+"/" + protocol.fileName+".c")
 
@@ -538,6 +575,10 @@ def main():
 
     if(args.document):
         buildTemplate(protocol, script_dir +'/templates/doc_template.md', path+"/" + protocol.name+"_ICD.md")
+
+    if(args.utility):
+        genUtility(protocol, script_dir, path+"/" + protocol.name + "_utility/")
+
 
 if __name__ == "__main__":
     main()

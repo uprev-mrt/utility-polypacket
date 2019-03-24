@@ -18,6 +18,8 @@ add_definitions(
     -DPOLY_PACKET_DEBUG_LVL=3
     )
 
+SET(CMAKE_C_FLAGS "-fsanitize=address -fsanitize=undefined")    
+
 add_library(
   PolyPacket
   ../poly_packet.h

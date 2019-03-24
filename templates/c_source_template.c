@@ -12,10 +12,6 @@
 #include "${proto.fileName}.h"
 #include <assert.h>
 
-#if defined(POLY_PACKET_DEBUG_LVL)
-extern char POLY_DEBUG_PRINTBUF[512];
-#endif
-
 //Define packet IDs
 % for packet in proto.packets:
 #define ${} ${packet.globalName}_ID ${packet.packetId}
@@ -120,21 +116,6 @@ void ${proto.prefix}_service_process()
 
     //set response token with ack flag (this will persist even when packet it built)
     response.mPacket.mHeader.mToken = packet.mPacket.mHeader.mToken | POLY_ACK_FLAG;
-
-  #if defined(POLY_PACKET_DEBUG_LVL) && POLY_PACKET_DEBUG_LVL >0
-    //If debug is enabled, print json of outgoing packets
-    #if POLY_PACKET_DEBUG_LVL == 1
-    poly_packet_print_json(&packet.mPacket, POLY_DEBUG_PRINTBUF, false );
-    printf("  IN <<< %s\n\n",POLY_DEBUG_PRINTBUF );
-    #elif POLY_PACKET_DEBUG_LVL > 1
-    poly_packet_print_json(&packet.mPacket, POLY_DEBUG_PRINTBUF, true );
-    printf("  IN <<< %s\n\n",POLY_DEBUG_PRINTBUF);
-    #endif
-    #if POLY_PACKET_DEBUG_LVL > 2
-    poly_packet_print_packed(&packet.mPacket, POLY_DEBUG_PRINTBUF);
-    printf("  IN <<< %s\n\n", POLY_DEBUG_PRINTBUF );
-    #endif
-  #endif
 
     //Dispatch packet
     switch(packet.mPacket.mDesc->mTypeId)

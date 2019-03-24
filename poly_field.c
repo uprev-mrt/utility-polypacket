@@ -59,6 +59,7 @@ poly_field_desc_t* poly_field_desc_init(poly_field_desc_t* desc, const char* nam
       desc->mObjSize=sizeof(double);
       break;
     case TYPE_STRING:
+      desc->mNullTerm = true;
     case TYPE_CHAR:
       desc->mObjSize=sizeof(char);  //strings are treated as arrays of characters
       desc->mFormat = FORMAT_ASCII;

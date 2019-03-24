@@ -46,8 +46,8 @@ int main()
   //sp_service_feed(0,ackData, 8);
   //sp_sendGetData(0);
 
-  for(int i=0; i < 2048; i++)
-  {
+   for(int i=0; i < 2048; i++)
+   {
     //sp_sendSendCmd(0,0);
     sp_sendData(0, 32500,898989, "This is my test string");
     sp_service_process();
