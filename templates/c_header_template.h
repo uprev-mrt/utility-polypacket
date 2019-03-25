@@ -95,7 +95,7 @@ void ${proto.prefix}_service_init(int interfaceCount);
 /**
   *@brief tears down service
   *@note probably not needed based on lifecycle of service
-  *@ but useful for detecting memory leaks 
+  *@ but useful for detecting memory leaks
   */
 void ${proto.prefix}_service_teardown();
 
@@ -226,10 +226,10 @@ HandlerStatus_e ${proto.prefix}_send${packet.camel()}(int iface\
 % for packet in proto.packets:
 %if packet.hasResponse:
 /*@brief Handler for ${packet.name} packets */
-HandlerStatus_e ${proto.prefix}_${packet.name}_handler(${proto.prefix}_packet_t* ${proto.prefix}_${packet.name}, ${proto.prefix}_packet_t* ${proto.prefix}_${packet.response.name});
+HandlerStatus_e ${proto.prefix}_${packet.camel()}_handler(${proto.prefix}_packet_t* ${proto.prefix}_${packet.name}, ${proto.prefix}_packet_t* ${proto.prefix}_${packet.response.name});
 %else:
 /*@brief Handler for ${packet.name} packets */
-HandlerStatus_e ${proto.prefix}_${packet.name}_handler(${proto.prefix}_packet_t* ${proto.prefix}_${packet.name});
+HandlerStatus_e ${proto.prefix}_${packet.camel()}_handler(${proto.prefix}_packet_t* ${proto.prefix}_${packet.name});
 %endif
 
 % endfor

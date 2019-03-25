@@ -4,12 +4,15 @@ include_directories("MrT/Modules")
 include_directories("src")
 include_directories("src/lib")
 
-add_subdirectory(MrT/Modules/Utilities/PolyPacket)
-
 add_definitions(
     -g
     -DPOLY_PACKET_DEBUG_LVL=1
     )
+
+#SET(CMAKE_C_FLAGS "-fsanitize=address -fsanitize=undefined")
+
+add_subdirectory(MrT/Modules/Utilities/PolyPacket)
+
 
 add_library(
   ${proto.fileName}_lib
