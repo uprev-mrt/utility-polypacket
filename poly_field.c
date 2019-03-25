@@ -129,6 +129,11 @@ void poly_field_set(poly_field_t* field, const uint8_t* data)
   if(field->mDesc->mNullTerm)
   {
     field->mSize = strlen((const char*)data);
+
+    if(strlen((const char*)data) > field->mDesc->mLen)
+    {
+      field->mSize = field->mDesc->mLen;
+    }
   }
 
   field->mPresent =true;
@@ -139,8 +144,8 @@ void poly_field_set(poly_field_t* field, const uint8_t* data)
 uint8_t* poly_field_get(poly_field_t* field, uint8_t* data)
 {
   assert(MEM_EXISTS(field));
-
-  memcpy(data, field->mData, field->mSize);
+  if(data != NULL)
+    memcpy(data, field->mData, field->mSize);
 
   return field->mData;
 }

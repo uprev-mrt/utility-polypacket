@@ -18,6 +18,11 @@ void app_${proto.name.lower()}_init();
 %endif
 
 /**
+  *@brief ends service
+  */
+void app_${proto.name.lower()}_end();
+
+/**
   *@brief process the data for the packet service
   */
 void app_${proto.name.lower()}_process();

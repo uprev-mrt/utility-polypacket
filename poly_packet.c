@@ -308,11 +308,11 @@ int poly_packet_print_json(poly_packet_t* packet, char* buf, bool printHeader)
 
   idx+= MRT_SPRINTF(&buf[idx],"{");
 
-  idx += MRT_SPRINTF(&buf[idx]," \"packetType\" : \"%s\" ,", packet->mDesc->mName);
+  idx += MRT_SPRINTF(&buf[idx]," \"packetType\" : \"%s\" ", packet->mDesc->mName);
 
   if(printHeader)
   {
-    idx += MRT_SPRINTF(&buf[idx]," \"typeId\" : \"%02X\" ,", packet->mHeader.mTypeId);
+    idx += MRT_SPRINTF(&buf[idx],", \"typeId\" : \"%02X\" ,", packet->mHeader.mTypeId);
     idx += MRT_SPRINTF(&buf[idx]," \"token\" : \%04X\" ,", packet->mHeader.mToken);
     idx += MRT_SPRINTF(&buf[idx]," \"checksum\" : \"%04X\" ,", packet->mHeader.mCheckSum);
     idx += MRT_SPRINTF(&buf[idx]," \"len\" : %d ", packet->mHeader.mDataLen);

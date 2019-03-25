@@ -50,7 +50,7 @@ static inline void iface0_read()
 }
 
 /*******************************************************************************
-  App Init
+  App Init/end
 *******************************************************************************/
 %if proto.genUtility:
 void app_${proto.name.lower()}_init(const char* port, int baud)
@@ -72,6 +72,13 @@ void app_${proto.name.lower()}_init()
 
   ${proto.prefix}_service_register_tx(0, iface0_write);
 
+}
+
+void app_${proto.name.lower()}_end()
+{
+%if proto.genUtility:
+  uart_close(fd);
+%endif
 }
 
 /*******************************************************************************
@@ -100,7 +107,7 @@ void app_${proto.name.lower()}_process()
   *@param ${packet.name} incoming ${packet.name} packet
   *@return handling status
   */
-HandlerStatus_e ${proto.prefix}_${packet.name}_handler(${proto.prefix}_packet_t* ${proto.prefix}_${packet.name})
+HandlerStatus_e ${proto.prefix}_${packet.camel()}_handler(${proto.prefix}_packet_t* ${proto.prefix}_${packet.name})
 %else:
 /**
   *@brief Handler for receiving ${packet.name} packets
@@ -108,7 +115,7 @@ HandlerStatus_e ${proto.prefix}_${packet.name}_handler(${proto.prefix}_packet_t*
   *@param ${packet.response.name} ${packet.response.name} packet to respond with
   *@return handling status
   */
-HandlerStatus_e ${proto.prefix}_${packet.name}_handler(${proto.prefix}_packet_t* ${proto.prefix}_${packet.name}, ${proto.prefix}_packet_t* ${proto.prefix}_${packet.response.name})
+HandlerStatus_e ${proto.prefix}_${packet.camel()}_handler(${proto.prefix}_packet_t* ${proto.prefix}_${packet.name}, ${proto.prefix}_packet_t* ${proto.prefix}_${packet.response.name})
 %endif
 {
   /*  Get Required Fields in packet */
