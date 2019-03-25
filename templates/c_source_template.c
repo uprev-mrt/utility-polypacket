@@ -290,7 +290,7 @@ ${field.getParamType()} ${proto.prefix}_get${field.camel()}(${proto.prefix}_pack
   ${field.getParamType()} val;
   poly_field_t* field = poly_packet_get_field(&packet->mPacket, ${field.globalName});
 %if field.isArray:
-  val = (${field.getParamType()})poly_field_get(field, (uint8_t*)val);
+  val = (${field.getParamType()})poly_field_get(field, NULL);
 % else:
   poly_field_get(field,(uint8_t*) &val);
 % endif

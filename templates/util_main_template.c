@@ -12,7 +12,8 @@
 
 #include "app_${proto.name.lower()}.h"
 
-
+void sig_exit();
+void catch_sigterm();
 
 int main(int argc, char* argv[])
 {
@@ -26,4 +27,23 @@ int main(int argc, char* argv[])
   }
 
   return 0;
+}
+
+
+void sig_exit()
+{
+  printf("closing!\n");
+  app_end();
+  exit(0);
+}
+
+void catch_sigterm()
+{
+    static struct sigaction _sigact;
+
+    memset(&_sigact, 0, sizeof(_sigact));
+    _sigact.sa_sigaction = sig_exit;
+    _sigact.sa_flags = SA_SIGINFO;
+
+    sigaction(SIGINT, &_sigact, NULL);
 }

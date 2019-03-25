@@ -50,7 +50,7 @@ static inline void iface0_read()
 }
 
 /*******************************************************************************
-  App Init
+  App Init/end
 *******************************************************************************/
 %if proto.genUtility:
 void app_${proto.name.lower()}_init(const char* port, int baud)
@@ -72,6 +72,13 @@ void app_${proto.name.lower()}_init()
 
   ${proto.prefix}_service_register_tx(0, iface0_write);
 
+}
+
+void app_${proto.name.lower()}_end()
+{
+%if proto.genUtility:
+  uart_close(fd);
+%endif
 }
 
 /*******************************************************************************
