@@ -20,6 +20,8 @@ int fd;
 static char printBuf[512];
 
 #define ${proto.prefix.upper()}_PRINT(packet) fp_print_json((packet),printBuf); printf("%s",printBuf)
+%else:
+mrt_uart_handle_t ifac0;
 %endif
 
 static inline HandlerStatus_e iface0_write(uint8_t* data, int len)
@@ -28,7 +30,7 @@ static inline HandlerStatus_e iface0_write(uint8_t* data, int len)
 %if proto.genUtility:
   uart_write(fd,data,len);
 %else:
-  //TODO write to interface (i.e. uart,spi, etc)
+  MRT_UART_TX(ifac0, data, len, 10);
 %endif
 
   return PACKET_SENT;
@@ -43,7 +45,7 @@ static inline void iface0_read()
   int len = uart_read(fd,iface0_rx_buf, 32);
 %else:
   //TODO read bytes from interface to iface0_rx_buf
-  int len;
+  int len = MRT_UART_RX(ifac0, iface0_rx_buf, 32);  //read 32 bytes at a time
 %endif
 
   ${proto.prefix}_service_feed(0,iface0_rx_buf, len);
@@ -61,10 +63,10 @@ void app_${proto.name.lower()}_init(const char* port, int baud)
   else
     printf("Could not open port: %s",port);
 %else:
-void app_${proto.name.lower()}_init()
+void app_${proto.name.lower()}_init(mrt_uart_handle_t uart_handle)
 {
-  /* initialize peripheral for iface_0 */
-  //TODO initialize peripheral for iface_0
+  /* Set ifac0 to uart handle, this can use any peripheral, but uart is the most common case */
+  ifac0 = uart_handle; //set interface to uart handle
 %endif
 
   //initialize service
@@ -121,7 +123,7 @@ HandlerStatus_e ${proto.prefix}_${packet.camel()}_handler(${proto.prefix}_packet
   /*  Get Required Fields in packet */
 % for field in packet.fields:
 %if field.isRequired:
-  ${field.getParamType()} ${field.name} = ${proto.prefix}_get${field.camel()}(${proto.prefix}_${packet.name});
+  ${field.getParamType()} ${field.name} = ${proto.prefix}_get${field.camel()}(${proto.prefix}_${packet.name});    //${field.desc}
 %endif
 % endfor
 % for field in packet.fields:
@@ -140,7 +142,7 @@ HandlerStatus_e ${proto.prefix}_${packet.camel()}_handler(${proto.prefix}_packet
   /*    Set required Fields in response  */
 % for field in packet.response.fields:
 %if field.isRequired:
-  //${proto.prefix}_set${field.camel()}(${proto.prefix}_${packet.response.name}, value );                   //Set ${field.name} value
+  //${proto.prefix}_set${field.camel()}(${proto.prefix}_${packet.response.name}, value );   //${field.desc}
 %endif
 %endfor
 %endif

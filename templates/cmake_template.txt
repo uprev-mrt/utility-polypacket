@@ -11,6 +11,8 @@ add_definitions(
 
 #SET(CMAKE_C_FLAGS "-fsanitize=address -fsanitize=undefined")
 
+SET(CMAKE_C_FLAGS "-Wformat=0")
+
 add_subdirectory(MrT/Modules/Utilities/PolyPacket)
 
 
@@ -29,4 +31,4 @@ add_executable(
 
 target_link_libraries(${proto.fileName}_lib PolyPacket)
 
-target_link_libraries(${proto.name}_util ${proto.fileName} )
+target_link_libraries(${proto.name}_util ${proto.fileName}_lib )

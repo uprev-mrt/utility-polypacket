@@ -1,9 +1,9 @@
 /**
-  *@file ${proto.fileName}.h
-  *@brief generated code for ${proto.name} packet service
+  *@file testService.h
+  *@brief generated code for test packet service
   *@author make_protocol.py
-  *@date ${proto.genTime}
-  *@hash ${proto.hash}
+  *@date 03/25/19
+  *@hash 23DC4AD9
   */
 
 /***********************************************************
@@ -11,67 +11,39 @@
 ***********************************************************/
 #include "Utilities/PolyPacket/poly_service.h"
 
-#define ${proto.prefix.upper()}_SERVICE_HASH 0x${proto.hash}
+#define TP_SERVICE_HASH 0x23DC4AD9
 
 /*******************************************************************************
   Enums
 *******************************************************************************/
-% for field in proto.fields:
-% if field.isEnum:
-/* Enums for ${field.name} field */
+/* Enums for cmd field */
 typedef enum{
-  % for val in field.vals:
-  ${proto.prefix.upper()+"_"+field.name.upper() + "_" + val.name.upper()},              /* ${val.desc} */
-  % endfor
-  ${proto.prefix.upper()+"_"+field.name.upper()}_MAX_LIMIT
-} ${proto.prefix}_${field.name.lower()}_e;
-%if proto.snippets:
-//Switch Snippet
-/*
-switch(${field.name.lower()})
-{
-% for val in field.vals:
-  case ${proto.prefix.upper()+"_"+field.name.upper() + "_" + val.name.upper()}:    // ${val.desc}
-    break;
-% endfor
-  default:
-    break;
-}
-*/
-% endif
+  TP_CMD_LED_ON,              /* turns on led */
+  TP_CMD_LED_OFF,              /* turns off led */
+  TP_CMD_RESET,              /* resets the device */
+  TP_CMD_MAX_LIMIT
+} tp_cmd_e;
 
-% endif
-% endfor
 
 /*******************************************************************************
   Bits/Flags
 *******************************************************************************/
-% for field in proto.fields:
-% if field.isMask:
-/* Flags for ${field.name} field */
-typedef enum{
-  % for idx,val in enumerate(field.vals):
-  ${proto.prefix.upper()+"_"+field.name.upper() + "_" + val.name.upper()} = ${ field.valsFormat % (1 << idx)},    /* ${val.desc} */
-  % endfor
-  ${proto.prefix.upper()+"_"+field.name.upper()}_MAX_LIMIT
-} ${proto.prefix}_${field.name.lower()}_e;
-
-% endif
-% endfor
 
 /*******************************************************************************
   Global Descriptors
 *******************************************************************************/
 //Declare extern packet descriptors
-% for packet in proto.packets:
-extern poly_packet_desc_t* ${packet.globalName};
-% endfor
+extern poly_packet_desc_t* TP_PACKET_ACK;
+extern poly_packet_desc_t* TP_PACKET_SENDCMD;
+extern poly_packet_desc_t* TP_PACKET_GETDATA;
+extern poly_packet_desc_t* TP_PACKET_DATA;
 
 
 //Declare extern field descriptors
-% for field in proto.fields:
-extern poly_field_desc_t* ${field.globalName};
-% endfor
+extern poly_field_desc_t* TP_FIELD_CMD;
+extern poly_field_desc_t* TP_FIELD_SENSORA;
+extern poly_field_desc_t* TP_FIELD_SENSORB;
+extern poly_field_desc_t* TP_FIELD_SENSORNAME;
 
 /*@brief The main type dealt with by the user
  *@note just wraps a poly_packet to prevent mixing them when multiple protocol are in use
@@ -80,7 +52,7 @@ typedef struct{
   poly_packet_t mPacket;    //internal packet structure
   bool mSpooled;            //spooled data doesnt get cleaned, the spool owns it now
   bool mBuilt;
-}${proto.prefix}_packet_t;
+}tp_packet_t;
 
 
 /*******************************************************************************
@@ -90,26 +62,26 @@ typedef struct{
   *@brief initializes protocol service
   *@param ifaces number of interfaces to use
   */
-void ${proto.prefix}_service_init(int interfaceCount);
+void tp_service_init(int interfaceCount);
 
 /**
   *@brief tears down service
   *@note probably not needed based on lifecycle of service
   *@ but useful for detecting memory leaks
   */
-void ${proto.prefix}_service_teardown();
+void tp_service_teardown();
 
 /**
   *@brief processes data in buffers
   */
-void ${proto.prefix}_service_process();
+void tp_service_process();
 
 /**
   *@brief registers a callback to let the service know how to send bytes for a given interface
   *@param iface index of interface to register with
   *@param txCallBack a function pointer for the callback
   */
-void ${proto.prefix}_service_register_tx( int iface, poly_tx_callback txCallBack);
+void tp_service_register_tx( int iface, poly_tx_callback txCallBack);
 
 /**
   *@brief 'Feeds' bytes to service at given interface for processing
@@ -117,20 +89,20 @@ void ${proto.prefix}_service_register_tx( int iface, poly_tx_callback txCallBack
   *@param data data to be processed
   *@param number of bytes
   */
-void ${proto.prefix}_service_feed(int iface, uint8_t* data, int len);
+void tp_service_feed(int iface, uint8_t* data, int len);
 
 /**
   *@brief sends packet over given interface
   *@param packet packet to be sent
   *@param iface index of interface to send on
   */
-HandlerStatus_e ${proto.prefix}_send( int iface, ${proto.prefix}_packet_t* packet);
+HandlerStatus_e tp_send( int iface, tp_packet_t* packet);
 
 /**
   *@brief enables/disables the auto acknowledgement function of the service
   *@param enable true enable auto acks, false disables them
   */
-void ${proto.prefix}_auto_ack(bool enable);
+void tp_auto_ack(bool enable);
 
 
 /*******************************************************************************
@@ -141,14 +113,14 @@ void ${proto.prefix}_auto_ack(bool enable);
   *@brief initializes a new {proto.prefix}_packet_t
   *@param desc ptr to packet descriptor to model packet from
   */
-void ${proto.prefix}_packet_build(${proto.prefix}_packet_t* packet, poly_packet_desc_t* desc);
+void tp_packet_build(tp_packet_t* packet, poly_packet_desc_t* desc);
 
 
 /**
   *@brief recrusively cleans packet and its contents if it still has ownership
   *@param packet packet to clean
   */
-void ${proto.prefix}_clean(${proto.prefix}_packet_t* packet);
+void tp_clean(tp_packet_t* packet);
 
 /**
   *@brief converts packet to json
@@ -156,7 +128,7 @@ void ${proto.prefix}_clean(${proto.prefix}_packet_t* packet);
   *@param buf buffer to store string
   *@return length of string
   */
-#define ${proto.prefix}_print_json(packet,buf) poly_packet_print_json(&(packet)->mPacket, buf, false)
+#define tp_print_json(packet,buf) poly_packet_print_json(&(packet)->mPacket, buf, false)
 
 /**
   *@brief parses packet from a buffer of data
@@ -164,7 +136,7 @@ void ${proto.prefix}_clean(${proto.prefix}_packet_t* packet);
   *@param buf buffer to parse
   *@return status of parse attempt
   */
-#define ${proto.prefix}_parse(packet,buf,len) poly_packet_parse_buffer(&(packet)->mPacket, buf, len)
+#define tp_parse(packet,buf,len) poly_packet_parse_buffer(&(packet)->mPacket, buf, len)
 
 
 /**
@@ -173,33 +145,31 @@ void ${proto.prefix}_clean(${proto.prefix}_packet_t* packet);
   *@param buf buffer to store data
   *@return length of packed data
   */
-#define ${proto.prefix}_pack(packet, buf) poly_packet_pack(&(packet)->mPacket, buf)
+#define tp_pack(packet, buf) poly_packet_pack(&(packet)->mPacket, buf)
 
 /**
   *@brief gets the length of a give field in a packet
-  *@param packet ptr to ${proto.prefix}_packet_t
+  *@param packet ptr to tp_packet_t
   *@param field ptr to field descriptor
   *@return size of field
   */
-int ${proto.prefix}_fieldLen(${proto.prefix}_packet_t* packet, poly_field_desc_t* fieldDesc );
+int tp_fieldLen(tp_packet_t* packet, poly_field_desc_t* fieldDesc );
 
 /*******************************************************************************
   Meta-Packet setters
 *******************************************************************************/
-% for field in proto.fields:
-  %if field.isArray:
-void ${proto.prefix}_set${field.camel()}(${proto.prefix}_packet_t* packet, const ${field.getParamType()} val);
-  % else:
-void ${proto.prefix}_set${field.camel()}(${proto.prefix}_packet_t* packet, ${field.getParamType()} val);
-  % endif
-% endfor
+void tp_setCmd(tp_packet_t* packet, uint8_t val);
+void tp_setSensorA(tp_packet_t* packet, int16_t val);
+void tp_setSensorB(tp_packet_t* packet, int val);
+void tp_setSensorName(tp_packet_t* packet, const char* val);
 
 /*******************************************************************************
   Meta-Packet getters
 *******************************************************************************/
-% for field in proto.fields:
-${field.getParamType()} ${proto.prefix}_get${field.camel()}(${proto.prefix}_packet_t* packet);
-% endfor
+uint8_t tp_getCmd(tp_packet_t* packet);
+int16_t tp_getSensorA(tp_packet_t* packet);
+int tp_getSensorB(tp_packet_t* packet);
+char* tp_getSensorName(tp_packet_t* packet);
 
 /*******************************************************************************
   Quick send functions
@@ -207,41 +177,25 @@ ${field.getParamType()} ${proto.prefix}_get${field.camel()}(${proto.prefix}_pack
   These are convenience one-liner functions for sending messages.
   They also handle their own clean up and are less bug prone than building your own packets
 *******************************************************************************/
-
-/**
-  *@brief Sends a ping
-  *@param iface interface to ping
-  *@note a ping is just an ACK without the ack flag set in the token
-  */
-HandlerStatus_e ${proto.prefix}_sendPing(int iface);
-
-% for packet in proto.packets:
-%if not packet.standard:
-HandlerStatus_e ${proto.prefix}_send${packet.camel()}(int iface\
-  %for idx,field in enumerate(packet.fields):
-,\
-  %if field.isArray:
- const ${field.getParamType()} ${field.name}\
-  %else:
- ${field.getParamType()} ${field.name}\
-  %endif
-  %endfor
-);
-%endif
-% endfor
+HandlerStatus_e tp_sendAck(int iface);
+HandlerStatus_e tp_sendSendCmd(int iface, uint8_t cmd);
+HandlerStatus_e tp_sendGetData(int iface);
+HandlerStatus_e tp_sendData(int iface, int16_t sensorA, int sensorB, const char* sensorName);
 
 /*******************************************************************************
   Packet Handlers
 *******************************************************************************/
-% for packet in proto.packets:
-%if packet.hasResponse:
-/*@brief Handler for ${packet.name} packets */
-HandlerStatus_e ${proto.prefix}_${packet.camel()}_handler(${proto.prefix}_packet_t* ${proto.prefix}_${packet.name}, ${proto.prefix}_packet_t* ${proto.prefix}_${packet.response.name});
-%else:
-/*@brief Handler for ${packet.name} packets */
-HandlerStatus_e ${proto.prefix}_${packet.camel()}_handler(${proto.prefix}_packet_t* ${proto.prefix}_${packet.name});
-%endif
+/*@brief Handler for ack packets */
+HandlerStatus_e tp_Ack_handler(tp_packet_t* tp_ack);
 
-% endfor
+/*@brief Handler for SendCmd packets */
+HandlerStatus_e tp_SendCmd_handler(tp_packet_t* tp_SendCmd);
+
+/*@brief Handler for GetData packets */
+HandlerStatus_e tp_GetData_handler(tp_packet_t* tp_GetData, tp_packet_t* tp_Data);
+
+/*@brief Handler for Data packets */
+HandlerStatus_e tp_Data_handler(tp_packet_t* tp_Data);
+
 /*@brief Catch-All Handler for unhandled packets */
-HandlerStatus_e ${proto.prefix}_default_handler(${proto.prefix}_packet_t * ${proto.prefix}_packet);
+HandlerStatus_e tp_default_handler(tp_packet_t * tp_packet);

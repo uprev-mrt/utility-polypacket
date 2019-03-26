@@ -117,14 +117,12 @@ void ${proto.prefix}_service_process()
     //Dispatch packet
     switch(packet.mPacket.mDesc->mTypeId)
     {
+      case ${proto.prefix.upper()}_PACKET_PING_ID:
+        ${proto.prefix}_packet_build(&response, ${proto.prefix.upper()}_PACKET_ACK);
+        status = ${proto.prefix}_Ping_handler(&packet, &response);
+        break;
       case ${proto.prefix.upper()}_PACKET_ACK_ID:
-        // If the Ack flag is set, this is an ack, its already registered with the spool so we ignore it
-        //If the Ack flag is not set, its a ping. respond with an ack
-        if(!(packet.mPacket.mHeader.mToken & POLY_ACK_FLAG))
-        {
-          fp_packet_build(&response, ${proto.prefix.upper()}_PACKET_ACK);
-        }
-        status= PACKET_HANDLED;
+        status = ${proto.prefix}_Ack_handler(&packet);
         break;
   % for packet in proto.packets:
   % if not packet.standard:
@@ -313,17 +311,13 @@ ${field.getParamType()} ${proto.prefix}_get${field.camel()}(${proto.prefix}_pack
 /*******************************************************************************
   Quick send functions
 *******************************************************************************/
-/**
-  *@brief Sends a ping
-  *@param iface interface to ping
-  *@note a ping is just an ACK without the ack flag set in the token
-  */
+
 HandlerStatus_e ${proto.prefix}_sendPing(int iface)
 {
   HandlerStatus_e status;
   //create packet
   ${proto.prefix}_packet_t packet;
-  ${proto.prefix}_packet_build(&packet, ${proto.prefix.upper()}_PACKET_ACK);
+  ${proto.prefix}_packet_build(&packet, ${proto.prefix.upper()}_PACKET_PING);
 
   status = ${proto.prefix}_send(iface,&packet); //send packet
   ${proto.prefix}_clean(&packet); //This will only free the underlying packet if the spooling was unsuccessful
@@ -378,6 +372,28 @@ HandlerStatus_e ${proto.prefix}_send${packet.camel()}(int iface\
 
   Do not modify these, just create your own without the '__weak' attribute
 *******************************************************************************/
+/**
+  *@brief Handler for receiving ping packets
+  *@param ${proto.prefix}_ping ptr to incoming ping packet
+  *@param ${proto.prefix}_ack ptr to repsonding ack
+  *@return PACKET_HANDLED
+  */
+__attribute__((weak)) HandlerStatus_e ${proto.prefix}_Ping_handler(${proto.prefix}_packet_t* ${proto.prefix}_ping, ${proto.prefix}_packet_t* ${proto.prefix}_ack)
+{
+  /* Ack token has already been set as ping token with POLY_ACK_FLAG*/
+  return PACKET_HANDLED;
+}
+
+/**
+  *@brief Handler for receiving ack packets
+  *@param ${proto.prefix}_ack ptr to ack
+  *@return PACKET_HANDLED
+  */
+__attribute__((weak)) HandlerStatus_e ${proto.prefix}_Ack_handler(${proto.prefix}_packet_t* ${proto.prefix}_ack)
+{
+  return PACKET_HANDLED;
+}
+
 % for packet in proto.packets:
 %if not packet.standard:
 %if not packet.hasResponse:
@@ -400,14 +416,14 @@ __attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.camel()}_handler(
   /*  Get Required Fields in packet */
 % for field in packet.fields:
 %if field.isRequired:
-  //${field.getParamType()} ${field.name} = ${proto.prefix}_get${field.camel()}(${proto.prefix}_${packet.name});
+  //${field.getParamType()} ${field.name} = ${proto.prefix}_get${field.camel()}(${proto.prefix}_${packet.name}); //${field.desc}
 %endif
 % endfor
 %if packet.hasResponse:
   /*    Set required Fields in response  */
 % for field in packet.response.fields:
 %if field.isRequired:
-  //${proto.prefix}_set${field.camel()}(${proto.prefix}_${packet.response.name}, value );                   //Set ${field.name} value
+  //${proto.prefix}_set${field.camel()}(${proto.prefix}_${packet.response.name}, value );  //${field.desc}
 %endif
 %endfor
 %endif

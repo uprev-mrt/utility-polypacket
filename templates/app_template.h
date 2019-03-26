@@ -1,11 +1,14 @@
 /**
-  *@file app_${proto.name.lower()}.cpp
+  *@file app_${proto.name.lower()}.h
   *@brief generated protocol source code
   *@author make_protocol.py
   *@date ${proto.genTime}
   */
 
 #include "${proto.fileName}.h"
+%if not proto.genUtility:
+#include "Platforms/Common/mrt_platform.h"
+%endif
 
 
 /**
@@ -14,7 +17,7 @@
 %if proto.genUtility:
 void app_${proto.name.lower()}_init(const char* port, int baud);
 %else:
-void app_${proto.name.lower()}_init();
+void app_${proto.name.lower()}_init(mrt_uart_handle_t uart_handle);
 %endif
 
 /**

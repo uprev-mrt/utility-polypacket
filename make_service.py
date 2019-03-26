@@ -166,14 +166,10 @@ class fieldDesc:
 
     def getFieldDeclaration(self):
         output = io.StringIO()
-        output.write("{0} {1}".format(self.cType, self.memberName))
+        output.write("{0} field_{1}".format(self.cType, self.name))
         if(self.arrayLen > 1):
             output.write("["+str(self.arrayLen)+"]")
 
-        if(self.desc != ""):
-            output.write(";\t//"+self.desc +"")
-        else:
-            output.write(";")
         return output.getvalue()
 
     def getParamType(self):
@@ -181,6 +177,12 @@ class fieldDesc:
             return self.cType +"*"
         else:
             return self.cType;
+
+    def getFormat(self):
+        if self.isString:
+            return "%s"
+        else:
+            return "%i"
 
 class packetDesc:
     def __init__(self, name):
@@ -213,11 +215,12 @@ class packetDesc:
             self.response = self.protocol.getPacket(next(iter(self.requests.keys())))
 
 
-
     def getDocMd(self):
         output = io.StringIO()
-        output.write('### ' + self.name + '\n')
+        idHex = "%0.2X" % self.packetId
+        output.write('### '  + self.name + '\n')
         output.write(self.desc + '\n\n')
+        output.write('* Packet ID: *['+idHex+']*\n')
         requestCount = len(self.requests)
         respondsToCount = len(self.respondsTo)
 
@@ -234,91 +237,100 @@ class packetDesc:
             output.write('*\n\n')
 
         #write request packets
-        if(respondsToCount > 0):
-            output.write('* *Responds To: ')
-            first = True
-            for resp in self.respondsTo:
-                if(first):
-                    first = False
-                else:
-                    output.write(', ')
-                output.write(resp)
-            output.write('*\n\n')
+        if(self.name == 'Ack'):
+            output.write('* *Responds To: Any Packet without a defined response*\n\n')
+        else:
+            if(respondsToCount > 0):
+                output.write('* *Responds To: ')
+                first = True
+                for resp in self.respondsTo:
+                    if(first):
+                        first = False
+                    else:
+                        output.write(', ')
+                    output.write(resp)
+                output.write('*\n')
+
+        output.write('\n')
 
         rowBytes = io.StringIO()
         rowBorder = io.StringIO()
         rowFields = io.StringIO()
         rowTypes = io.StringIO()
 
-        rowBytes.write('|***Byte***|')
-        rowBorder.write('|---|')
-        rowFields.write('|***Field***')
-        rowTypes.write('|***Type***')
 
-        count =0
+        if(len(self.fields) > 0):
+            rowBytes.write('|***Byte***|')
+            rowBorder.write('|---|')
+            rowFields.write('|***Field***')
+            rowTypes.write('|***Type***')
 
-        for pfield in self.fields:
+            count =0
 
-            #write bytes
-            if(pfield.size > 4):
-                rowBytes.write(str(count)+'| . . . . . . . |'+str(count+pfield.size -1))
-                count+=pfield.size
-            else:
-                for x in range(pfield.size):
-                    rowBytes.write(str(count) + '|')
-                    count+=1
+            for pfield in self.fields:
 
-            #write border
-            span = pfield.size
-            if(span > 4):
-                span = 4
-            for x in range(span):
-                rowBorder.write('---|')
-
-            #write fields
-            span = pfield.size
-            if(span > 4):
-                span = 4
-            rowFields.write('<td colspan=\''+str(span)+'\'>')
-            if(pfield.isRequired):
-                rowFields.write('***'+pfield.name+'***')
-            else:
-                rowFields.write(pfield.name)
-
-            #write types
-            span = pfield.size
-            if(span > 4):
-                span = 4
-            rowTypes.write('<td colspan=\''+str(span)+'\'>')
-            rowTypes.write(pfield.cType)
-            if(pfield.isArray):
-                if(pfield.isVarLen):
-                    rowTypes.write('[0-'+ str(pfield.size)+' ]')
+                #write bytes
+                if(pfield.size > 4):
+                    rowBytes.write(str(count)+'| . . . . . . . |'+str(count+pfield.size -1))
+                    count+=pfield.size
                 else:
-                    rowTypes.write('['+str(pfield.size)+']')
+                    for x in range(pfield.size):
+                        rowBytes.write(str(count) + '|')
+                        count+=1
 
-        #combine rows for table
-        output.write(rowBytes.getvalue() + "\n");
-        output.write(rowBorder.getvalue() + "\n");
-        output.write(rowFields.getvalue() + "\n");
-        output.write(rowTypes.getvalue() + "\n");
+                #write border
+                span = pfield.size
+                if(span > 4):
+                    span = 4
+                for x in range(span):
+                    rowBorder.write('---|')
 
-        output.write('\n\n')
+                #write fields
+                span = pfield.size
+                if(span > 4):
+                    span = 4
+                rowFields.write('<td colspan=\''+str(span)+'\'>')
+                if(pfield.isRequired):
+                    rowFields.write('***'+pfield.name+'***')
+                else:
+                    rowFields.write(pfield.name)
 
-        #write field description table
-        for pfield in self.fields:
-            output.write('>***'+ pfield.name+'*** : ' + pfield.desc +'<br/>\n')
-            if pfield.isMask:
-                for idx,val in enumerate(pfield.vals):
-                    strVal = pfield.valsFormat % (1 << idx)
-                    output.write('>> **{0}** : {1} - {2}<br/>\n'.format(strVal, val.name, val.desc))
-                output.write('>\n')
+                #write types
+                span = pfield.size
+                if(span > 4):
+                    span = 4
+                rowTypes.write('<td colspan=\''+str(span)+'\'>')
+                rowTypes.write(pfield.cType)
+                if(pfield.isArray):
+                    if(pfield.isVarLen):
+                        rowTypes.write('[0-'+ str(pfield.size)+' ]')
+                    else:
+                        rowTypes.write('['+str(pfield.size)+']')
 
-            if pfield.isEnum:
-                for idx,val in enumerate(pfield.vals):
-                    strVal = pfield.valsFormat % (idx)
-                    output.write('>> **{0}** : {1} - {2}<br/>\n'.format(strVal, val.name, val.desc))
-                output.write('>\n')
+            #combine rows for table
+            output.write(rowBytes.getvalue() + "\n");
+            output.write(rowBorder.getvalue() + "\n");
+            output.write(rowFields.getvalue() + "\n");
+            output.write(rowTypes.getvalue() + "\n");
+
+            output.write('\n\n')
+            output.write('Fields:\n')
+            #write field description table
+            for pfield in self.fields:
+                output.write('>***'+ pfield.name+'*** : ' + pfield.desc +'<br/>\n')
+                if pfield.isMask:
+                    for idx,val in enumerate(pfield.vals):
+                        strVal = pfield.valsFormat % (1 << idx)
+                        output.write('>> **{0}** : {1} - {2}<br/>\n'.format(strVal, val.name, val.desc))
+                    output.write('>\n')
+
+                if pfield.isEnum:
+                    for idx,val in enumerate(pfield.vals):
+                        strVal = pfield.valsFormat % (idx)
+                        output.write('>> **{0}** : {1} - {2}<br/>\n'.format(strVal, val.name, val.desc))
+                    output.write('>\n')
+        else:
+            output.write('>This Packet type does not contain any data fields\n\n')
 
         output.write('\n------\n')
 
@@ -348,6 +360,7 @@ class protocolDesc:
         self.snippets = False
         self.genUtility = False
         self.scriptDir =""
+        self.xmlName =""
 
     def service(self):
         return self.prefix.upper() +'_SERVICE'
@@ -374,8 +387,16 @@ class protocolDesc:
 
 
 def addStandardPackets(protocol):
-    ack = packetDesc("ack")
+    ping = packetDesc("Ping")
+    ack = packetDesc("Ack")
+    ping.desc = "This message requests an Ack from a remote device to test connectivity"
+    ping.response = ack
+    ping.hasResponse = True
+    ping.requests['Ack'] =0
+    ack.desc ="Acknowledges any packet that does not have an explicit response"
+    ping.standard = True
     ack.standard = True
+    protocol.addPacket(ping)
     protocol.addPacket(ack)
 
 
@@ -389,6 +410,7 @@ def parseXML(xmlfile):
 
     # create empty list for Fields
     protocol = protocolDesc(root.attrib['name'])
+    protocol.xmlName = os.path.basename(xmlfile)
 
 
     if('desc' in root.attrib):
@@ -513,16 +535,16 @@ def genUtility(protocol, xmlFile, script_dir, path):
         os.makedirs(buildPath)
         os.makedirs(polyPath)
         os.makedirs(fifoPath)
-        os.system('cp '+ script_dir+'/poly_* '+ polyPath)
-        os.system('cp -r '+ script_dir+'/templates '+ polyPath)
-        os.system('cp '+ script_dir+'/make_service.py '+ polyPath)
-        os.system('cp '+ xmlFile +' '+ path)
-        os.system('cp '+ xmlPath + protocol.name+"_ICD.md "+ path)
-        os.system('cp '+ script_dir+'/CMakeLists.txt '+ polyPath)
-        os.system('cp '+ script_dir+'/linux_uart/linux_uart* '+ libPath)
-        os.system('cp '+ script_dir+'/../Fifo/fifo.h '+ fifoPath)
-        os.system('cp '+ script_dir+'/../Fifo/fifo.c '+ fifoPath)
-        os.system('cp '+ script_dir+'/../Fifo/CMakeLists.txt '+ fifoPath)
+    os.system('cp '+ script_dir+'/poly_* '+ polyPath)
+    os.system('cp -r '+ script_dir+'/templates '+ polyPath)
+    os.system('cp '+ script_dir+'/make_service.py '+ polyPath)
+    os.system('cp '+ xmlFile +' '+ path)
+    os.system('cp '+ xmlPath + protocol.name+"_ICD.md "+ path)
+    os.system('cp '+ script_dir+'/CMakeLists.txt '+ polyPath)
+    os.system('cp '+ script_dir+'/linux_uart/linux_uart* '+ libPath)
+    os.system('cp '+ script_dir+'/../Fifo/fifo.h '+ fifoPath)
+    os.system('cp '+ script_dir+'/../Fifo/fifo.c '+ fifoPath)
+    os.system('cp '+ script_dir+'/../Fifo/CMakeLists.txt '+ fifoPath)
 
 
     protocol.genUtility = True

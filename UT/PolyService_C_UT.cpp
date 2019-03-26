@@ -8,38 +8,48 @@ extern "C"{
 #include "../poly_field.c"
 #include "../poly_packet.c"
 #include "../poly_service.c"
+#include "../poly_spool.c"
 }
 #include "../example/SampleService.c"
 
 #include <gtest/gtest.h>
 
 
+uint8_t txBuf[512]; //buffer used to fake serial writes
 
-uint8_t buffer[1024];
-int len;
+//Function to mock uart_tx on mcu
+HandlerStatus_e mock_uart_send(uint8_t* data, int len)
+{
+  memcpy(txBuf,data,len);
+  return PACKET_SENT;
+}
 
-uint8_t compBuffer[] = {0x01, 0x00, 0x2C, 0x00, 0x00, 0x00, 0xBB, 0x10, 0xE0, 0xCD, 0xAB, 0xEF, 0xCD, 0xF4, 0x7E, 0xAD, 0xB7, 0x0D, 0x00, 0x20, 0x54, 0x68, 0x69, 0x73, 0x20, 0x69, 0x73, 0x20, 0x6D, 0x79, 0x20, 0x74, 0x65, 0x73, 0x74, 0x20, 0x73, 0x74, 0x72, 0x69, 0x6E, 0x67, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x2F, 0x68, 0x6F, 0x6D};
+/**
+  *@brief catch-all handler for any packet not handled by its default handler
+  *@param metaPacket ptr to tp_packet_t containing packet
+  *@return handling status
+  */
+HandlerStatus_e tp_default_handler( tp_packet_t * tp_packet)
+{
+
+  /* NOTE : This function should not be modified, when the callback is needed,
+          tp_default_handler  should be implemented in the user file
+  */
+
+  return PACKET_HANDLED;
+}
+
 
 TEST(PolyPacket_CTest, PackTest )
 {
-  ParseStatus_e status;
-  sp_service_init(1);
-  sp_packet_t* msg = new_sp_packet(PP_SETDATA_PACKET);
-  sp_packet_t* msgb = new_sp_packet(PP_SETDATA_PACKET);
+  tp_service_init(1); // initialize with 1 interface
 
-  sp_setSrc(msg,0xABCD );
-  sp_setDst(msg,0xCDEF);
-  sp_setSensora(msg,32500);
-  sp_setSensorb(msg,898989);
-  sp_setSensorname(msg, "This is my test string");
-
-  len = sp_pack(msg, buffer);
-
-  ASSERT_EQ(len,52);
-
-  status = sp_parse(msgb, buffer, len);
+  tp_packet_t msg;
+  tp_ppacket_init(&msg, )
 
 
+
+  tp_service_teardown();
 }
 
 //
