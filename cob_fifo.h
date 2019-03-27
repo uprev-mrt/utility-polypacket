@@ -104,7 +104,9 @@ cob_fifo_status_e cob_fifo_push_frame(cob_fifo_t* fifo, const uint8_t* data, int
 int cob_fifo_pop_frame(cob_fifo_t* fifo, uint8_t* data, int len);
 
 /**
-  *@brief finds the next zero
+  *@brief gets the length of th next frame (including delimiter) in the fifo
   *@param fifo ptr to the fifo
+  *@return length of encoded frame and delimiter
+  *@return zero if no frames are available
   */
-int cob_fifo_find_next_len(cob_fifo_t* fifo);
+int cob_fifo_get_next_len(cob_fifo_t* fifo);

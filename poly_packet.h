@@ -160,6 +160,14 @@ ParseStatus_e poly_packet_parse_buffer(poly_packet_t* packet, uint8_t* data, int
 int poly_packet_pack(poly_packet_t* packet, uint8_t* data);
 
 /**
+  *@brief packs data into byte array encoded in COB
+  *@param packet ptr to packet
+  *@pre data ptr to memory to store packed data
+  *@return length of packed data
+  */
+int poly_packet_pack_encoded(poly_packet_t* packet, uint8_t* data);
+
+/**
   *@brief prints json representation of packet to a buffer
   *@param packet ptr to packet
   *@param buf buffer to print to

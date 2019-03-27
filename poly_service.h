@@ -13,7 +13,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "Utilities/Fifo/fifo.h"
+#include "cob_fifo.h"
 #include "poly_packet.h"
 #include "poly_spool.h"
 
@@ -46,12 +46,8 @@ typedef HandlerStatus_e (*poly_tx_callback)(uint8_t* data , int len);
 
 typedef struct {
   /*    Incoming      */
-  bool mUpdate;                     //flag set when there is new data to process
-  fifo_t mBytefifo;                 //fifo of incoming bytes
-  uint8_t* mRaw;                    //raw packet being parsed
-  int mIdx;                         //index of cursor in raw message
+  cob_fifo_t mBytefifo;                 //fifo of incoming bytes
   poly_packet_hdr_t mCurrentHdr;    //header for current message candidate
-  ServiceParseState_e mParseState;  //state of current parsing
   /*    Outgoing      */
   poly_spool_t mOutSpool;           //ack/rety spool for outgoing messages
   poly_tx_callback f_TxCallBack;    //call back for writing bytes to interface
@@ -125,13 +121,6 @@ void poly_service_start(poly_service_t* pService, int fifoDepth);
   */
 void poly_service_feed(poly_service_t* pService, int interface, uint8_t* data, int len);
 
-/**
-  *@brief advances the idx in the interface buffer until the next valid header
-  *@param pService ptr to poly service
-  *@param iface ptr to interface
-  *@return true if header is found
-  */
-bool poly_service_seek_header(poly_service_t* pService, poly_interface_t* iface);
 
 /**
   *@brief parses packet from interface
@@ -143,7 +132,7 @@ bool poly_service_seek_header(poly_service_t* pService, poly_interface_t* iface)
   *@return PACKET_BAD_CHECKSUM if the checksum is incorrect (likely bit error)
   *@return PACKET_PARSING_ERROR if len is longer than it should be (likely missed a delimiter)
   */
-ParseStatus_e poly_service_try_parse_interface(poly_service_t* pService, poly_packet_t* packet,  int interface);
+ParseStatus_e poly_service_try_parse_interface(poly_service_t* pService, poly_packet_t* packet,  poly_interface_t* interface);
 
 /**
   *@brief parses packet from data buffer
@@ -161,13 +150,13 @@ ParseStatus_e poly_service_try_parse(poly_service_t* pService, poly_packet_t* pa
   *@param packet packet to add to spool
   *@return "Return of the function"
   */
-ParseStatus_e poly_service_spool(poly_service_t* pService, int interface,  poly_packet_t* packet);
+HandlerStatus_e poly_service_spool(poly_service_t* pService, int interface,  poly_packet_t* packet);
 
 /**
   *@brief grabs next available packet from spool and sends it
   *@param pService ptr to service
   */
-ParseStatus_e poly_service_despool(poly_service_t* pService);
+HandlerStatus_e poly_service_despool(poly_service_t* pService);
 
 
 

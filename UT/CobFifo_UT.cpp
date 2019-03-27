@@ -67,15 +67,19 @@ TEST(CobFifo_Test, multiframes )
 {
   cob_fifo_t cobFifo;
   int nextLen;
+  int decodedLen;
   cob_fifo_init(&cobFifo,128);
 
   cob_fifo_push_frame(&cobFifo, testFrame0, FRAME_0_LEN);  //encoding adds one byte
   cob_fifo_push_frame(&cobFifo, testFrame1, FRAME_1_LEN);
 
+  nextLen = cob_fifo_get_next_len(&cobFifo);
+  ASSERT_EQ(nextLen,FRAME_0_LEN +2 );
   ASSERT_EQ(cobFifo.mCount, FRAME_0_LEN + FRAME_1_LEN + 4); // 2 ohb + 2 delimiters
   ASSERT_EQ(cobFifo.mNextLen,FRAME_0_LEN+2);
 
-  cob_fifo_pop_frame(&cobFifo, testComp0, FRAME_0_LEN);
+  decodedLen = cob_fifo_pop_frame(&cobFifo, testComp0, FRAME_0_LEN);
+  ASSERT_EQ(decodedLen,FRAME_0_LEN);
 
   for(int i =0; i < FRAME_0_LEN; i++)
   {
@@ -90,7 +94,8 @@ TEST(CobFifo_Test, multiframes )
     ASSERT_EQ(testComp0[i],testFrame0[i]);
   }
 
-  cob_fifo_pop_frame(&cobFifo, testComp1, FRAME_1_LEN);
+  decodedLen = cob_fifo_pop_frame(&cobFifo, testComp1, FRAME_1_LEN);
+  ASSERT_EQ(decodedLen,FRAME_1_LEN);
 
   ASSERT_EQ(cobFifo.mCount, 0);
   ASSERT_EQ(cobFifo.mNextLen,0);

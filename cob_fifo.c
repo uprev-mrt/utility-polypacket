@@ -16,6 +16,13 @@
 #define COB_FIFO_LOCK //fifo->mLock =1//while(fifo->lock){delay_ms(1);} fifo->lock = 1
 #define COB_FIFO_UNLOCK //fifo->mLock = 0
 
+
+/**
+  *@brief finds the next zero
+  *@param fifo ptr to the fifo
+  */
+static int cob_fifo_find_next_len(cob_fifo_t* fifo);
+
 void cob_fifo_init(cob_fifo_t* fifo, int len)
 {
   fifo->mBuffer = (uint8_t*) malloc(len);
@@ -189,6 +196,7 @@ int cob_fifo_pop_frame(cob_fifo_t* fifo, uint8_t* data, int len)
     return 0;
 
   int encodedLen = fifo->mNextLen;
+
   uint8_t encoded[encodedLen];
 
   cob_fifo_pop_buf(fifo,encoded,encodedLen);
@@ -215,9 +223,10 @@ int cob_fifo_pop_frame(cob_fifo_t* fifo, uint8_t* data, int len)
 		}
 	}
 
+
   cob_fifo_find_next_len(fifo);
 
-	return dst - start;
+	return (dst - start) -1; //we dont include the delim in the length return
 }
 
 int cob_fifo_find_next_len(cob_fifo_t* fifo)
@@ -249,4 +258,12 @@ int cob_fifo_find_next_len(cob_fifo_t* fifo)
 
   COB_FIFO_UNLOCK;
   return i;
+}
+
+int cob_fifo_get_next_len(cob_fifo_t* fifo)
+{
+  COB_FIFO_LOCK;
+  int retVal = fifo->mNextLen;
+  COB_FIFO_UNLOCK;
+  return retVal;
 }

@@ -2,7 +2,7 @@
   *@file testService.h
   *@brief generated code for test packet service
   *@author make_protocol.py
-  *@date 03/25/19
+  *@date 03/27/19
   *@hash 23DC4AD9
   */
 
@@ -33,6 +33,7 @@ typedef enum{
   Global Descriptors
 *******************************************************************************/
 //Declare extern packet descriptors
+extern poly_packet_desc_t* TP_PACKET_PING;
 extern poly_packet_desc_t* TP_PACKET_ACK;
 extern poly_packet_desc_t* TP_PACKET_SENDCMD;
 extern poly_packet_desc_t* TP_PACKET_GETDATA;
@@ -177,7 +178,14 @@ char* tp_getSensorName(tp_packet_t* packet);
   These are convenience one-liner functions for sending messages.
   They also handle their own clean up and are less bug prone than building your own packets
 *******************************************************************************/
-HandlerStatus_e tp_sendAck(int iface);
+
+/**
+  *@brief Sends a ping
+  *@param iface interface to ping
+  *@note a ping is just an ACK without the ack flag set in the token
+  */
+HandlerStatus_e tp_sendPing(int iface);
+
 HandlerStatus_e tp_sendSendCmd(int iface, uint8_t cmd);
 HandlerStatus_e tp_sendGetData(int iface);
 HandlerStatus_e tp_sendData(int iface, int16_t sensorA, int sensorB, const char* sensorName);
@@ -185,8 +193,11 @@ HandlerStatus_e tp_sendData(int iface, int16_t sensorA, int sensorB, const char*
 /*******************************************************************************
   Packet Handlers
 *******************************************************************************/
-/*@brief Handler for ack packets */
-HandlerStatus_e tp_Ack_handler(tp_packet_t* tp_ack);
+/*@brief Handler for Ping packets */
+HandlerStatus_e tp_Ping_handler(tp_packet_t* tp_Ping, tp_packet_t* tp_Ack);
+
+/*@brief Handler for Ack packets */
+HandlerStatus_e tp_Ack_handler(tp_packet_t* tp_Ack);
 
 /*@brief Handler for SendCmd packets */
 HandlerStatus_e tp_SendCmd_handler(tp_packet_t* tp_SendCmd);
