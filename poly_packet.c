@@ -30,8 +30,12 @@ poly_packet_desc_t* poly_packet_desc_init(poly_packet_desc_t* desc, int id,  con
 poly_packet_desc_t* poly_packet_desc_deinit(poly_packet_desc_t* desc)
 {
   if(desc->mMaxFields > 0)
+  {
     free(desc->mFields);
     free(desc->mRequirementMap);
+  }
+  
+  return desc;
 }
 
 void poly_packet_desc_add_field(poly_packet_desc_t* desc, poly_field_desc_t* fieldDesc, bool required)

@@ -1,13 +1,13 @@
 # test ICD
 * Generated: 03/27/19<br/>
 * CRC: 23DC4AD9
+* Transport Encoding: (COBS) [Consistent Overhead ByteStuffing](https://en.wikipedia.org/wiki/Consistent_Overhead_Byte_Stuffing)
 
 ** This is a sample protocol used for unit testing the Poly Packet module **
 
-----
-
-## Header
 ---
+## Header
+
 All packets begin with a standard header:
 
 |***Byte***|0|1|2|3|4|5|6|

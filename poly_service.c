@@ -67,13 +67,17 @@ void poly_service_register_tx_callback(poly_service_t* pService, int interface, 
 
 void poly_service_start(poly_service_t* pService, int depth)
 {
-
+  int fifo_depth;
   //find max packet size
   for(int i=0; i < pService->mDescCount; i++)
   {
     if(pService->mPacketDescs[i]->mMaxPacketSize > pService->mMaxPacketSize)
       pService->mMaxPacketSize = pService->mPacketDescs[i]->mMaxPacketSize;
   }
+
+  //ensure fifo is on 8byte alignment
+  fifo_depth = (depth * pService->mMaxPacketSize)/8;
+  fifo_depth = fifo_depth *8;
 
   //initialize interfaces
   for(int i=0; i < pService->mInterfaceCount;i++)
@@ -84,7 +88,7 @@ void poly_service_start(poly_service_t* pService, int depth)
     pService->mInterfaces[i].f_TxCallBack = NULL;
 
     //set up buffers for incoming data
-    cob_fifo_init(&pService->mInterfaces[i].mBytefifo, depth);
+    cob_fifo_init(&pService->mInterfaces[i].mBytefifo, depth * pService->mMaxPacketSize );
 
     //set up spool for outgoing
     poly_spool_init(&pService->mInterfaces[i].mOutSpool, depth);

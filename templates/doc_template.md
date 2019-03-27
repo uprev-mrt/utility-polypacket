@@ -1,14 +1,14 @@
 # ${proto.name} ICD
 * Generated: ${proto.genTime}<br/>
 * CRC: ${proto.hash}
+* Transport Encoding: (COBS) [Consistent Overhead ByteStuffing](https://en.wikipedia.org/wiki/Consistent_Overhead_Byte_Stuffing)
 
 ** ${proto.desc} **
 
-----
-
+---
 #\
 # Header
----
+
 All packets begin with a standard header:
 
 |***Byte***|0|1|2|3|4|5|6|

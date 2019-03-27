@@ -76,7 +76,7 @@ void ${proto.prefix}_service_init(int interfaceCount)
   poly_service_register_desc(&${proto.service()}, ${packet.globalName});
 % endfor
 
-  poly_service_start(&${proto.service()}, 512);
+  poly_service_start(&${proto.service()}, 16);
 
 }
 
