@@ -54,9 +54,6 @@ typedef struct {
   /*    Diagnostic      */
   int mPacketsIn;     //Total number of incoming packets parsed
   int mPacketsOut;    //Total packets sent on on spool
-  int mRetries;       //total number of packet retries (no ack)
-  int mFailures;      //total number of packets that failed (hit max retries )
-  int mBitErrors;     //total number of bit errors (bad packet parse)
 }poly_interface_t;
 
 /**

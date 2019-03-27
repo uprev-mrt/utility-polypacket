@@ -150,7 +150,7 @@ uint8_t* poly_field_get(poly_field_t* field, uint8_t* data)
   return field->mData;
 }
 
-int poly_field_parse(poly_field_t* field, uint8_t* data)
+int poly_field_parse(poly_field_t* field, const uint8_t* data)
 {
   int idx =0;
 

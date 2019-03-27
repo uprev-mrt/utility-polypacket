@@ -13,11 +13,11 @@
 #include <assert.h>
 
 //Define packet IDs
-#define  TP_PACKET_PING_ID 0
-#define  TP_PACKET_ACK_ID 1
-#define  TP_PACKET_SENDCMD_ID 2
-#define  TP_PACKET_GETDATA_ID 3
-#define  TP_PACKET_DATA_ID 4
+#define TP_PACKET_PING_ID 0
+#define TP_PACKET_ACK_ID 1
+#define TP_PACKET_SENDCMD_ID 2
+#define TP_PACKET_GETDATA_ID 3
+#define TP_PACKET_DATA_ID 4
 
 
 //Global descriptors
@@ -60,11 +60,11 @@ void tp_service_init(int interfaceCount)
   poly_service_init(&TP_SERVICE,5, interfaceCount);
 
   //Build Packet Descriptors
-  TP_PACKET_PING = poly_packet_desc_init(&_TP_PACKET_PING ,"Ping", 0);
-  TP_PACKET_ACK = poly_packet_desc_init(&_TP_PACKET_ACK ,"Ack", 0);
-  TP_PACKET_SENDCMD = poly_packet_desc_init(&_TP_PACKET_SENDCMD ,"SendCmd", 1);
-  TP_PACKET_GETDATA = poly_packet_desc_init(&_TP_PACKET_GETDATA ,"GetData", 0);
-  TP_PACKET_DATA = poly_packet_desc_init(&_TP_PACKET_DATA ,"Data", 3);
+  TP_PACKET_PING = poly_packet_desc_init(&_TP_PACKET_PING ,TP_PACKET_PING_ID,"Ping", 0);
+  TP_PACKET_ACK = poly_packet_desc_init(&_TP_PACKET_ACK ,TP_PACKET_ACK_ID,"Ack", 0);
+  TP_PACKET_SENDCMD = poly_packet_desc_init(&_TP_PACKET_SENDCMD ,TP_PACKET_SENDCMD_ID,"SendCmd", 1);
+  TP_PACKET_GETDATA = poly_packet_desc_init(&_TP_PACKET_GETDATA ,TP_PACKET_GETDATA_ID,"GetData", 0);
+  TP_PACKET_DATA = poly_packet_desc_init(&_TP_PACKET_DATA ,TP_PACKET_DATA_ID,"Data", 3);
 
   //Build Field Descriptors
   TP_FIELD_CMD = poly_field_desc_init( &_TP_FIELD_CMD ,"cmd", TYPE_UINT8, 1, FORMAT_HEX);
@@ -519,20 +519,4 @@ __attribute__((weak)) HandlerStatus_e tp_Data_handler(tp_packet_t* tp_Data)
   /* NOTE : This function should not be modified! If needed,  It should be overridden in the application code */
 
   return PACKET_NOT_HANDLED;
-}
-
-
-/**
-  *@brief catch-all handler for any packet not handled by its default handler
-  *@param metaPacket ptr to tp_packet_t containing packet
-  *@return handling status
-  */
-__attribute__((weak)) HandlerStatus_e tp_default_handler( tp_packet_t * tp_packet)
-{
-
-  /* NOTE : This function should not be modified, when the callback is needed,
-          tp_default_handler  should be implemented in the user file
-  */
-
-  return PACKET_HANDLED;
 }

@@ -35,11 +35,9 @@ void poly_service_deinit(poly_service_t* service)
   //deinitialize interfaces
   for(int i=0; i < service->mInterfaceCount;i++)
   {
-    //set up buffers for incoming data
+
     cob_fifo_deinit(&service->mInterfaces[i].mBytefifo);
 
-
-    //set up spool for outgoing
     poly_spool_deinit(&service->mInterfaces[i].mOutSpool);
   }
 
@@ -53,7 +51,7 @@ void poly_service_register_desc(poly_service_t* pService, poly_packet_desc_t* pD
   assert(pService->mDescCount < pService->mMaxDescs);
 
   #if defined(POLY_PACKET_DEBUG_LVL) && POLY_PACKET_DEBUG_LVL > 1
-  printf("Packet Descriptor: %s  fieldCount: %d (%d optional) , manifestSize: %d , mMaxPacketSize: %d\n", pDesc->mName, pDesc->mFieldCount,pDesc->mOptionalFieldCount, pDesc->mManifestSize, pDesc->mMaxPacketSize );
+  printf("Packet Descriptor: %s [%d]  fieldCount: %d (%d optional) , manifestSize: %d , mMaxPacketSize: %d\n", pDesc->mName,pService->mDescCount, pDesc->mFieldCount,pDesc->mOptionalFieldCount, pDesc->mManifestSize, pDesc->mMaxPacketSize );
   #endif
 
   pService->mPacketDescs[pService->mDescCount++] = pDesc;
@@ -83,9 +81,6 @@ void poly_service_start(poly_service_t* pService, int depth)
     //reset diagnostic info
     pService->mInterfaces[i].mPacketsIn = 0;
     pService->mInterfaces[i].mPacketsOut = 0;
-    pService->mInterfaces[i].mRetries = 0;
-    pService->mInterfaces[i].mFailures = 0;
-    pService->mInterfaces[i].mBitErrors = 0;
     pService->mInterfaces[i].f_TxCallBack = NULL;
 
     //set up buffers for incoming data
@@ -120,16 +115,25 @@ ParseStatus_e poly_service_try_parse_interface(poly_service_t* pService, poly_pa
   int decodedLen;
   if(encodedLen > 0)
   {
+
     uint8_t frame[encodedLen];
     decodedLen = cob_fifo_pop_frame(&iface->mBytefifo,frame,encodedLen);
 
-    memcpy((uint8_t*)&iface->mCurrentHdr, frame, sizeof(poly_packet_hdr_t));
 
-    poly_packet_build(packet, pService->mPacketDescs[iface->mCurrentHdr.mTypeId],true);
 
-    poly_packet_parse_buffer(packet, frame, decodedLen );
+    if(decodedLen >= sizeof(poly_packet_hdr_t))
+    {
+      memcpy((uint8_t*)&iface->mCurrentHdr, frame, sizeof(poly_packet_hdr_t));
 
-    retVal = PACKET_VALID;
+      poly_packet_build(packet, pService->mPacketDescs[iface->mCurrentHdr.mTypeId],true);
+
+      retVal = poly_packet_parse_buffer(packet, frame, decodedLen );
+
+      //if the parse failed, clean the packet
+      if(retVal != PACKET_VALID)
+        poly_packet_clean(packet);
+    }
+
   }
 
 
