@@ -12,12 +12,10 @@
 char POLY_DEBUG_PRINTBUF[512];
 #endif
 
-poly_packet_desc_t* poly_packet_desc_init(poly_packet_desc_t* desc, const char* name, int maxFields)
+poly_packet_desc_t* poly_packet_desc_init(poly_packet_desc_t* desc, int id,  const char* name, int maxFields)
 {
-  static int id =0;
-
   //build out new packet descriptor
-  desc->mTypeId = id++;
+  desc->mTypeId = id;
   desc->mName = name;
   desc->mMaxFields = maxFields;
   desc->mFieldCount =0;
@@ -64,7 +62,7 @@ void poly_packet_desc_add_field(poly_packet_desc_t* desc, poly_field_desc_t* fie
 }
 
 
-void poly_packet_build(poly_packet_t* packet, poly_packet_desc_t* desc, bool allocate )
+void poly_packet_build(poly_packet_t* packet, const poly_packet_desc_t* desc, bool allocate )
 {
   packet->mDesc = desc;
   packet->mInterface = 0;
@@ -99,7 +97,7 @@ void poly_packet_clean(poly_packet_t* packet)
   packet->mBuilt = false;
 }
 
-poly_field_t* poly_packet_get_field(poly_packet_t* packet, poly_field_desc_t* desc)
+poly_field_t* poly_packet_get_field(poly_packet_t* packet, const poly_field_desc_t* desc)
 {
   for(int i=0; i < packet->mDesc->mFieldCount; i++ )
   {
@@ -126,13 +124,13 @@ int poly_packet_id(uint8_t* data, int len)
 }
 
 
-ParseStatus_e poly_packet_parse_buffer(poly_packet_t* packet, uint8_t* data, int len)
+ParseStatus_e poly_packet_parse_buffer(poly_packet_t* packet, const uint8_t* data, int len)
 {
   int idx=0;                //cursor in data
   int expectedLen =0;       //length indicated in header
   int manifestBit =0;        //bit offset for manifest
 
-  poly_packet_desc_t* desc = packet->mDesc;
+  const poly_packet_desc_t* desc = packet->mDesc;
 
   uint8_t manifestByte;         //current manifest byte
 
@@ -291,6 +289,45 @@ int poly_packet_pack(poly_packet_t* packet, uint8_t* data)
   memcpy((void*)&data[0], (void*)&packet->mHeader, sizeof(poly_packet_hdr_t));
 
   return idx;
+}
+
+int poly_packet_pack_encoded(poly_packet_t* packet, uint8_t* data)
+{
+
+  uint8_t decoded[packet->mDesc->mMaxPacketSize];
+  int decodedLen = poly_packet_pack(packet, decoded);
+
+  const uint8_t* ptr = decoded;
+  uint8_t* dst = data;
+  const uint8_t *start = dst, *end = ptr + decodedLen;
+	uint8_t code, *code_ptr; /* Where to insert the leading count */
+
+
+  //TODO optimize
+  code_ptr = dst++;
+  code = 1;
+	while (ptr < end)
+  {
+		if (code != 0xFF)
+    {
+			uint8_t c = *ptr++;
+			if (c != 0)
+      {
+				*dst++ = c;
+				code++;
+				continue;
+			}
+		}
+    *code_ptr = code;
+    code_ptr = dst++;
+    code = 1;
+
+	}
+  *code_ptr++ = code;
+  *dst++ = 0; //add delimiter
+
+
+  return (int)(dst-start);
 }
 
 int poly_packet_print_json(poly_packet_t* packet, char* buf, bool printHeader)

@@ -8,5 +8,5 @@ add_library(
   poly_field.c
   poly_service.c
   poly_spool.c
-  ../Fifo/fifo.c
+  cob_fifo.c
   )

@@ -2,7 +2,7 @@
   *@file testService.c
   *@brief generated code for test packet service
   *@author make_protocol.py
-  *@date 03/25/19
+  *@date 03/27/19
   */
 
 /***********************************************************
@@ -13,13 +13,15 @@
 #include <assert.h>
 
 //Define packet IDs
-#define  TP_PACKET_ACK_ID 0
-#define  TP_PACKET_SENDCMD_ID 1
-#define  TP_PACKET_GETDATA_ID 2
-#define  TP_PACKET_DATA_ID 3
+#define TP_PACKET_PING_ID 0
+#define TP_PACKET_ACK_ID 1
+#define TP_PACKET_SENDCMD_ID 2
+#define TP_PACKET_GETDATA_ID 3
+#define TP_PACKET_DATA_ID 4
 
 
 //Global descriptors
+poly_packet_desc_t* TP_PACKET_PING;
 poly_packet_desc_t* TP_PACKET_ACK;
 poly_packet_desc_t* TP_PACKET_SENDCMD;
 poly_packet_desc_t* TP_PACKET_GETDATA;
@@ -31,6 +33,7 @@ poly_field_desc_t* TP_FIELD_SENSORB;
 poly_field_desc_t* TP_FIELD_SENSORNAME;
 
 //Global descriptors
+poly_packet_desc_t _TP_PACKET_PING;
 poly_packet_desc_t _TP_PACKET_ACK;
 poly_packet_desc_t _TP_PACKET_SENDCMD;
 poly_packet_desc_t _TP_PACKET_GETDATA;
@@ -54,19 +57,21 @@ static poly_service_t TP_SERVICE;
 void tp_service_init(int interfaceCount)
 {
   //initialize core service
-  poly_service_init(&TP_SERVICE,4, interfaceCount);
+  poly_service_init(&TP_SERVICE,5, interfaceCount);
 
   //Build Packet Descriptors
-  TP_PACKET_ACK = poly_packet_desc_init(&_TP_PACKET_ACK ,"ack", 0);
-  TP_PACKET_SENDCMD = poly_packet_desc_init(&_TP_PACKET_SENDCMD ,"SendCmd", 1);
-  TP_PACKET_GETDATA = poly_packet_desc_init(&_TP_PACKET_GETDATA ,"GetData", 0);
-  TP_PACKET_DATA = poly_packet_desc_init(&_TP_PACKET_DATA ,"Data", 3);
+  TP_PACKET_PING = poly_packet_desc_init(&_TP_PACKET_PING ,TP_PACKET_PING_ID,"Ping", 0);
+  TP_PACKET_ACK = poly_packet_desc_init(&_TP_PACKET_ACK ,TP_PACKET_ACK_ID,"Ack", 0);
+  TP_PACKET_SENDCMD = poly_packet_desc_init(&_TP_PACKET_SENDCMD ,TP_PACKET_SENDCMD_ID,"SendCmd", 1);
+  TP_PACKET_GETDATA = poly_packet_desc_init(&_TP_PACKET_GETDATA ,TP_PACKET_GETDATA_ID,"GetData", 0);
+  TP_PACKET_DATA = poly_packet_desc_init(&_TP_PACKET_DATA ,TP_PACKET_DATA_ID,"Data", 3);
 
   //Build Field Descriptors
   TP_FIELD_CMD = poly_field_desc_init( &_TP_FIELD_CMD ,"cmd", TYPE_UINT8, 1, FORMAT_HEX);
   TP_FIELD_SENSORA = poly_field_desc_init( &_TP_FIELD_SENSORA ,"sensorA", TYPE_INT16, 1, FORMAT_DEC);
   TP_FIELD_SENSORB = poly_field_desc_init( &_TP_FIELD_SENSORB ,"sensorB", TYPE_INT, 1, FORMAT_DEC);
   TP_FIELD_SENSORNAME = poly_field_desc_init( &_TP_FIELD_SENSORNAME ,"sensorName", TYPE_STRING, 32, FORMAT_ASCII);
+
 
 
   //Setting Field Descriptors for SendCmd
@@ -80,6 +85,7 @@ void tp_service_init(int interfaceCount)
 
 
   //Register packet descriptors with the service
+  poly_service_register_desc(&TP_SERVICE, TP_PACKET_PING);
   poly_service_register_desc(&TP_SERVICE, TP_PACKET_ACK);
   poly_service_register_desc(&TP_SERVICE, TP_PACKET_SENDCMD);
   poly_service_register_desc(&TP_SERVICE, TP_PACKET_GETDATA);
@@ -93,6 +99,7 @@ void tp_service_init(int interfaceCount)
 void tp_service_teardown()
 {
   //deinit Packet Descriptors
+  TP_PACKET_PING = poly_packet_desc_deinit(&_TP_PACKET_PING);
   TP_PACKET_ACK = poly_packet_desc_deinit(&_TP_PACKET_ACK);
   TP_PACKET_SENDCMD = poly_packet_desc_deinit(&_TP_PACKET_SENDCMD);
   TP_PACKET_GETDATA = poly_packet_desc_deinit(&_TP_PACKET_GETDATA);
@@ -127,14 +134,12 @@ void tp_service_process()
     //Dispatch packet
     switch(packet.mPacket.mDesc->mTypeId)
     {
+      case TP_PACKET_PING_ID:
+        tp_packet_build(&response, TP_PACKET_ACK);
+        status = tp_Ping_handler(&packet, &response);
+        break;
       case TP_PACKET_ACK_ID:
-        // If the Ack flag is set, this is an ack, its already registered with the spool so we ignore it
-        //If the Ack flag is not set, its a ping. respond with an ack
-        if(!(packet.mPacket.mHeader.mToken & POLY_ACK_FLAG))
-        {
-          fp_packet_build(&response, TP_PACKET_ACK);
-        }
-        status= PACKET_HANDLED;
+        status = tp_Ack_handler(&packet);
         break;
       case TP_PACKET_SENDCMD_ID:
         status = tp_SendCmd_handler(&packet);
@@ -364,17 +369,13 @@ char* tp_getSensorName(tp_packet_t* packet)
 /*******************************************************************************
   Quick send functions
 *******************************************************************************/
-/**
-  *@brief Sends a ping
-  *@param iface interface to ping
-  *@note a ping is just an ACK without the ack flag set in the token
-  */
+
 HandlerStatus_e tp_sendPing(int iface)
 {
   HandlerStatus_e status;
   //create packet
   tp_packet_t packet;
-  tp_packet_build(&packet, TP_PACKET_ACK);
+  tp_packet_build(&packet, TP_PACKET_PING);
 
   status = tp_send(iface,&packet); //send packet
   tp_clean(&packet); //This will only free the underlying packet if the spooling was unsuccessful
@@ -451,6 +452,28 @@ HandlerStatus_e tp_sendData(int iface, int16_t sensorA, int sensorB, const char*
   Do not modify these, just create your own without the '__weak' attribute
 *******************************************************************************/
 /**
+  *@brief Handler for receiving ping packets
+  *@param tp_ping ptr to incoming ping packet
+  *@param tp_ack ptr to repsonding ack
+  *@return PACKET_HANDLED
+  */
+__attribute__((weak)) HandlerStatus_e tp_Ping_handler(tp_packet_t* tp_ping, tp_packet_t* tp_ack)
+{
+  /* Ack token has already been set as ping token with POLY_ACK_FLAG*/
+  return PACKET_HANDLED;
+}
+
+/**
+  *@brief Handler for receiving ack packets
+  *@param tp_ack ptr to ack
+  *@return PACKET_HANDLED
+  */
+__attribute__((weak)) HandlerStatus_e tp_Ack_handler(tp_packet_t* tp_ack)
+{
+  return PACKET_HANDLED;
+}
+
+/**
   *@brief Handler for receiving SendCmd packets
   *@param SendCmd incoming SendCmd packet
   *@return handling status
@@ -458,7 +481,7 @@ HandlerStatus_e tp_sendData(int iface, int16_t sensorA, int sensorB, const char*
 __attribute__((weak)) HandlerStatus_e tp_SendCmd_handler(tp_packet_t* tp_SendCmd)
 {
   /*  Get Required Fields in packet */
-  //uint8_t cmd = tp_getCmd(tp_SendCmd);
+  //uint8_t cmd = tp_getCmd(tp_SendCmd); //
 
 
   /* NOTE : This function should not be modified! If needed,  It should be overridden in the application code */
@@ -494,22 +517,6 @@ __attribute__((weak)) HandlerStatus_e tp_Data_handler(tp_packet_t* tp_Data)
 
 
   /* NOTE : This function should not be modified! If needed,  It should be overridden in the application code */
-
-  return PACKET_NOT_HANDLED;
-}
-
-
-/**
-  *@brief catch-all handler for any packet not handled by its default handler
-  *@param metaPacket ptr to tp_packet_t containing packet
-  *@return handling status
-  */
-__attribute__((weak)) HandlerStatus_e tp_default_handler( tp_packet_t * tp_packet)
-{
-
-  /* NOTE : This function should not be modified, when the callback is needed,
-          tp_default_handler  should be implemented in the user file
-  */
 
   return PACKET_NOT_HANDLED;
 }

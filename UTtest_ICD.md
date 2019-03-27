@@ -1,10 +1,14 @@
-# test
-* Generated: 03/25/19<br/>
+# test ICD
+* Generated: 03/27/19<br/>
 * CRC: 23DC4AD9
 
------
+** This is a sample protocol used for unit testing the Poly Packet module **
 
-Every Packet has a standard Header before the data
+----
+
+## Header
+---
+All packets begin with a standard header:
 
 |***Byte***|0|1|2|3|4|5|6|
 |---|---|---|---|---|---|---|---|
@@ -12,15 +16,47 @@ Every Packet has a standard Header before the data
 |***Type***<td colspan='1'>uint8<td colspan='2'>uint16<td colspan='2'>uint16<td colspan='2'>uint16
 
 >***Id*** : The ID used to identify the type of packet, packet Ids are assigned and managed automatically<br/>
->***Len*** : This is the len of the packet data, this does not include the header and checksum<br/>
->***Token*** : A unique randomly generated token. Each packet is tokenized to provide functions like ack/retry and preventing duplicates <br/>
+>***Len*** : This is the number of data bytes in the packet data, this does not include the header<br/>
+>***Token*** : A randomly generated token. Each packet is tokenized to provide functions like ack/retry and preventing duplicates <br/>
 >***Checksum*** : A calculated checksum of the data in the packet
 ----
 # Packet Types:
 
 
+### Ping
+This message requests an Ack from a remote device to test connectivity
+
+* Packet ID: *[00]*
+* *Requests: Ack*
+
+
+>This Packet type does not contain any data fields
+
+
+------
+
+
+
+
+### Ack
+Acknowledges any packet that does not have an explicit response
+
+* Packet ID: *[01]*
+* *Responds To: Any Packet without a defined response*
+
+
+>This Packet type does not contain any data fields
+
+
+------
+
+
+
+
 ### SendCmd
 Message to set command in node
+
+* Packet ID: *[02]*
 
 |***Byte***|0|
 |---|---|
@@ -28,6 +64,7 @@ Message to set command in node
 |***Type***<td colspan='1'>uint8_t
 
 
+Fields:
 >***cmd*** : <br/>
 >> **0x00** : LED_ON - turns on led<br/>
 >> **0x01** : LED_OFF - turns off led<br/>
@@ -38,9 +75,26 @@ Message to set command in node
 
 
 
+
+### GetData
+
+
+* Packet ID: *[03]*
+* *Requests: Data*
+
+
+>This Packet type does not contain any data fields
+
+
+------
+
+
+
+
 ### Data
 Message containing data from sensor
 
+* Packet ID: *[04]*
 * *Responds To: GetData*
 
 |***Byte***|0|1|2|3|4|5|6| . . . . . . . |37
@@ -49,9 +103,11 @@ Message containing data from sensor
 |***Type***<td colspan='2'>int16_t<td colspan='4'>int<td colspan='4'>char[32]
 
 
+Fields:
 >***sensorA*** : Value of Sensor A<br/>
 >***sensorB*** : Value of Sensor B<br/>
 >***sensorName*** : Name of sensor responding to message <br/>
 
 ------
+
 

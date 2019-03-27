@@ -525,7 +525,6 @@ def genUtility(protocol, xmlFile, script_dir, path):
     libPath = path +"src/lib/"
     buildPath = path+"build/"
     polyPath = path+"MrT/Modules/Utilities/PolyPacket"
-    fifoPath = path+"MrT/Modules/Utilities/Fifo"
     xmlPath = os.path.dirname(xmlFile)
 
     if not os.path.isdir(path):
@@ -534,7 +533,6 @@ def genUtility(protocol, xmlFile, script_dir, path):
         os.makedirs(libPath)
         os.makedirs(buildPath)
         os.makedirs(polyPath)
-        os.makedirs(fifoPath)
     os.system('cp '+ script_dir+'/poly_* '+ polyPath)
     os.system('cp -r '+ script_dir+'/templates '+ polyPath)
     os.system('cp '+ script_dir+'/make_service.py '+ polyPath)
@@ -542,9 +540,7 @@ def genUtility(protocol, xmlFile, script_dir, path):
     os.system('cp '+ xmlPath + protocol.name+"_ICD.md "+ path)
     os.system('cp '+ script_dir+'/CMakeLists.txt '+ polyPath)
     os.system('cp '+ script_dir+'/linux_uart/linux_uart* '+ libPath)
-    os.system('cp '+ script_dir+'/../Fifo/fifo.h '+ fifoPath)
-    os.system('cp '+ script_dir+'/../Fifo/fifo.c '+ fifoPath)
-    os.system('cp '+ script_dir+'/../Fifo/CMakeLists.txt '+ fifoPath)
+
 
 
     protocol.genUtility = True

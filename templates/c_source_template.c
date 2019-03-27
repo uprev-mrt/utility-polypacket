@@ -14,7 +14,7 @@
 
 //Define packet IDs
 % for packet in proto.packets:
-#define ${} ${packet.globalName}_ID ${packet.packetId}
+#define ${packet.globalName}_ID ${packet.packetId}
 % endfor
 
 
@@ -53,7 +53,7 @@ void ${proto.prefix}_service_init(int interfaceCount)
 
   //Build Packet Descriptors
 % for packet in proto.packets:
-  ${packet.globalName} = poly_packet_desc_init(&_${packet.globalName} ,"${packet.name}", ${len(packet.fields)});
+  ${packet.globalName} = poly_packet_desc_init(&_${packet.globalName} ,${packet.globalName}_ID,"${packet.name}", ${len(packet.fields)});
 % endfor
 
   //Build Field Descriptors

@@ -35,12 +35,9 @@ void poly_service_deinit(poly_service_t* service)
   //deinitialize interfaces
   for(int i=0; i < service->mInterfaceCount;i++)
   {
-    //set up buffers for incoming data
-    fifo_deinit(&service->mInterfaces[i].mBytefifo);
 
-    free(service->mInterfaces[i].mRaw);
+    cob_fifo_deinit(&service->mInterfaces[i].mBytefifo);
 
-    //set up spool for outgoing
     poly_spool_deinit(&service->mInterfaces[i].mOutSpool);
   }
 
@@ -54,7 +51,7 @@ void poly_service_register_desc(poly_service_t* pService, poly_packet_desc_t* pD
   assert(pService->mDescCount < pService->mMaxDescs);
 
   #if defined(POLY_PACKET_DEBUG_LVL) && POLY_PACKET_DEBUG_LVL > 1
-  printf("Packet Descriptor: %s  fieldCount: %d (%d optional) , manifestSize: %d , mMaxPacketSize: %d\n", pDesc->mName, pDesc->mFieldCount,pDesc->mOptionalFieldCount, pDesc->mManifestSize, pDesc->mMaxPacketSize );
+  printf("Packet Descriptor: %s [%d]  fieldCount: %d (%d optional) , manifestSize: %d , mMaxPacketSize: %d\n", pDesc->mName,pService->mDescCount, pDesc->mFieldCount,pDesc->mOptionalFieldCount, pDesc->mManifestSize, pDesc->mMaxPacketSize );
   #endif
 
   pService->mPacketDescs[pService->mDescCount++] = pDesc;
@@ -84,15 +81,10 @@ void poly_service_start(poly_service_t* pService, int depth)
     //reset diagnostic info
     pService->mInterfaces[i].mPacketsIn = 0;
     pService->mInterfaces[i].mPacketsOut = 0;
-    pService->mInterfaces[i].mRetries = 0;
-    pService->mInterfaces[i].mFailures = 0;
-    pService->mInterfaces[i].mBitErrors = 0;
     pService->mInterfaces[i].f_TxCallBack = NULL;
 
     //set up buffers for incoming data
-    fifo_init(&pService->mInterfaces[i].mBytefifo, depth, sizeof(uint8_t));
-    pService->mInterfaces[i].mParseState= STATE_WAITING_FOR_HEADER;
-    pService->mInterfaces[i].mRaw = (uint8_t*) malloc(pService->mMaxPacketSize);
+    cob_fifo_init(&pService->mInterfaces[i].mBytefifo, depth);
 
     //set up spool for outgoing
     poly_spool_init(&pService->mInterfaces[i].mOutSpool, depth);
@@ -110,96 +102,40 @@ void poly_service_feed(poly_service_t* pService, int interface, uint8_t* data, i
 
   poly_interface_t* iface = &pService->mInterfaces[interface];
 
-  fifo_push_buf(&iface->mBytefifo, data, len);
+
+  cob_fifo_push_buf(&iface->mBytefifo, data, len);
 }
 
-bool poly_service_seek_header(poly_service_t* pService, poly_interface_t* iface)
+
+ParseStatus_e poly_service_try_parse_interface(poly_service_t* pService, poly_packet_t* packet, poly_interface_t* iface)
 {
-  uint8_t trash;
-  uint8_t id;
-  bool retVal =false;
-  //if we dont have at least the size of a header, it cant be valid
-  while(!(iface->mBytefifo.mCount < sizeof(poly_packet_hdr_t)))
-  {
-    //peek in next header
-    fifo_peek_buf(&iface->mBytefifo, &iface->mCurrentHdr, sizeof(poly_packet_hdr_t));
-
-    id = iface->mCurrentHdr.mTypeId;
-
-    //if packet type is valid, and length is valid for that packet type, we have a candidate
-    if((iface->mCurrentHdr.mTypeId < pService->mDescCount) && (iface->mCurrentHdr.mDataLen < pService->mPacketDescs[iface->mCurrentHdr.mTypeId]->mMaxPacketSize))
-    {
-      iface->mParseState = STATE_HEADER_FOUND;
-      retVal = true;
-      break;
-    }
-    else
-    {
-      //if we are not on a valid header, throw away the fifo tail and move on to the next byte
-      fifo_pop(&iface->mBytefifo, &trash);
-    }
-
-  }
-    return retVal;
-}
-
-ParseStatus_e poly_service_try_parse_interface(poly_service_t* pService, poly_packet_t* packet, int interface)
-{
-  poly_interface_t* iface = &pService->mInterfaces[interface];
   ParseStatus_e retVal = PACKET_NONE;
   uint16_t checksumComp;
-  uint8_t trash;
-  int len;
-
-  //if we dont have at least the size of a header, it cant be valid
-  while((iface->mBytefifo.mCount >= sizeof(poly_packet_hdr_t))&& (retVal == PACKET_NONE) )
+  int encodedLen = cob_fifo_get_next_len(&iface->mBytefifo);  //gets the length of the encoded frame which is always longer than decoded
+  int decodedLen;
+  if(encodedLen > 0)
   {
-    if(iface->mParseState == STATE_WAITING_FOR_HEADER)
+
+    uint8_t frame[encodedLen];
+    decodedLen = cob_fifo_pop_frame(&iface->mBytefifo,frame,encodedLen);
+
+
+
+    if(decodedLen >= sizeof(poly_packet_hdr_t))
     {
-        //moves tail of fifo to next possible header
-        poly_service_seek_header(pService, iface);
+      memcpy((uint8_t*)&iface->mCurrentHdr, frame, sizeof(poly_packet_hdr_t));
+
+      poly_packet_build(packet, pService->mPacketDescs[iface->mCurrentHdr.mTypeId],true);
+
+      retVal = poly_packet_parse_buffer(packet, frame, decodedLen );
+
+      //if the parse failed, clean the packet
+      if(retVal != PACKET_VALID)
+        poly_packet_clean(packet);
     }
 
-    if(iface->mParseState == STATE_HEADER_FOUND)
-    {
-        len = iface->mCurrentHdr.mDataLen + PACKET_METADATA_SIZE;
-        //see if fifo has enough to contain the entire packet
-        if(iface->mBytefifo.mCount >= len)
-        {
-          //calculate checksum of data in the fifo, if it matches the checksum in the header, we have a valid packet
-          checksumComp = CHECKSUM_SEED + fifo_checksum(&iface->mBytefifo, sizeof(poly_packet_hdr_t), iface->mCurrentHdr.mDataLen );
-          if(checksumComp == iface->mCurrentHdr.mCheckSum)
-          {
-            //Valid packet, Parse!
-            fifo_peek_buf(&iface->mBytefifo, iface->mRaw, len );
-
-            poly_packet_build(packet, pService->mPacketDescs[iface->mCurrentHdr.mTypeId] ,true);
-
-            packet->mInterface = interface;
-
-            retVal = poly_packet_parse_buffer(packet, iface->mRaw, len);
-
-            switch(retVal)
-            {
-              case PACKET_VALID:
-                fifo_clear(&iface->mBytefifo, len); //remove these bytes from fifo
-                iface->mPacketsIn++;
-                iface->mParseState = STATE_WAITING_FOR_HEADER;
-                break;
-              default:
-                fifo_clear(&iface->mBytefifo, 1); //remove one byte
-                poly_packet_clean(packet);
-                break;
-            }
-          }
-          else
-          {
-            //bad checksum throw away leading byte and try again
-            iface->mParseState = STATE_WAITING_FOR_HEADER;
-          }
-        }
-    }
   }
+
 
   return retVal;
 
@@ -210,7 +146,7 @@ ParseStatus_e poly_service_try_parse(poly_service_t* pService, poly_packet_t* pa
   ParseStatus_e retVal = PACKET_NONE;
   for(int i=0; i < pService->mInterfaceCount; i++)
   {
-    if (poly_service_try_parse_interface(pService, packet,i) == PACKET_VALID)
+    if (poly_service_try_parse_interface(pService, packet, &pService->mInterfaces[i]) == PACKET_VALID)
     {
       retVal=  PACKET_VALID;
       #if defined(POLY_PACKET_DEBUG_LVL) && POLY_PACKET_DEBUG_LVL >0
@@ -234,9 +170,9 @@ ParseStatus_e poly_service_try_parse(poly_service_t* pService, poly_packet_t* pa
   return retVal;
 }
 
-ParseStatus_e poly_service_spool(poly_service_t* pService, int interface,  poly_packet_t* packet)
+HandlerStatus_e poly_service_spool(poly_service_t* pService, int interface,  poly_packet_t* packet)
 {
-   ParseStatus_e status = PACKET_NOT_HANDLED;
+   HandlerStatus_e status = PACKET_NOT_HANDLED;
    assert(interface < pService->mInterfaceCount);
 
    poly_interface_t* iface = &pService->mInterfaces[interface];
@@ -255,9 +191,9 @@ ParseStatus_e poly_service_spool(poly_service_t* pService, int interface,  poly_
   return PACKET_SPOOLED;
 }
 
-ParseStatus_e poly_service_despool(poly_service_t* pService)
+HandlerStatus_e poly_service_despool(poly_service_t* pService)
 {
-  ParseStatus_e status = PACKET_NOT_HANDLED;
+  HandlerStatus_e status = PACKET_NOT_HANDLED;
   poly_interface_t* iface;
   poly_packet_t outPacket;
   int len;
@@ -269,8 +205,12 @@ ParseStatus_e poly_service_despool(poly_service_t* pService)
     {
       if(poly_spool_pop(&iface->mOutSpool, &outPacket) == SPOOL_OK)
       {
-        uint8_t data[outPacket.mDesc->mMaxPacketSize];
-        len = poly_packet_pack(&outPacket, data);
+        uint8_t encoded[outPacket.mDesc->mMaxPacketSize +2+ (outPacket.mDesc->mMaxPacketSize/254)];
+
+
+        //encode packed frame
+        len = poly_packet_pack_encoded(&outPacket, encoded);
+
 
         #if defined(POLY_PACKET_DEBUG_LVL) && POLY_PACKET_DEBUG_LVL >0
           //If debug is enabled, print json of outgoing packets
@@ -287,7 +227,7 @@ ParseStatus_e poly_service_despool(poly_service_t* pService)
           #endif
         #endif
 
-        status = iface->f_TxCallBack(data,len);
+        status = iface->f_TxCallBack(encoded,len);
         break;
       }
     }

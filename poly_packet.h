@@ -66,7 +66,8 @@ typedef struct {
 
 
 typedef struct {
-  uint8_t mTypeId; //id of payload type
+  uint8_t mTypeId;    //id of payload type
+  uint8_t mSeq;       // sequential field to detect dropped packets
   uint16_t mDataLen;  //expected len of packet data (not including header and footer)
   uint16_t mToken;    //token for packet (used for acknowledgement/ echo cancellation in mesh nets)
   uint16_t mCheckSum; //checksum of packet data
@@ -77,7 +78,7 @@ typedef struct {
   */
 typedef struct poly_packet{
   poly_packet_hdr_t mHeader;
-  poly_packet_desc_t* mDesc;      //prt to packet descriptor
+  const poly_packet_desc_t* mDesc;      //prt to packet descriptor
   poly_field_t* mFields;          //array of fields contained in packet
   uint8_t mInterface;              //id of interface that packet is from/to
   bool mBuilt;                    //indicates if packet has already been built
@@ -94,7 +95,7 @@ typedef struct poly_packet{
   *@param maxFields max number of fields in packet descriptor
   *@return ptr to packet descriptor
   */
-poly_packet_desc_t* poly_packet_desc_init(poly_packet_desc_t* desc, const char* name , int maxFields);
+poly_packet_desc_t* poly_packet_desc_init(poly_packet_desc_t* desc,int id, const char* name , int maxFields);
 poly_packet_desc_t* poly_packet_desc_deinit(poly_packet_desc_t* desc);
 
 /**
@@ -111,7 +112,7 @@ void poly_packet_desc_add_field(poly_packet_desc_t* desc, poly_field_desc_t* fie
   *@param desc ptr to packet descriptor
   *@param allocate whether or not to allocate the memory
   */
-void poly_packet_build(poly_packet_t* packet, poly_packet_desc_t* desc, bool allocate );
+void poly_packet_build(poly_packet_t* packet, const poly_packet_desc_t* desc, bool allocate );
 
 /**
   *@brief cleans up all memory allocated by the packet (but not the packet itself)
@@ -125,7 +126,7 @@ void poly_packet_clean(poly_packet_t* packet);
   *@param desc ptr to field descriptor
   *@return ptr to field
   */
-poly_field_t* poly_packet_get_field(poly_packet_t* packet, poly_field_desc_t* desc);
+poly_field_t* poly_packet_get_field(poly_packet_t* packet, const poly_field_desc_t* desc);
 
 
 /**
@@ -148,7 +149,7 @@ int poly_packet_id(uint8_t* data, int len);
   *@return PACKET_BAD_CHECKSUM if the checksum is incorrect (likely bit error)
   *@return PACKET_PARSING_ERROR if len is longer than it should be (likely missed a delimiter)
   */
-ParseStatus_e poly_packet_parse_buffer(poly_packet_t* packet, uint8_t* data, int len);
+ParseStatus_e poly_packet_parse_buffer(poly_packet_t* packet, const uint8_t* data, int len);
 
 
 /**
@@ -158,6 +159,14 @@ ParseStatus_e poly_packet_parse_buffer(poly_packet_t* packet, uint8_t* data, int
   *@return length of packed data
   */
 int poly_packet_pack(poly_packet_t* packet, uint8_t* data);
+
+/**
+  *@brief packs data into byte array encoded in COB
+  *@param packet ptr to packet
+  *@pre data ptr to memory to store packed data
+  *@return length of packed data
+  */
+int poly_packet_pack_encoded(poly_packet_t* packet, uint8_t* data);
 
 /**
   *@brief prints json representation of packet to a buffer
@@ -184,12 +193,6 @@ int poly_packet_print_packed(poly_packet_t* packet, char* buf);
   */
 int poly_packet_update_header(poly_packet_t* packet);
 
-/**
-  *@brief updates the header for the packet
-  *@param packet ptr to packet to update
-  *@return total length of packet including header
-  */
-int poly_packet_update_header(poly_packet_t* packet);
 
 #ifdef __cplusplus
 }
