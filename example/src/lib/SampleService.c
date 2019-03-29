@@ -2,7 +2,7 @@
   *@file SampleService.c
   *@brief generated code for Sample packet service
   *@author make_protocol.py
-  *@date 03/23/19
+  *@date 03/29/19
   */
 
 /***********************************************************
@@ -12,18 +12,16 @@
 #include "SampleService.h"
 #include <assert.h>
 
-#if defined(POLY_PACKET_DEBUG_LVL)
-extern char POLY_DEBUG_PRINTBUF[512];
-#endif
-
 //Define packet IDs
-#define  SP_PACKET_ACK_ID 0
-#define  SP_PACKET_SENDCMD_ID 1
-#define  SP_PACKET_GETDATA_ID 2
-#define  SP_PACKET_DATA_ID 3
+#define SP_PACKET_PING_ID 0
+#define SP_PACKET_ACK_ID 1
+#define SP_PACKET_SENDCMD_ID 2
+#define SP_PACKET_GETDATA_ID 3
+#define SP_PACKET_DATA_ID 4
 
 
 //Global descriptors
+poly_packet_desc_t* SP_PACKET_PING;
 poly_packet_desc_t* SP_PACKET_ACK;
 poly_packet_desc_t* SP_PACKET_SENDCMD;
 poly_packet_desc_t* SP_PACKET_GETDATA;
@@ -35,6 +33,7 @@ poly_field_desc_t* SP_FIELD_SENSORB;
 poly_field_desc_t* SP_FIELD_SENSORNAME;
 
 //Global descriptors
+poly_packet_desc_t _SP_PACKET_PING;
 poly_packet_desc_t _SP_PACKET_ACK;
 poly_packet_desc_t _SP_PACKET_SENDCMD;
 poly_packet_desc_t _SP_PACKET_GETDATA;
@@ -58,19 +57,21 @@ static poly_service_t SP_SERVICE;
 void sp_service_init(int interfaceCount)
 {
   //initialize core service
-  poly_service_init(&SP_SERVICE,4, interfaceCount);
+  poly_service_init(&SP_SERVICE,5, interfaceCount);
 
   //Build Packet Descriptors
-  SP_PACKET_ACK = poly_packet_desc_init(&_SP_PACKET_ACK ,"ack", 0);
-  SP_PACKET_SENDCMD = poly_packet_desc_init(&_SP_PACKET_SENDCMD ,"SendCmd", 1);
-  SP_PACKET_GETDATA = poly_packet_desc_init(&_SP_PACKET_GETDATA ,"GetData", 0);
-  SP_PACKET_DATA = poly_packet_desc_init(&_SP_PACKET_DATA ,"Data", 3);
+  SP_PACKET_PING = poly_packet_desc_init(&_SP_PACKET_PING ,SP_PACKET_PING_ID,"Ping", 0);
+  SP_PACKET_ACK = poly_packet_desc_init(&_SP_PACKET_ACK ,SP_PACKET_ACK_ID,"Ack", 0);
+  SP_PACKET_SENDCMD = poly_packet_desc_init(&_SP_PACKET_SENDCMD ,SP_PACKET_SENDCMD_ID,"SendCmd", 1);
+  SP_PACKET_GETDATA = poly_packet_desc_init(&_SP_PACKET_GETDATA ,SP_PACKET_GETDATA_ID,"GetData", 0);
+  SP_PACKET_DATA = poly_packet_desc_init(&_SP_PACKET_DATA ,SP_PACKET_DATA_ID,"Data", 3);
 
   //Build Field Descriptors
   SP_FIELD_CMD = poly_field_desc_init( &_SP_FIELD_CMD ,"cmd", TYPE_UINT8, 1, FORMAT_HEX);
   SP_FIELD_SENSORA = poly_field_desc_init( &_SP_FIELD_SENSORA ,"sensorA", TYPE_INT16, 1, FORMAT_DEC);
   SP_FIELD_SENSORB = poly_field_desc_init( &_SP_FIELD_SENSORB ,"sensorB", TYPE_INT, 1, FORMAT_DEC);
   SP_FIELD_SENSORNAME = poly_field_desc_init( &_SP_FIELD_SENSORNAME ,"sensorName", TYPE_STRING, 32, FORMAT_ASCII);
+
 
 
   //Setting Field Descriptors for SendCmd
@@ -84,12 +85,13 @@ void sp_service_init(int interfaceCount)
 
 
   //Register packet descriptors with the service
+  poly_service_register_desc(&SP_SERVICE, SP_PACKET_PING);
   poly_service_register_desc(&SP_SERVICE, SP_PACKET_ACK);
   poly_service_register_desc(&SP_SERVICE, SP_PACKET_SENDCMD);
   poly_service_register_desc(&SP_SERVICE, SP_PACKET_GETDATA);
   poly_service_register_desc(&SP_SERVICE, SP_PACKET_DATA);
 
-  poly_service_start(&SP_SERVICE, 512);
+  poly_service_start(&SP_SERVICE, 16);
 
 }
 
@@ -97,6 +99,7 @@ void sp_service_init(int interfaceCount)
 void sp_service_teardown()
 {
   //deinit Packet Descriptors
+  SP_PACKET_PING = poly_packet_desc_deinit(&_SP_PACKET_PING);
   SP_PACKET_ACK = poly_packet_desc_deinit(&_SP_PACKET_ACK);
   SP_PACKET_SENDCMD = poly_packet_desc_deinit(&_SP_PACKET_SENDCMD);
   SP_PACKET_GETDATA = poly_packet_desc_deinit(&_SP_PACKET_GETDATA);
@@ -128,29 +131,15 @@ void sp_service_process()
     //if we get here, then the inner packet was built by the parser
     packet.mBuilt = true;
 
-    //set response token with ack flag (this will persist even when packet it built)
-    response.mPacket.mHeader.mToken = packet.mPacket.mHeader.mToken | POLY_ACK_FLAG;
-
-  #if defined(POLY_PACKET_DEBUG_LVL) && POLY_PACKET_DEBUG_LVL >0
-    //If debug is enabled, print json of outgoing packets
-    #if POLY_PACKET_DEBUG_LVL == 1
-    poly_packet_print_json(&packet.mPacket, POLY_DEBUG_PRINTBUF, false );
-    printf("  IN <<< %s\n\n",POLY_DEBUG_PRINTBUF );
-    #elif POLY_PACKET_DEBUG_LVL > 1
-    poly_packet_print_json(&packet.mPacket, POLY_DEBUG_PRINTBUF, true );
-    printf("  IN <<< %s\n\n",POLY_DEBUG_PRINTBUF);
-    #endif
-    #if POLY_PACKET_DEBUG_LVL > 2
-    poly_packet_print_packed(&packet.mPacket, POLY_DEBUG_PRINTBUF);
-    printf("  IN <<< %s\n\n", POLY_DEBUG_PRINTBUF );
-    #endif
-  #endif
-
     //Dispatch packet
     switch(packet.mPacket.mDesc->mTypeId)
     {
+      case SP_PACKET_PING_ID:
+        sp_packet_build(&response, SP_PACKET_ACK);
+        status = sp_Ping_handler(&packet, &response);
+        break;
       case SP_PACKET_ACK_ID:
-        status = sp_ack_handler(&packet);
+        status = sp_Ack_handler(&packet);
         break;
       case SP_PACKET_SENDCMD_ID:
         status = sp_SendCmd_handler(&packet);
@@ -169,7 +158,7 @@ void sp_service_process()
     }
 
     //If this packet doe not have an explicit response and AutoAck is enabled, create an ack packet
-    if(( SP_SERVICE.mAutoAck ) && (!response.mPacket.mBuilt))
+    if(( SP_SERVICE.mAutoAck ) && (!response.mBuilt) && (!(packet.mPacket.mHeader.mToken & POLY_ACK_FLAG)))
     {
       sp_packet_build(&response, SP_PACKET_ACK);
     }
@@ -182,8 +171,11 @@ void sp_service_process()
 
 
     //If a response has been build and the status was not set to ignore, we send a response on the intrface it came from
-    if(( status == PACKET_HANDLED) && (response.mPacket.mBuilt) )
+    if(( status == PACKET_HANDLED) && (response.mBuilt) )
     {
+      //set response token with ack flag
+			response.mPacket.mHeader.mToken = packet.mPacket.mHeader.mToken | POLY_ACK_FLAG;
+
       sp_send(packet.mPacket.mInterface , &response);
     }
 
@@ -369,7 +361,7 @@ char* sp_getSensorName(sp_packet_t* packet)
 {
   char* val;
   poly_field_t* field = poly_packet_get_field(&packet->mPacket, SP_FIELD_SENSORNAME);
-  val = (char*)poly_field_get(field, (uint8_t*)val);
+  val = (char*)poly_field_get(field, NULL);
   return val;
 }
 
@@ -378,19 +370,12 @@ char* sp_getSensorName(sp_packet_t* packet)
   Quick send functions
 *******************************************************************************/
 
-/**
-  *@brief sends ack packet
-  *@param iface indec of interface to send packet to
-  *@return status send attempt
-  */
-HandlerStatus_e sp_sendAck(int iface)
+HandlerStatus_e sp_sendPing(int iface)
 {
   HandlerStatus_e status;
   //create packet
   sp_packet_t packet;
-  sp_packet_build(&packet,SP_PACKET_ACK);
-
-  //set fields
+  sp_packet_build(&packet, SP_PACKET_PING);
 
   status = sp_send(iface,&packet); //send packet
   sp_clean(&packet); //This will only free the underlying packet if the spooling was unsuccessful
@@ -417,7 +402,6 @@ HandlerStatus_e sp_sendSendCmd(int iface, uint8_t cmd)
   sp_clean(&packet); //This will only free the underlying packet if the spooling was unsuccessful
   return status;
 }
-
 /**
   *@brief sends GetData packet
   *@param iface indec of interface to send packet to
@@ -436,7 +420,6 @@ HandlerStatus_e sp_sendGetData(int iface)
   sp_clean(&packet); //This will only free the underlying packet if the spooling was unsuccessful
   return status;
 }
-
 /**
   *@brief sends Data packet
   *@param iface indec of interface to send packet to
@@ -463,27 +446,32 @@ HandlerStatus_e sp_sendData(int iface, int16_t sensorA, int sensorB, const char*
 }
 
 
-
 /*******************************************************************************
   Weak packet handlers
 
   Do not modify these, just create your own without the '__weak' attribute
 *******************************************************************************/
 /**
-  *@brief Handler for receiving ack packets
-  *@param ack incoming ack packet
-  *@return handling status
+  *@brief Handler for receiving ping packets
+  *@param sp_ping ptr to incoming ping packet
+  *@param sp_ack ptr to repsonding ack
+  *@return PACKET_HANDLED
   */
-__attribute__((weak)) HandlerStatus_e sp_ack_handler(sp_packet_t* sp_ack)
+__attribute__((weak)) HandlerStatus_e sp_Ping_handler(sp_packet_t* sp_ping, sp_packet_t* sp_ack)
 {
-  /*  Get Required Fields in packet */
-
-
-  /* NOTE : This function should not be modified! If needed,  It should be overridden in the application code */
-
-  return PACKET_NOT_HANDLED;
+  /* Ack token has already been set as ping token with POLY_ACK_FLAG*/
+  return PACKET_HANDLED;
 }
 
+/**
+  *@brief Handler for receiving ack packets
+  *@param sp_ack ptr to ack
+  *@return PACKET_HANDLED
+  */
+__attribute__((weak)) HandlerStatus_e sp_Ack_handler(sp_packet_t* sp_ack)
+{
+  return PACKET_HANDLED;
+}
 
 /**
   *@brief Handler for receiving SendCmd packets
@@ -493,14 +481,13 @@ __attribute__((weak)) HandlerStatus_e sp_ack_handler(sp_packet_t* sp_ack)
 __attribute__((weak)) HandlerStatus_e sp_SendCmd_handler(sp_packet_t* sp_SendCmd)
 {
   /*  Get Required Fields in packet */
-  //uint8_t cmd = sp_getCmd(sp_SendCmd);
+  //uint8_t cmd = sp_getCmd(sp_SendCmd); //
 
 
   /* NOTE : This function should not be modified! If needed,  It should be overridden in the application code */
 
   return PACKET_NOT_HANDLED;
 }
-
 
 /**
   *@brief Handler for receiving GetData packets
@@ -519,7 +506,6 @@ __attribute__((weak)) HandlerStatus_e sp_GetData_handler(sp_packet_t* sp_GetData
   return PACKET_NOT_HANDLED;
 }
 
-
 /**
   *@brief Handler for receiving Data packets
   *@param Data incoming Data packet
@@ -534,7 +520,6 @@ __attribute__((weak)) HandlerStatus_e sp_Data_handler(sp_packet_t* sp_Data)
 
   return PACKET_NOT_HANDLED;
 }
-
 
 
 /**

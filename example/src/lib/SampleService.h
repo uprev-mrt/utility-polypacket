@@ -2,7 +2,7 @@
   *@file SampleService.h
   *@brief generated code for Sample packet service
   *@author make_protocol.py
-  *@date 03/23/19
+  *@date 03/29/19
   *@hash AD1ABF4A
   */
 
@@ -33,6 +33,7 @@ typedef enum{
   Global Descriptors
 *******************************************************************************/
 //Declare extern packet descriptors
+extern poly_packet_desc_t* SP_PACKET_PING;
 extern poly_packet_desc_t* SP_PACKET_ACK;
 extern poly_packet_desc_t* SP_PACKET_SENDCMD;
 extern poly_packet_desc_t* SP_PACKET_GETDATA;
@@ -67,7 +68,7 @@ void sp_service_init(int interfaceCount);
 /**
   *@brief tears down service
   *@note probably not needed based on lifecycle of service
-  *@ but useful for detecting memory leaks 
+  *@ but useful for detecting memory leaks
   */
 void sp_service_teardown();
 
@@ -177,7 +178,14 @@ char* sp_getSensorName(sp_packet_t* packet);
   These are convenience one-liner functions for sending messages.
   They also handle their own clean up and are less bug prone than building your own packets
 *******************************************************************************/
-HandlerStatus_e sp_sendAck(int iface);
+
+/**
+  *@brief Sends a ping
+  *@param iface interface to ping
+  *@note a ping is just an ACK without the ack flag set in the token
+  */
+HandlerStatus_e sp_sendPing(int iface);
+
 HandlerStatus_e sp_sendSendCmd(int iface, uint8_t cmd);
 HandlerStatus_e sp_sendGetData(int iface);
 HandlerStatus_e sp_sendData(int iface, int16_t sensorA, int sensorB, const char* sensorName);
@@ -185,8 +193,11 @@ HandlerStatus_e sp_sendData(int iface, int16_t sensorA, int sensorB, const char*
 /*******************************************************************************
   Packet Handlers
 *******************************************************************************/
-/*@brief Handler for ack packets */
-HandlerStatus_e sp_ack_handler(sp_packet_t* sp_ack);
+/*@brief Handler for Ping packets */
+HandlerStatus_e sp_Ping_handler(sp_packet_t* sp_Ping, sp_packet_t* sp_Ack);
+
+/*@brief Handler for Ack packets */
+HandlerStatus_e sp_Ack_handler(sp_packet_t* sp_Ack);
 
 /*@brief Handler for SendCmd packets */
 HandlerStatus_e sp_SendCmd_handler(sp_packet_t* sp_SendCmd);
