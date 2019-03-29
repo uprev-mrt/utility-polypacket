@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<body>
+<h1>Sample ICD</h1>
+<ul>
+  <li> Generated: 03/30/19</li>
+  <li> CRC: AD1ABF4A</li>
+  <li> Transport Encoding: (COBS) <a href="https://en.wikipedia.org/wiki/Consistent_Overhead_Byte_Stuffing">Consistent Overhead ByteStuffing</a></li>
+</ul>
+
+<p>This is a sample protocol made up to demonstrate features of the PolyPacket code generation tool. The idea   is to have a tool that can automatically create parseable/serializable messaging for embedded systems.</p>
+
+<h2> Packet Types </h2>
+<hr>
+
+<h3>Ping </h3>
+
+This Packet type does not contain any data fields
+
+<hr>
+<h3>Ack </h3>
+
+This Packet type does not contain any data fields
+
+<hr>
+<h3>SendCmd </h3>
+
+<table class="fixed" style="width:4%">
+  <tr>
+  <th  >Byte</th>
+      <th >0</th>
+      </tr>
+  <tr>
+    <td>Field</td>
+      <td colspan="1">cmd</td>
+  </tr>
+  <tr>
+    <td>Type</td>
+      <td colspan="1">    uint8_t  </td>
+  </tr>
+</table>
+<br/>
+
+
+<hr>
+<h3>GetData </h3>
+
+This Packet type does not contain any data fields
+
+<hr>
+<h3>Data </h3>
+
+<table class="fixed" style="width:40%">
+  <tr>
+  <th  >Byte</th>
+      <th >0</th>
+        <th >1</th>
+        <th >2</th>
+        <th >3</th>
+        <th >4</th>
+        <th >5</th>
+        <th >6</th>
+    <th colspan="2">........</th>
+    <th >38</th>
+  </tr>
+  <tr>
+    <td>Field</td>
+      <td colspan="2">sensorA</td>
+      <td colspan="4">sensorB</td>
+      <td colspan="4">sensorName</td>
+  </tr>
+  <tr>
+    <td>Type</td>
+      <td colspan="2">    int16_t  </td>
+      <td colspan="4">    int  </td>
+      <td colspan="4">    char    [32]  </td>
+  </tr>
+</table>
+<br/>
+
+
+<hr>
+
+</body>
+<style>
+table.fixed { table-layout:auto; }
+table.fixed td { overflow:visible; }
+
+
+body{
+  padding: 3%;
+}
+
+
+
+table {
+  font-family: arial, sans-serif;
+  border-collapse: collapse;
+  width: 95%;
+}
+
+td {
+  border: 1px solid #000000;
+  text-align: left;
+  padding: 8px;
+}
+
+th {
+  border: 1px solid #000000;
+  text-align: left;
+  padding: 8px;
+}
+
+th {
+  background-color: #dddddd;
+}
+
+tr td:last-child{
+    width:1%;
+    white-space:nowrap;
+}
+</style>
+</html>

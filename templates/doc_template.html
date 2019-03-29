@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<body>
+<h1>${proto.name} ICD</h1>
+<ul>
+  <li> Generated: ${proto.genTime}</li>
+  <li> CRC: ${proto.hash}</li>
+  <li> Transport Encoding: (COBS) <a href="https://en.wikipedia.org/wiki/Consistent_Overhead_Byte_Stuffing">Consistent Overhead ByteStuffing</a></li>
+</ul>
+
+<p>${proto.desc}</p>
+
+<h2> Packet Types </h2>
+<hr>
+
+%for packet in proto.packets:
+<h3>${packet.name} </h3>
+
+%if len(packet.fields) > 0:
+<table class="fixed" style="width:${packet.tableSize() * 4}%">
+  <tr>
+  <th  >Byte</th>
+  <% count = 0 %>\
+%for field in packet.fields:
+    %if field.size > 4:
+    <th >${count}</th>
+    <th colspan="2">........</th>
+    <th >${(count+field.size) }</th>
+  %else:
+    %for x in range(field.size):
+    <th >${count}</th>
+    <% count += 1 %>\
+    %endfor
+  %endif
+%endfor
+  </tr>
+  <tr>
+    <td>Field</td>
+  %for field in packet.fields:
+      %if field.size > 4:
+      <td colspan="4">${field.name}</td>
+    %else:
+      <td colspan="${field.size}">${field.name}</td>
+    %endif
+  %endfor
+  </tr>
+  <tr>
+    <td>Type</td>
+  %for field in packet.fields:
+      %if field.size > 4:
+      <td colspan="4">\
+    %else:
+      <td colspan="${field.size}">\
+    %endif
+    ${field.cType}\
+    %if field.isArray:
+    [${field.arrayLen}]\
+    %endif
+  </td>
+  %endfor
+  </tr>
+</table>
+<br/>
+
+%else:
+## zero data fields
+This Packet type does not contain any data fields
+%endif
+
+<hr>
+%endfor
+
+</body>
+<style>
+table.fixed { table-layout:auto; }
+table.fixed td { overflow:visible; }
+
+
+body{
+  padding: 3%;
+}
+
+
+
+table {
+  font-family: arial, sans-serif;
+  border-collapse: collapse;
+  width: 95%;
+}
+
+td {
+  border: 1px solid #000000;
+  text-align: left;
+  padding: 8px;
+}
+
+th {
+  border: 1px solid #000000;
+  text-align: left;
+  padding: 8px;
+}
+
+th {
+  background-color: #dddddd;
+}
+
+tr td:last-child{
+    width:1%;
+    white-space:nowrap;
+}
+</style>
+</html>

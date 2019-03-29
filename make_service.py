@@ -15,6 +15,7 @@ import copy
 import datetime
 import zlib
 import argparse
+import pdfkit
 from shutil import copyfile
 from mako.template import Template
 
@@ -184,6 +185,8 @@ class fieldDesc:
         else:
             return "%i"
 
+
+
 class packetDesc:
     def __init__(self, name):
         self.name = name
@@ -213,6 +216,16 @@ class packetDesc:
         if len(self.requests) > 0:
             self.hasResponse = True;
             self.response = self.protocol.getPacket(next(iter(self.requests.keys())))
+
+    def tableSize(self):
+        sum =0;
+        for field in self.fields:
+            if field.size > 4:
+                sum+=4
+            else:
+                sum += field.size
+
+        return sum
 
 
     def getDocMd(self):
@@ -562,6 +575,7 @@ def init_args():
     parser.add_argument('-a', '--app', action='store_true', help='Generates the app layer code to fill out', default=False)
     parser.add_argument('-s', '--snippets', action='store_true', help='Adds helpful code snippets to files', default=False)
     parser.add_argument('-u', '--utility', action='store_true', help='Generates Linux host utility application', default=False)
+    parser.add_argument('-m', '--html', action='store_true', help='Generates html doc', default=False)
 
 def main():
     global path
@@ -592,6 +606,10 @@ def main():
 
     if(args.document):
         buildTemplate(protocol, script_dir +'/templates/doc_template.md', xmlPath + protocol.name+"_ICD.md")
+
+    if(args.html):
+        buildTemplate(protocol, script_dir +'/templates/doc_template.html', xmlPath + protocol.name+"_ICD.html")
+        pdfkit.from_file(xmlPath + protocol.name+"_ICD.html", xmlPath + protocol.name+"_ICD.pdf" )
 
     if(args.utility):
         genUtility(protocol,xmlFile, script_dir, path+"/" + protocol.name + "_utility/")
