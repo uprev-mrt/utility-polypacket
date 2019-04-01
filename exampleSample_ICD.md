@@ -1,6 +1,6 @@
 # Sample ICD
-* Generated: 03/30/19<br/>
-* CRC: AD1ABF4A
+* Generated: 04/01/19<br/>
+* CRC: 67837EF9
 * Transport Encoding: (COBS) [Consistent Overhead ByteStuffing](https://en.wikipedia.org/wiki/Consistent_Overhead_Byte_Stuffing)
 
 ** This is a sample protocol made up to demonstrate features of the PolyPacket code generation tool. The idea   is to have a tool that can automatically create parseable/serializable messaging for embedded systems. **
@@ -54,7 +54,7 @@ Acknowledges any packet that does not have an explicit response
 
 
 ### SendCmd
-Message to set command in node
+Message to send command to node
 
 * Packet ID: *[02]*
 
@@ -65,7 +65,7 @@ Message to set command in node
 
 
 Fields:
->***cmd*** : <br/>
+>***cmd*** : command byte for controlling node<br/>
 >> **0x00** : LED_ON - turns on led<br/>
 >> **0x01** : LED_OFF - turns off led<br/>
 >> **0x02** : RESET - resets the device<br/>
@@ -77,7 +77,7 @@ Fields:
 
 
 ### GetData
-
+Message to get data from node
 
 * Packet ID: *[03]*
 * *Requests: Data*

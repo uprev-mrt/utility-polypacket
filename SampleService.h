@@ -2,8 +2,8 @@
   *@file SampleService.h
   *@brief generated code for Sample packet service
   *@author make_protocol.py
-  *@date 03/29/19
-  *@hash AD1ABF4A
+  *@date 04/01/19
+  *@hash 67837EF9
   */
 
 /***********************************************************
@@ -11,7 +11,7 @@
 ***********************************************************/
 #include "Utilities/PolyPacket/poly_service.h"
 
-#define SP_SERVICE_HASH 0xAD1ABF4A
+#define SP_SERVICE_HASH 0x67837EF9
 
 /*******************************************************************************
   Enums

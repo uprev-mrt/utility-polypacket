@@ -15,7 +15,7 @@ import copy
 import datetime
 import zlib
 import argparse
-import pdfkit
+#import pdfkit
 from shutil import copyfile
 from mako.template import Template
 
@@ -508,7 +508,8 @@ def parseXML(xmlfile):
                 fieldCopy.desc = pfield.attrib['desc']
 
             newPacket.addField(fieldCopy)
-            newPacket.desc = desc
+
+        newPacket.desc = desc
 
         protocol.addPacket(newPacket)
 
@@ -609,7 +610,7 @@ def main():
 
     if(args.html):
         buildTemplate(protocol, script_dir +'/templates/doc_template.html', xmlPath + protocol.name+"_ICD.html")
-        pdfkit.from_file(xmlPath + protocol.name+"_ICD.html", xmlPath + protocol.name+"_ICD.pdf" )
+        #pdfkit.from_file(xmlPath + protocol.name+"_ICD.html", xmlPath + protocol.name+"_ICD.pdf" )
 
     if(args.utility):
         genUtility(protocol,xmlFile, script_dir, path+"/" + protocol.name + "_utility/")

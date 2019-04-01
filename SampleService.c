@@ -2,7 +2,7 @@
   *@file SampleService.c
   *@brief generated code for Sample packet service
   *@author make_protocol.py
-  *@date 03/29/19
+  *@date 04/01/19
   */
 
 /***********************************************************
@@ -481,7 +481,7 @@ __attribute__((weak)) HandlerStatus_e sp_Ack_handler(sp_packet_t* sp_ack)
 __attribute__((weak)) HandlerStatus_e sp_SendCmd_handler(sp_packet_t* sp_SendCmd)
 {
   /*  Get Required Fields in packet */
-  //uint8_t cmd = sp_getCmd(sp_SendCmd); //
+  //uint8_t cmd = sp_getCmd(sp_SendCmd); //command byte for controlling node
 
 
   /* NOTE : This function should not be modified! If needed,  It should be overridden in the application code */

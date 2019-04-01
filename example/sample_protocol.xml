@@ -6,7 +6,7 @@
   <Fields>
 
     <!--Common -->
-    <Field name="cmd" type="enum" format="hex" >
+    <Field name="cmd" type="enum" format="hex" desc="command byte for controlling node" >
       <Val name="led_ON" desc="turns on led" />
       <Val name="led_OFF" desc="turns off led" />
       <Val name="reset" desc="resets the device" />
@@ -22,12 +22,11 @@
   </Fields>
   <!--Declare all Packet Types-->
   <Packets>
-    <Packet name="SendCmd" desc="Message to set command in node" >
+    <Packet name="SendCmd" desc="Message to send command to node" >
       <Field name="cmd" req="true"/>
     </Packet>
 
-    <Packet name="GetData" desc="Message to get data from node" response="Data">
-    </Packet>
+    <Packet name="GetData" desc="Message to get data from node" response="Data"/>
 
     <Packet name="Data" desc="Message containing data from sensor" >
       <Field name="sensorA"/>
