@@ -1,5 +1,8 @@
 <!DOCTYPE html>
 <html>
+<head>
+  <title>${proto.name} ICD</title>
+</head>
 <body>
 <div class="content">
 <h1>${proto.name} ICD</h1>
@@ -8,10 +11,84 @@
   <li> CRC: ${proto.hash}</li>
   <li> Transport Encoding: (COBS) <a href="https://en.wikipedia.org/wiki/Consistent_Overhead_Byte_Stuffing">Consistent Overhead ByteStuffing</a></li>
 </ul>
-
+<hr/>
+<h2>Description: </h2>
 <p>${proto.desc}</p>
 
+<br/>
+<hr class="thick">
+
+<div id="header" class="packet">
+<h2>Header </h2>
+<hr/>
+
+<p class="desc">All packets contain a standard header</p>
+<br/>
+<b>Structure:</b>
+<table class="fixed" style="width:40%">
+  <tr>
+  <th  >Byte</th>
+        <th >0</th>
+        <th >1</th>
+        <th >2</th>
+        <th >3</th>
+        <th >4</th>
+        <th >5</th>
+        <th >6</th>
+  </tr>
+  <tr>
+    <td>Field</td>
+      <td colspan="1">Id</td>
+      <td colspan="2">Length</td>
+      <td colspan="2">Token</td>
+      <td colspan="2">Checksum</td>
+  </tr>
+  <tr>
+    <td>Type</td>
+    <td colspan="1">uint8_t</td>
+    <td colspan="2">uint16_t</td>
+    <td colspan="2">uint16_t</td>
+    <td colspan="2">uint16_t</td>
+  </tr>
+</table>
+<br/>
+<b>Fields:</b>
+<table class="fields">
+  <tr>
+    <th> Field</th>
+    <th> Description</th>
+  </tr>
+  <tr>
+    <td width="">Id</td>
+    <td>Packet Type identifier</td>
+  </tr>
+  <tr>
+    <td width="">Length</td>
+    <td>Number of bytes in packet (not including header)</td>
+  </tr>
+  <tr>
+    <td width="">Token</td>
+    <td>Psuedo random token generated for message</td>
+  </tr>
+  <tr>
+    <td width="">Checksum</td>
+    <td>16bit checksum used for data validation</td>
+  </tr>
+</table>
+
+<br/>
+<hr class="thick">
+</div>
+
 <h2> Packet Types </h2>
+<hr/>
+
+<ul>
+  %for packet in proto.packets:
+  <li><a href="#packet_${packet.name.lower()}">${"[%0.2X]" % packet.packetId}  ${packet.name} </a></li>
+  %endfor
+</ul>
+
 <hr class="thick">
 
 <div class="packet" id="packet_ping">
@@ -257,6 +334,19 @@ h2{
 .note{
   font-style: italic;
   opacity: 0.6;
+}
+
+a{
+  text-decoration:none;
+}
+
+a:link {
+  color: blue;
+}
+
+/* visited link */
+a:visited {
+  color: blue;
 }
 
 table.fixed tr td:last-child{
