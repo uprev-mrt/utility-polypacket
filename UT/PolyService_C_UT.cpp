@@ -84,6 +84,87 @@ TEST(PolyService, FeedTest )
   tp_service_teardown();
 }
 
+TEST(PolyService, JsonFeedTest )
+{
+  tp_service_init(1); // initialize with 1 interface
+
+  int frames;
+  tp_packet_t msg;
+  tp_packet_build(&msg,TP_PACKET_SENDCMD );
+
+  tp_setCmd(&msg, 0x43);
+
+  tp_print_json(&msg, printBuf);
+
+  tp_service_feed_json(0, printBuf,strlen(printBuf));
+
+  frames = getFrameCount(0);
+  ASSERT_EQ(frames,1);
+
+  poly_packet_clean(&msg.mPacket);
+  tp_service_teardown();
+}
+
+/**
+  *@brief feed 3 messages to incoming buffer and verufy they process
+  */
+TEST(PolyService, JSON_byte_mix )
+{
+  tp_service_init(1); // initialize with 1 interface
+  lastRxDesc = NULL;
+  packet_count =0;
+  int frames;
+  tp_packet_t msg0;
+  tp_packet_t msg1;
+  tp_packet_t msg2;
+
+  //build one automatically
+  tp_packet_build(&msg0,TP_PACKET_SENDCMD );
+  tp_setCmd(&msg0, 0x43);
+  tp_print_json(&msg0, printBuf);
+  tp_service_feed_json(0, printBuf,strlen(printBuf));
+
+  //msg1
+  char* strMsg1 = "{ \"packetType\":\"Data\", \"sensorA\" : x6ca, \"sensorB\":898989, \"sensorName\":\"test name\" }";
+  tp_service_feed_json(0, strMsg1,strlen(strMsg1));
+
+  //msg2
+  tp_packet_build(&msg2,TP_PACKET_DATA );
+  tp_setSensorA(&msg2, 1738);
+  tp_setSensorB(&msg2, 898989);
+  tp_setSensorName(&msg2, "test name2");
+
+
+
+  //feed 3
+  feed_packet(0,&msg2);
+
+  //verify 3 frames in fifo
+  ASSERT_EQ(getFrameCount(0),3);
+
+
+  //process to pull a frame and verify remaining count
+  tp_service_process();
+  ASSERT_EQ(packet_count,1);
+  ASSERT_EQ(getFrameCount(0),2);
+  ASSERT_EQ(lastRxDesc,TP_PACKET_SENDCMD);
+
+  //process to pull a frame and verify remaining count
+  tp_service_process();
+  ASSERT_EQ(packet_count,2);
+  ASSERT_EQ(getFrameCount(0),1);
+  ASSERT_EQ(lastRxDesc,TP_PACKET_DATA);
+
+  //process to pull a frame and verify remaining count
+  tp_service_process();
+  ASSERT_EQ(packet_count,3);
+  ASSERT_EQ(getFrameCount(0),0);
+  ASSERT_EQ(lastRxDesc,TP_PACKET_DATA);
+
+
+  tp_service_teardown();
+}
+
 TEST(PolyService, ProcessTest )
 {
   tp_service_init(1); // initialize with 1 interface

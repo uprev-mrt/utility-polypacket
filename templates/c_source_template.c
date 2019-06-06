@@ -185,6 +185,11 @@ void ${proto.prefix}_service_feed(int iface, uint8_t* data, int len)
   poly_service_feed(&${proto.service()},iface,data,len);
 }
 
+void ${proto.prefix}_service_feed_json(int iface, const char* msg, int len)
+{
+  poly_service_feed_json_msg(&${proto.service()},iface,msg,len);
+}
+
 HandlerStatus_e ${proto.prefix}_send(int iface, ${proto.prefix}_packet_t* packet)
 {
   HandlerStatus_e status;

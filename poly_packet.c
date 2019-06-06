@@ -224,16 +224,16 @@ ParseStatus_e poly_packet_parse_buffer(poly_packet_t* packet, const uint8_t* dat
   return PACKET_VALID;
 }
 
-ParseStatus_e poly_packet_parse_json_obj(poly_packet_t* packet, json_obj_t* json);
+ParseStatus_e poly_packet_parse_json_obj(poly_packet_t* packet, json_obj_t* json)
 {
   //iterate through text and parse key/value pairs
-  for(int i=0 ; i < json.mAttributeCount; i++)
+  for(int i=0 ; i < json->mAttributeCount; i++)
   {
     for(int a=0; a < packet->mDesc->mFieldCount; a++)
     {
-      if((!packet->mFields[a].mPresent) && (strcmp(packet->mFields[a].mDesc->mName, json.mAttributes[i].mKey) == 0))
+      if((!packet->mFields[a].mPresent) && (strcmp(packet->mFields[a].mDesc->mName, json->mAttributes[i].mKey) == 0))
       {
-        poly_field_parse_json(&packet->mFields[a],json.mAttributes[i].mVal);
+        poly_field_parse_str(&packet->mFields[a],json->mAttributes[i].mVal);
         break;
       }
     }

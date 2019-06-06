@@ -6,6 +6,7 @@
   */
 
 #include "poly_field.h"
+#include <cstdlib>
 #include <assert.h>
 
 #define MEM_EXISTS( field) ((field->mAllocated) || (field->mBound))
@@ -167,9 +168,55 @@ int poly_field_parse(poly_field_t* field, const uint8_t* data)
   return idx;
 }
 
-int poly_field_parse_json(poly_field_t* field, const char* str)
+int poly_field_parse_str(poly_field_t* field, const char* str)
 {
-  
+  int64_t tmp;
+  uint64_t utmp;
+  float ftmp;
+  double dtmp;
+
+  char* ptr;
+  int base = 10;
+
+  if(field->mDesc->mFormat == FORMAT_HEX)
+  {
+    base = 16;
+  }
+  //copy string
+  if((field->mDesc->mNullTerm) || (field->mDesc->mDataType == TYPE_CHAR))
+  {
+    poly_field_set(field, (uint8_t*)str);
+  }
+
+  //parse data types
+  switch(field->mDesc->mDataType)
+  {
+    case TYPE_UINT8:
+    case TYPE_UINT16:
+    case TYPE_UINT32:
+    case TYPE_UINT64:
+      tmp = strtoul(str, &ptr, base);
+      poly_field_set(field, (uint8_t*) &utmp);
+      break;
+    case TYPE_INT8:
+    case TYPE_INT16:
+    case TYPE_INT32:
+    case TYPE_INT:
+    case TYPE_INT64:
+      tmp = strtol(str, &ptr, base);
+      poly_field_set(field, (uint8_t*) &tmp);
+      break;
+    case TYPE_FLOAT:
+      ftmp = atof(str);
+      poly_field_set(field, (uint8_t*) &ftmp);
+      break;
+    case TYPE_DOUBLE:
+      dtmp = atof(str);
+      poly_field_set(field, (uint8_t*) &dtmp);
+      break;
+    default:
+      break;
+  }
 }
 
 int poly_field_print_json(poly_field_t* field, char* buf)

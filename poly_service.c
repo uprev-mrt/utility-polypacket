@@ -124,11 +124,11 @@ void poly_service_feed_json_msg(poly_service_t* pService, int interface,const ch
   //get type
   for(int i=0; i < json.mAttributeCount; i++)
   {
-    if(strcmp(packetType,json.mAttributes[i].mKey) == 0)
+    if(strcmp("packetType",json.mAttributes[i].mKey) == 0)
     {
-      for(int a=0; a < pService.mDescCount; a++)
+      for(int a=0; a < pService->mDescCount; a++)
       {
-        if(strcmp(pService->mPacketDescs[a],json.mAttributes[i].mVal) == 0)
+        if(strcmp(pService->mPacketDescs[a]->mName,json.mAttributes[i].mVal) == 0)
         {
           typeId = a;
           break;
@@ -148,7 +148,7 @@ void poly_service_feed_json_msg(poly_service_t* pService, int interface,const ch
       packedLen = poly_packet_pack_encoded(&packet, tmp);
 
       //feed packet to service
-      poly_service_feed(pService, interface, tmp, packetLen);
+      poly_service_feed(pService, interface, tmp, packedLen);
 
       //destroy packet
       poly_packet_clean(&packet);

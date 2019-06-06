@@ -2,7 +2,7 @@
   *@file testService.c
   *@brief generated code for test packet service
   *@author make_protocol.py
-  *@date 03/27/19
+  *@date 06/06/19
   */
 
 /***********************************************************
@@ -68,7 +68,7 @@ void tp_service_init(int interfaceCount)
 
   //Build Field Descriptors
   TP_FIELD_CMD = poly_field_desc_init( &_TP_FIELD_CMD ,"cmd", TYPE_UINT8, 1, FORMAT_HEX);
-  TP_FIELD_SENSORA = poly_field_desc_init( &_TP_FIELD_SENSORA ,"sensorA", TYPE_INT16, 1, FORMAT_DEC);
+  TP_FIELD_SENSORA = poly_field_desc_init( &_TP_FIELD_SENSORA ,"sensorA", TYPE_INT16, 1, FORMAT_HEX);
   TP_FIELD_SENSORB = poly_field_desc_init( &_TP_FIELD_SENSORB ,"sensorB", TYPE_INT, 1, FORMAT_DEC);
   TP_FIELD_SENSORNAME = poly_field_desc_init( &_TP_FIELD_SENSORNAME ,"sensorName", TYPE_STRING, 32, FORMAT_ASCII);
 
@@ -91,7 +91,7 @@ void tp_service_init(int interfaceCount)
   poly_service_register_desc(&TP_SERVICE, TP_PACKET_GETDATA);
   poly_service_register_desc(&TP_SERVICE, TP_PACKET_DATA);
 
-  poly_service_start(&TP_SERVICE, 512);
+  poly_service_start(&TP_SERVICE, 16);
 
 }
 
@@ -198,6 +198,11 @@ void tp_service_register_tx( int iface, poly_tx_callback txCallBack)
 void tp_service_feed(int iface, uint8_t* data, int len)
 {
   poly_service_feed(&TP_SERVICE,iface,data,len);
+}
+
+void tp_service_feed_json(int iface, const char* msg, int len)
+{
+  poly_service_feed_json_msg(&TP_SERVICE,iface,msg,len);
 }
 
 HandlerStatus_e tp_send(int iface, tp_packet_t* packet)

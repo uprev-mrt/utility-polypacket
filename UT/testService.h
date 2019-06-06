@@ -2,8 +2,8 @@
   *@file testService.h
   *@brief generated code for test packet service
   *@author make_protocol.py
-  *@date 03/27/19
-  *@hash 23DC4AD9
+  *@date 06/06/19
+  *@hash 706C9397
   */
 
 /***********************************************************
@@ -11,7 +11,7 @@
 ***********************************************************/
 #include "Utilities/PolyPacket/poly_service.h"
 
-#define TP_SERVICE_HASH 0x23DC4AD9
+#define TP_SERVICE_HASH 0x706C9397
 
 /*******************************************************************************
   Enums
@@ -91,6 +91,14 @@ void tp_service_register_tx( int iface, poly_tx_callback txCallBack);
   *@param number of bytes
   */
 void tp_service_feed(int iface, uint8_t* data, int len);
+
+/**
+  *@brief 'Feeds' json message to service
+  *@param iface index of interface to send on
+  *@param msg data to be processed
+  *@param number of bytes
+  */
+void tp_service_feed_json(int iface, const char* msg, int len);
 
 /**
   *@brief sends packet over given interface

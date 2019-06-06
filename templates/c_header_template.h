@@ -120,6 +120,14 @@ void ${proto.prefix}_service_register_tx( int iface, poly_tx_callback txCallBack
 void ${proto.prefix}_service_feed(int iface, uint8_t* data, int len);
 
 /**
+  *@brief 'Feeds' json message to service
+  *@param iface index of interface to send on
+  *@param msg data to be processed
+  *@param number of bytes
+  */
+void ${proto.prefix}_service_feed_json(int iface, const char* msg, int len);
+
+/**
   *@brief sends packet over given interface
   *@param packet packet to be sent
   *@param iface index of interface to send on

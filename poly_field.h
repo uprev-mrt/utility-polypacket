@@ -151,7 +151,7 @@ int poly_field_parse(poly_field_t* field, const uint8_t* data);
   *@param str string to parse for data
   *@returns size of parsed data
   */
-int poly_field_parse_json(poly_field_t* field, const char* str);
+int poly_field_parse_str(poly_field_t* field, const char* str);
 
 /**
   *@brief prints out field in json format
