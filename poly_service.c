@@ -138,11 +138,20 @@ void poly_service_feed_json_msg(poly_service_t* pService, int interface,const ch
     }
   }
 
+
   if(typeId > -1)
   {
       poly_packet_build(&packet, pService->mPacketDescs[typeId],true);
 
       poly_packet_parse_json_obj(&packet, &json);
+
+      #if defined(POLY_PACKET_DEBUG_LVL) && POLY_PACKET_DEBUG_LVL >0
+        //If debug is enabled, print json of outgoing packets
+        #if POLY_PACKET_DEBUG_LVL == 4
+        poly_packet_print_json(&packet, POLY_DEBUG_PRINTBUF, true );
+        printf("  JSON PARSED:  %s\n\n",POLY_DEBUG_PRINTBUF );
+        #endif
+      #endif
 
       //pack packet
       packedLen = poly_packet_pack_encoded(&packet, tmp);

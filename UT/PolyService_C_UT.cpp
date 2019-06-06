@@ -125,7 +125,7 @@ TEST(PolyService, JSON_byte_mix )
   tp_service_feed_json(0, printBuf,strlen(printBuf));
 
   //msg1
-  char* strMsg1 = "{ \"packetType\":\"Data\", \"sensorA\" : x6ca, \"sensorB\":898989, \"sensorName\":\"test name\" }";
+  char* strMsg1 = "{ \"packetType\":\"Data\", \"sensorA\" : \"0x6ca\", \"sensorB\":898989, \"sensorName\":\"test name\" }";
   tp_service_feed_json(0, strMsg1,strlen(strMsg1));
 
   //msg2

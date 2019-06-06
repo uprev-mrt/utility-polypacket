@@ -11,6 +11,12 @@
 
 #define MEM_EXISTS( field) ((field->mAllocated) || (field->mBound))
 
+#define PARSE_U(x,s,b)  x = strtoul(s, NULL, b);  \
+                          poly_field_set(field, (uint8_t*) &x)
+
+#define PARSE_I(x,s,b)  x = strtol(s, NULL, b);  \
+                          poly_field_set(field, (uint8_t*) &x)
+
 poly_field_desc_t* poly_field_desc_init(poly_field_desc_t* desc, const char* name, eFieldType type, uint32_t len, eFieldFormat format)
 {
   desc->mName = name;
@@ -170,12 +176,20 @@ int poly_field_parse(poly_field_t* field, const uint8_t* data)
 
 int poly_field_parse_str(poly_field_t* field, const char* str)
 {
-  int64_t tmp;
-  uint64_t utmp;
+
+  uint8_t u8tmp;
+  uint16_t u16tmp;
+  uint32_t u32tmp;
+  uint64_t u64tmp;
+
+  int8_t i8tmp;
+  int16_t i16tmp;
+  int32_t i32tmp;
+  int64_t i64tmp;
+
   float ftmp;
   double dtmp;
 
-  char* ptr;
   int base = 10;
 
   if(field->mDesc->mFormat == FORMAT_HEX)
@@ -186,25 +200,36 @@ int poly_field_parse_str(poly_field_t* field, const char* str)
   if((field->mDesc->mNullTerm) || (field->mDesc->mDataType == TYPE_CHAR))
   {
     poly_field_set(field, (uint8_t*)str);
+    return 0 ;
   }
 
   //parse data types
   switch(field->mDesc->mDataType)
   {
     case TYPE_UINT8:
+      PARSE_U( u8tmp,str,base);
+      break;
     case TYPE_UINT16:
+      PARSE_U( u16tmp,str,base);
+      break;
     case TYPE_UINT32:
+      PARSE_U( u32tmp,str,base);
+      break;
     case TYPE_UINT64:
-      tmp = strtoul(str, &ptr, base);
-      poly_field_set(field, (uint8_t*) &utmp);
+      PARSE_U(u64tmp,str,base);
       break;
     case TYPE_INT8:
+      PARSE_I(i8tmp,str,base);
+      break;
     case TYPE_INT16:
+      PARSE_I(i16tmp,str,base);
+      break;
     case TYPE_INT32:
     case TYPE_INT:
+      PARSE_I(i32tmp,str,base);
+      break;
     case TYPE_INT64:
-      tmp = strtol(str, &ptr, base);
-      poly_field_set(field, (uint8_t*) &tmp);
+      PARSE_I(i64tmp,str,base);
       break;
     case TYPE_FLOAT:
       ftmp = atof(str);
@@ -212,11 +237,11 @@ int poly_field_parse_str(poly_field_t* field, const char* str)
       break;
     case TYPE_DOUBLE:
       dtmp = atof(str);
-      poly_field_set(field, (uint8_t*) &dtmp);
-      break;
-    default:
+      poly_field_set(field, (uint8_t*) &ftmp);
       break;
   }
+
+  return 0;
 }
 
 int poly_field_print_json(poly_field_t* field, char* buf)
@@ -308,7 +333,7 @@ int poly_field_print_val(poly_field_t* field, int element, char* buf)
   }
   else if(field->mDesc->mFormat == FORMAT_HEX)
   {
-    idx+= MRT_SPRINTF(&buf[idx], "\"x");
+    idx+= MRT_SPRINTF(&buf[idx], "\"0x");
     for(int i=0; i < field->mDesc->mObjSize; i++)
     {
       idx+= MRT_SPRINTF(&buf[idx], "%02X", pData[i]);
