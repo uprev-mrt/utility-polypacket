@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "Utilities/JSON/json.h"
 
 #ifndef MRT_SPRINTF
 #define MRT_SPRINTF(f_, ...) sprintf((f_), __VA_ARGS__)
@@ -61,7 +62,8 @@ typedef enum FieldFormat {
   *@brief Struct for variable field descriptor
   */
 typedef struct{
-  const char* mName;            //friendly name of field
+  const char* mName;      //friendly name of field
+  uint8_t mNameLen;       //len of friendly name
   eFieldFormat mFormat;   //format used for printing and jsonifying field
   uint8_t mObjSize;       //size of object in field
   eFieldType mDataType;
@@ -142,6 +144,14 @@ uint8_t* poly_field_get(poly_field_t* field, uint8_t* data);
   *@returns size of parsed data
   */
 int poly_field_parse(poly_field_t* field, const uint8_t* data);
+
+/**
+  *@brief Parses string data for a field
+  *@param field ptr to field being parsed
+  *@param str string to parse for data
+  *@returns size of parsed data
+  */
+int poly_field_parse_json(poly_field_t* field, const char* str);
 
 /**
   *@brief prints out field in json format

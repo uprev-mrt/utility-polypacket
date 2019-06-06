@@ -100,7 +100,7 @@ void poly_service_start(poly_service_t* pService, int depth)
 
 
 
-void poly_service_feed(poly_service_t* pService, int interface, uint8_t* data, int len)
+void poly_service_feed(poly_service_t* pService, int interface, const uint8_t* data, int len)
 {
   assert(interface < pService->mInterfaceCount);
 
@@ -108,6 +108,56 @@ void poly_service_feed(poly_service_t* pService, int interface, uint8_t* data, i
 
 
   cob_fifo_push_buf(&iface->mBytefifo, data, len);
+}
+
+void poly_service_feed_json_msg(poly_service_t* pService, int interface,const char* msg, int len)
+{
+  //parse json to packet
+  json_obj_t json;
+  poly_packet_t packet;
+  int typeId = -1;
+  uint8_t tmp[pService->mMaxPacketSize];
+  int packedLen=0;
+
+  json_parse_string(&json, msg, len);
+
+  //get type
+  for(int i=0; i < json.mAttributeCount; i++)
+  {
+    if(strcmp(packetType,json.mAttributes[i].mKey) == 0)
+    {
+      for(int a=0; a < pService.mDescCount; a++)
+      {
+        if(strcmp(pService->mPacketDescs[a],json.mAttributes[i].mVal) == 0)
+        {
+          typeId = a;
+          break;
+        }
+      }
+      break;
+    }
+  }
+
+  if(typeId > -1)
+  {
+      poly_packet_build(&packet, pService->mPacketDescs[typeId],true);
+
+      poly_packet_parse_json_obj(&packet, &json);
+
+      //pack packet
+      packedLen = poly_packet_pack_encoded(&packet, tmp);
+
+      //feed packet to service
+      poly_service_feed(pService, interface, tmp, packetLen);
+
+      //destroy packet
+      poly_packet_clean(&packet);
+  }
+
+  json_clean(&json);
+
+
+
 }
 
 

@@ -151,6 +151,18 @@ int poly_packet_id(uint8_t* data, int len);
   */
 ParseStatus_e poly_packet_parse_buffer(poly_packet_t* packet, const uint8_t* data, int len);
 
+/**
+  *@brief parses a packet from raw data buffer
+  *@param packet ptr to packet being parsed
+  *@param obj json obj to be parsed
+  *@pre Must be bound to data struct before this is called
+  *@return PACKET_VALID if packet is ok
+  *@return PACKET_INCOMPLETE if len is shorter than packet header indicates
+  *@return PACKET_BAD_CHECKSUM if the checksum is incorrect (likely bit error)
+  *@return PACKET_PARSING_ERROR if len is longer than it should be (likely missed a delimiter)
+  */
+ParseStatus_e poly_packet_parse_json_obj(poly_packet_t* packet, json_obj_t* json);
+
 
 /**
   *@brief packs data into byte array

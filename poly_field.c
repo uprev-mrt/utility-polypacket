@@ -13,6 +13,7 @@
 poly_field_desc_t* poly_field_desc_init(poly_field_desc_t* desc, const char* name, eFieldType type, uint32_t len, eFieldFormat format)
 {
   desc->mName = name;
+  desc->mNameLen = strlen(name);
   desc->mFormat = FORMAT_DEC;
   desc->mLen = len;
   desc->mDataType = type;
@@ -164,6 +165,11 @@ int poly_field_parse(poly_field_t* field, const uint8_t* data)
   idx+= field->mSize;
 
   return idx;
+}
+
+int poly_field_parse_json(poly_field_t* field, const char* str)
+{
+  
 }
 
 int poly_field_print_json(poly_field_t* field, char* buf)

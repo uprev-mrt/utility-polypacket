@@ -116,7 +116,17 @@ void poly_service_start(poly_service_t* pService, int fifoDepth);
   *@param data ptr to data being added
   *@param len number of bytes being fed to service
   */
-void poly_service_feed(poly_service_t* pService, int interface, uint8_t* data, int len);
+void poly_service_feed(poly_service_t* pService, int interface,const uint8_t* data, int len);
+
+
+/**
+  *@brief 'Feeds' the service a complete json message
+  *@param pService ptr to poly service
+  *@param interface index of interface to feed
+  *@param data ptr to chars being added
+  *@param len number of chars being fed to service
+  */
+void poly_service_feed_json_msg(poly_service_t* pService, int interface,const char* msg, int len);
 
 
 /**
