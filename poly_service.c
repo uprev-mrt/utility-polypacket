@@ -113,8 +113,28 @@ void poly_service_feed(poly_service_t* pService, int interface, const uint8_t* d
 void poly_service_feed_json_msg(poly_service_t* pService, int interface,const char* msg, int len)
 {
   //parse json to packet
-  json_obj_t json;
   poly_packet_t packet;
+  uint8_t tmp[pService->mMaxPacketSize];
+  int packedLen=0;
+
+  poly_service_parse_json(pService, &packet, msg, len);
+
+
+  //pack packet
+  packedLen = poly_packet_pack_encoded(&packet, tmp);
+
+  //feed packet to service
+  poly_service_feed(pService, interface, tmp, packedLen);
+
+  //destroy packet
+  poly_packet_clean(&packet);
+
+}
+
+ParseStatus_e poly_service_parse_json(poly_service_t* pService, poly_packet_t* packet ,const char* msg, int len)
+{
+  //parse json to packet
+  json_obj_t json;
   int typeId = -1;
   uint8_t tmp[pService->mMaxPacketSize];
   int packedLen=0;
@@ -138,7 +158,6 @@ void poly_service_feed_json_msg(poly_service_t* pService, int interface,const ch
     }
   }
 
-
   if(typeId > -1)
   {
       poly_packet_build(&packet, pService->mPacketDescs[typeId],true);
@@ -153,21 +172,14 @@ void poly_service_feed_json_msg(poly_service_t* pService, int interface,const ch
         #endif
       #endif
 
-      //pack packet
-      packedLen = poly_packet_pack_encoded(&packet, tmp);
-
-      //feed packet to service
-      poly_service_feed(pService, interface, tmp, packedLen);
-
-      //destroy packet
-      poly_packet_clean(&packet);
+      return PACKET_VALID;
   }
 
   json_clean(&json);
 
-
-
+  return PACKET_PARSING_ERROR;
 }
+
 
 
 ParseStatus_e poly_service_try_parse_interface(poly_service_t* pService, poly_packet_t* packet, poly_interface_t* iface)

@@ -99,6 +99,15 @@ void ${proto.prefix}_service_init(int interfaceCount);
   */
 void ${proto.prefix}_service_teardown();
 
+
+/**
+  *@brief handles packets and dispatches to handler
+  *@param req incoming message
+  *@param resp response to message
+  *@param number of bytes
+  */
+HandlerStatus_e ${proto.prefix}_service_dispatch(${proto.prefix}_packet_t* req, ${proto.prefix}_packet_t* resp);
+
 /**
   *@brief processes data in buffers
   */
@@ -118,6 +127,14 @@ void ${proto.prefix}_service_register_tx( int iface, poly_tx_callback txCallBack
   *@param number of bytes
   */
 void ${proto.prefix}_service_feed(int iface, uint8_t* data, int len);
+
+/**
+  *@brief handles json message, and shortcuts the servicing proccess. used for http requests
+  *@param req incoming json message string
+  *@param resp response data
+  *@param number of bytes
+  */
+HandlerStatus_e ${proto.prefix}_handle_json(const char* req,int len, char* resp);
 
 /**
   *@brief 'Feeds' json message to service

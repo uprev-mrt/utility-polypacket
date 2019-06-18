@@ -242,6 +242,8 @@ ParseStatus_e poly_packet_parse_json_obj(poly_packet_t* packet, json_obj_t* json
 
   }
 
+  return PACKET_VALID;
+
 }
 
 

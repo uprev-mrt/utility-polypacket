@@ -93,6 +93,54 @@ void ${proto.prefix}_service_teardown()
 
 }
 
+HandlerStatus_e ${proto.prefix}_service_dispatch(${proto.prefix}_packet_t* packet, ${proto.prefix}_packet_t* response)
+{
+
+  HandlerStatus_e ${proto.prefix}_status;
+
+  //Dispatch packet
+  switch(packet->mPacket.mDesc->mTypeId)
+  {
+    case ${proto.prefix.upper()}_PACKET_PING_ID:
+      ${proto.prefix}_packet_build(&response, ${proto.prefix.upper()}_PACKET_ACK);
+      ${proto.prefix}_status = ${proto.prefix}_Ping_handler(packet, response);
+      break;
+    case ${proto.prefix.upper()}_PACKET_ACK_ID:
+      ${proto.prefix}_status = ${proto.prefix}_Ack_handler(packet);
+      break;
+% for packet in proto.packets:
+% if not packet.standard:
+    case ${packet.globalName}_ID:
+    %if packet.hasResponse:
+     ${proto.prefix}_packet_build(response, ${packet.response.globalName});
+     ${proto.prefix}_status = ${proto.prefix}_${packet.camel()}_handler(packet , response );
+    %else:
+      ${proto.prefix}_status = ${proto.prefix}_${packet.camel()}_handler(packet);
+    %endif
+      break;
+% endif
+% endfor
+    default:
+      //we should never get here
+      assert(false);
+      break;
+  }
+
+  //If this packet doe not have an explicit response and AutoAck is enabled, create an ack packet
+  if(( ${proto.prefix.upper()}_SERVICE.mAutoAck ) && (!response->mBuilt) && (!(packet->mPacket.mHeader.mToken & POLY_ACK_FLAG)))
+  {
+    ${proto.prefix}_packet_build(&response, ${proto.prefix.upper()}_PACKET_ACK);
+  }
+
+  //If the packet was not handled, throw it to the default handler
+  if(${proto.prefix}_status == PACKET_NOT_HANDLED)
+  {
+    ${proto.prefix}_status = ${proto.prefix}_default_handler(&packet);
+  }
+
+  return ${proto.prefix}_status;
+}
+
 /**
   *@brief attempts to process data in buffers and parse out packets
   */
@@ -101,7 +149,7 @@ void ${proto.prefix}_service_process()
   static ${proto.prefix}_packet_t packet;
   static ${proto.prefix}_packet_t response;
 
-  HandlerStatus_e status = PACKET_NOT_HANDLED;
+  HandlerStatus_e ${proto.prefix}_status = PACKET_NOT_HANDLED;
 
   //reset states of static packets
   packet.mBuilt = false;
@@ -114,49 +162,10 @@ void ${proto.prefix}_service_process()
     //if we get here, then the inner packet was built by the parser
     packet.mBuilt = true;
 
-    //Dispatch packet
-    switch(packet.mPacket.mDesc->mTypeId)
-    {
-      case ${proto.prefix.upper()}_PACKET_PING_ID:
-        ${proto.prefix}_packet_build(&response, ${proto.prefix.upper()}_PACKET_ACK);
-        status = ${proto.prefix}_Ping_handler(&packet, &response);
-        break;
-      case ${proto.prefix.upper()}_PACKET_ACK_ID:
-        status = ${proto.prefix}_Ack_handler(&packet);
-        break;
-  % for packet in proto.packets:
-  % if not packet.standard:
-      case ${packet.globalName}_ID:
-      %if packet.hasResponse:
-       ${proto.prefix}_packet_build(&response, ${packet.response.globalName});
-       status = ${proto.prefix}_${packet.camel()}_handler(&packet , &response );
-      %else:
-        status = ${proto.prefix}_${packet.camel()}_handler(&packet);
-      %endif
-        break;
-  % endif
-  % endfor
-      default:
-        //we should never get here
-        assert(false);
-        break;
-    }
+    ${proto.prefix}_status = ${proto.prefix}_service_dispatch(&packet,&response);
 
-    //If this packet doe not have an explicit response and AutoAck is enabled, create an ack packet
-    if(( ${proto.prefix.upper()}_SERVICE.mAutoAck ) && (!response.mBuilt) && (!(packet.mPacket.mHeader.mToken & POLY_ACK_FLAG)))
-    {
-      ${proto.prefix}_packet_build(&response, ${proto.prefix.upper()}_PACKET_ACK);
-    }
-
-    //If the packet was not handled, throw it to the default handler
-    if(status == PACKET_NOT_HANDLED)
-    {
-      status = ${proto.prefix}_default_handler(&packet);
-    }
-
-
-    //If a response has been build and the status was not set to ignore, we send a response on the intrface it came from
-    if(( status == PACKET_HANDLED) && (response.mBuilt) )
+    //If a response has been build and the ${proto.prefix}_status was not set to ignore, we send a response on the intrface it came from
+    if(( ${proto.prefix}_status == PACKET_HANDLED) && (response.mBuilt) )
     {
       //set response token with ack flag
 			response.mPacket.mHeader.mToken = packet.mPacket.mHeader.mToken | POLY_ACK_FLAG;
@@ -185,6 +194,40 @@ void ${proto.prefix}_service_feed(int iface, uint8_t* data, int len)
   poly_service_feed(&${proto.service()},iface,data,len);
 }
 
+HandlerStatus_e ${proto.prefix}_handle_json(const char* req, int len, char* resp)
+{
+  ${proto.prefix}_packet_t packet;
+  ${proto.prefix}_packet_t response;
+
+  HandlerStatus_e ${proto.prefix}_status = PACKET_NOT_HANDLED;
+
+
+  if(poly_service_parse_json(&${proto.service()}, &packet.mPacket, req, len) == PACKET_VALID)
+  {
+    //if we get here, then the inner packet was built by the parser
+    packet.mBuilt = true;
+
+    ${proto.prefix}_status = ${proto.prefix}_service_dispatch(&packet,&response);
+
+
+    //If a response has been build and the ${proto.prefix}_status was not set to ignore, we send a response on the intrface it came from
+    if(( ${proto.prefix}_status == PACKET_HANDLED) && (response.mBuilt) )
+    {
+      //set response token with ack flag
+			response.mPacket.mHeader.mToken = packet.mPacket.mHeader.mToken | POLY_ACK_FLAG;
+      poly_packet_print_json(&response.mPacket, resp, true);
+    }
+
+    //Clean the packets
+    ${proto.prefix}_clean(&packet);
+    ${proto.prefix}_clean(&response);
+
+  }
+
+  return ${proto.prefix}_status;
+}
+
+
 void ${proto.prefix}_service_feed_json(int iface, const char* msg, int len)
 {
   poly_service_feed_json_msg(&${proto.service()},iface,msg,len);
@@ -192,16 +235,16 @@ void ${proto.prefix}_service_feed_json(int iface, const char* msg, int len)
 
 HandlerStatus_e ${proto.prefix}_send(int iface, ${proto.prefix}_packet_t* packet)
 {
-  HandlerStatus_e status;
+  HandlerStatus_e ${proto.prefix}_status;
 
-  status = poly_service_spool(&${proto.service()}, iface, &packet->mPacket);
+  ${proto.prefix}_status = poly_service_spool(&${proto.service()}, iface, &packet->mPacket);
 
-  if(status == PACKET_SPOOLED)
+  if(${proto.prefix}_status == PACKET_SPOOLED)
   {
     packet->mSpooled = true;
   }
 
-  return status;
+  return ${proto.prefix}_status;
 }
 
 void ${proto.prefix}_auto_ack(bool enable)
@@ -319,14 +362,14 @@ ${field.getParamType()} ${proto.prefix}_get${field.camel()}(${proto.prefix}_pack
 
 HandlerStatus_e ${proto.prefix}_sendPing(int iface)
 {
-  HandlerStatus_e status;
+  HandlerStatus_e ${proto.prefix}_status;
   //create packet
   ${proto.prefix}_packet_t packet;
   ${proto.prefix}_packet_build(&packet, ${proto.prefix.upper()}_PACKET_PING);
 
-  status = ${proto.prefix}_send(iface,&packet); //send packet
+  ${proto.prefix}_status = ${proto.prefix}_send(iface,&packet); //send packet
   ${proto.prefix}_clean(&packet); //This will only free the underlying packet if the spooling was unsuccessful
-  return status;
+  return ${proto.prefix}_status;
 }
 
 % for packet in proto.packets:
@@ -341,7 +384,7 @@ HandlerStatus_e ${proto.prefix}_sendPing(int iface)
   *@param ${field.name} value to set ${field.name} field to
   %endif
   %endfor
-  *@return status send attempt
+  *@return ${proto.prefix}_status send attempt
   */
 HandlerStatus_e ${proto.prefix}_send${packet.camel()}(int iface\
   %for idx,field in enumerate(packet.fields):
@@ -354,7 +397,7 @@ HandlerStatus_e ${proto.prefix}_send${packet.camel()}(int iface\
   %endfor
 )
 {
-  HandlerStatus_e status;
+  HandlerStatus_e ${proto.prefix}_status;
   //create packet
   ${proto.prefix}_packet_t packet;
   ${proto.prefix}_packet_build(&packet,${packet.globalName});
@@ -364,9 +407,9 @@ HandlerStatus_e ${proto.prefix}_send${packet.camel()}(int iface\
   ${proto.prefix}_set${field.camel()}(&packet, ${field.name});
   %endfor
 
-  status = ${proto.prefix}_send(iface,&packet); //send packet
+  ${proto.prefix}_status = ${proto.prefix}_send(iface,&packet); //send packet
   ${proto.prefix}_clean(&packet); //This will only free the underlying packet if the spooling was unsuccessful
-  return status;
+  return ${proto.prefix}_status;
 }
 %endif
 % endfor
@@ -405,7 +448,7 @@ __attribute__((weak)) HandlerStatus_e ${proto.prefix}_Ack_handler(${proto.prefix
 /**
   *@brief Handler for receiving ${packet.name} packets
   *@param ${packet.name} incoming ${packet.name} packet
-  *@return handling status
+  *@return handling ${proto.prefix}_status
   */
 __attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.camel()}_handler(${proto.prefix}_packet_t* ${proto.prefix}_${packet.name})
 %else:
@@ -413,7 +456,7 @@ __attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.camel()}_handler(
   *@brief Handler for receiving ${packet.name} packets
   *@param ${packet.name} incoming ${packet.name} packet
   *@param ${packet.response.name} ${packet.response.name} packet to respond with
-  *@return handling status
+  *@return handling ${proto.prefix}_status
   */
 __attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.camel()}_handler(${proto.prefix}_packet_t* ${proto.prefix}_${packet.name}, ${proto.prefix}_packet_t* ${proto.prefix}_${packet.response.name})
 %endif
@@ -445,7 +488,7 @@ __attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.camel()}_handler(
 /**
   *@brief catch-all handler for any packet not handled by its default handler
   *@param metaPacket ptr to ${proto.prefix}_packet_t containing packet
-  *@return handling status
+  *@return handling ${proto.prefix}_status
   */
 __attribute__((weak)) HandlerStatus_e ${proto.prefix}_default_handler( ${proto.prefix}_packet_t * ${proto.prefix}_packet)
 {

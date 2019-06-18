@@ -130,6 +130,18 @@ void poly_service_feed_json_msg(poly_service_t* pService, int interface,const ch
 
 
 /**
+  *@brief parses packet from json
+  *@param pService ptr to poly service
+  *@param packet ptr to store packet if found
+  *@param msg json string
+  *@param len length of json string
+  *@return PACKET_VALID if packet is ok
+  *@return PACKET_PARSING_ERROR if len is longer than it should be (likely missed a delimiter)
+  */
+ParseStatus_e poly_service_parse_json(poly_service_t* pService, poly_packet_t* packet ,const char* msg, int len);
+
+
+/**
   *@brief parses packet from interface
   *@param pService ptr to poly service
   *@param packet ptr to store packet if found

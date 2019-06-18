@@ -572,7 +572,7 @@ def init_args():
     parser = argparse.ArgumentParser("Tool to generate code and documentation for PolyPacket protocol")
     parser.add_argument('-i', '--input', type=str, help='Xml file to parse', required=True)
     parser.add_argument('-o', '--output', type=str, help='Output path', default="")
-    parser.add_argument('-d', '--document', action='store_true', help='Enable documentation', default=True)
+    parser.add_argument('-d', '--document', type=str, help='Enable documentation', default="")
     parser.add_argument('-a', '--app', action='store_true', help='Generates the app layer code to fill out', default=False)
     parser.add_argument('-s', '--snippets', action='store_true', help='Adds helpful code snippets to files', default=False)
     parser.add_argument('-u', '--utility', action='store_true', help='Generates Linux host utility application', default=False)
@@ -587,8 +587,10 @@ def main():
     args= parser.parse_args()
     argCount = len(sys.argv)
 
+
     xmlFile = args.input
     path = args.output
+    docPath = args.document
 
     fileCrc = crc(xmlFile)
 
@@ -602,14 +604,14 @@ def main():
     #get path of this script so we can run remotely
     script_dir = os.path.dirname(__file__)
     xmlPath = os.path.dirname(xmlFile)
+    if(docPath == ""):
+        docPath = xmlPath
 
     protocol.scriptDir = script_dir
 
-    if(args.document):
-        buildTemplate(protocol, script_dir +'/templates/doc_template.md', xmlPath + protocol.name+"_ICD.md")
+    buildTemplate(protocol, script_dir +'/templates/doc_template.md', docPath + protocol.name+"_ICD.md")
 
-    if(args.html):
-        buildTemplate(protocol, script_dir +'/templates/doc_template.html', xmlPath + protocol.name+"_ICD.html")
+    buildTemplate(protocol, script_dir +'/templates/doc_template.html', docPath + protocol.name+"_ICD.html")
         #pdfkit.from_file(xmlPath + protocol.name+"_ICD.html", xmlPath + protocol.name+"_ICD.pdf" )
 
     if(args.utility):

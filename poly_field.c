@@ -6,7 +6,7 @@
   */
 
 #include "poly_field.h"
-#include <cstdlib>
+//#include <cstdlib>
 #include <assert.h>
 
 #define MEM_EXISTS( field) ((field->mAllocated) || (field->mBound))
@@ -239,6 +239,9 @@ int poly_field_parse_str(poly_field_t* field, const char* str)
       dtmp = atof(str);
       poly_field_set(field, (uint8_t*) &ftmp);
       break;
+    case TYPE_STRING:
+    case TYPE_CHAR:
+      break;
   }
 
   return 0;
@@ -306,7 +309,7 @@ int poly_field_print_val(poly_field_t* field, int element, char* buf)
         idx+= MRT_SPRINTF(&buf[idx], "%u", *(uint32_t*)pData);
         break;
       case TYPE_UINT64:
-        idx+= MRT_SPRINTF(&buf[idx], "%lu", *(uint64_t*)pData);
+        idx+= MRT_SPRINTF(&buf[idx], "%llu", *(uint64_t*)pData);
         break;
       case TYPE_INT8:
         idx+= MRT_SPRINTF(&buf[idx], "%i", *(int8_t*)pData);
@@ -319,7 +322,7 @@ int poly_field_print_val(poly_field_t* field, int element, char* buf)
         idx+= MRT_SPRINTF(&buf[idx], "%i", *(int32_t*)pData);
         break;
       case TYPE_INT64:
-        idx+= MRT_SPRINTF(&buf[idx], "%li", *(int64_t*)pData);
+        idx+= MRT_SPRINTF(&buf[idx], "%lli", *(int64_t*)pData);
         break;
       case TYPE_FLOAT:
         idx+= MRT_SPRINTF(&buf[idx], "%f", *(float*)pData);
