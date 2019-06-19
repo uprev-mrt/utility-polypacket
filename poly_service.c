@@ -139,7 +139,9 @@ ParseStatus_e poly_service_parse_json(poly_service_t* pService, poly_packet_t* p
   uint8_t tmp[pService->mMaxPacketSize];
   int packedLen=0;
 
+
   json_parse_string(&json, msg, len);
+
 
   //get type
   for(int i=0; i < json.mAttributeCount; i++)
@@ -158,11 +160,12 @@ ParseStatus_e poly_service_parse_json(poly_service_t* pService, poly_packet_t* p
     }
   }
 
+
   if(typeId > -1)
   {
-      poly_packet_build(&packet, pService->mPacketDescs[typeId],true);
+      poly_packet_build(packet, pService->mPacketDescs[typeId],true);
 
-      poly_packet_parse_json_obj(&packet, &json);
+      poly_packet_parse_json_obj(packet, &json);
 
       #if defined(POLY_PACKET_DEBUG_LVL) && POLY_PACKET_DEBUG_LVL >0
         //If debug is enabled, print json of outgoing packets

@@ -572,7 +572,8 @@ def init_args():
     parser = argparse.ArgumentParser("Tool to generate code and documentation for PolyPacket protocol")
     parser.add_argument('-i', '--input', type=str, help='Xml file to parse', required=True)
     parser.add_argument('-o', '--output', type=str, help='Output path', default="")
-    parser.add_argument('-d', '--document', type=str, help='Enable documentation', default="")
+    parser.add_argument('-d', '--document', type=str, help='documentation path', default="")
+    parser.add_argument('-j', '--javascript', type=str, help='javascript output path', default="")
     parser.add_argument('-a', '--app', action='store_true', help='Generates the app layer code to fill out', default=False)
     parser.add_argument('-s', '--snippets', action='store_true', help='Adds helpful code snippets to files', default=False)
     parser.add_argument('-u', '--utility', action='store_true', help='Generates Linux host utility application', default=False)
@@ -591,6 +592,7 @@ def main():
     xmlFile = args.input
     path = args.output
     docPath = args.document
+    jsPath = args.javascript
 
     fileCrc = crc(xmlFile)
 
@@ -613,6 +615,9 @@ def main():
 
     buildTemplate(protocol, script_dir +'/templates/doc_template.html', docPath + protocol.name+"_ICD.html")
         #pdfkit.from_file(xmlPath + protocol.name+"_ICD.html", xmlPath + protocol.name+"_ICD.pdf" )
+
+    if(jsPath != ""):
+        buildTemplate(protocol, script_dir + '/templates/javascript_template.js', jsPath + protocol.fileName+".js");
 
     if(args.utility):
         genUtility(protocol,xmlFile, script_dir, path+"/" + protocol.name + "_utility/")

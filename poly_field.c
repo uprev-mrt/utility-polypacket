@@ -142,6 +142,7 @@ void poly_field_set(poly_field_t* field, const uint8_t* data)
     {
       field->mSize = field->mDesc->mLen;
     }
+    field->mData[field->mSize] = 0;
   }
 
   field->mPresent =true;

@@ -102,7 +102,7 @@ HandlerStatus_e ${proto.prefix}_service_dispatch(${proto.prefix}_packet_t* packe
   switch(packet->mPacket.mDesc->mTypeId)
   {
     case ${proto.prefix.upper()}_PACKET_PING_ID:
-      ${proto.prefix}_packet_build(&response, ${proto.prefix.upper()}_PACKET_ACK);
+      ${proto.prefix}_packet_build(response, ${proto.prefix.upper()}_PACKET_ACK);
       ${proto.prefix}_status = ${proto.prefix}_Ping_handler(packet, response);
       break;
     case ${proto.prefix.upper()}_PACKET_ACK_ID:
@@ -129,13 +129,13 @@ HandlerStatus_e ${proto.prefix}_service_dispatch(${proto.prefix}_packet_t* packe
   //If this packet doe not have an explicit response and AutoAck is enabled, create an ack packet
   if(( ${proto.prefix.upper()}_SERVICE.mAutoAck ) && (!response->mBuilt) && (!(packet->mPacket.mHeader.mToken & POLY_ACK_FLAG)))
   {
-    ${proto.prefix}_packet_build(&response, ${proto.prefix.upper()}_PACKET_ACK);
+    ${proto.prefix}_packet_build(response, ${proto.prefix.upper()}_PACKET_ACK);
   }
 
   //If the packet was not handled, throw it to the default handler
   if(${proto.prefix}_status == PACKET_NOT_HANDLED)
   {
-    ${proto.prefix}_status = ${proto.prefix}_default_handler(&packet);
+    ${proto.prefix}_status = ${proto.prefix}_default_handler(packet);
   }
 
   return ${proto.prefix}_status;
@@ -215,13 +215,17 @@ HandlerStatus_e ${proto.prefix}_handle_json(const char* req, int len, char* resp
     {
       //set response token with ack flag
 			response.mPacket.mHeader.mToken = packet.mPacket.mHeader.mToken | POLY_ACK_FLAG;
-      poly_packet_print_json(&response.mPacket, resp, true);
+      poly_packet_print_json(&response.mPacket, resp, false);
     }
 
     //Clean the packets
     ${proto.prefix}_clean(&packet);
     ${proto.prefix}_clean(&response);
 
+  }
+  else
+  {
+    MRT_SPRINTF(resp,"{\"Error\":\"Parsing Error\"}");
   }
 
   return ${proto.prefix}_status;
@@ -463,16 +467,12 @@ __attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.camel()}_handler(
 {
   /*  Get Required Fields in packet */
 % for field in packet.fields:
-%if field.isRequired:
   //${field.getParamType()} ${field.name} = ${proto.prefix}_get${field.camel()}(${proto.prefix}_${packet.name}); //${field.desc}
-%endif
 % endfor
 %if packet.hasResponse:
   /*    Set required Fields in response  */
 % for field in packet.response.fields:
-%if field.isRequired:
   //${proto.prefix}_set${field.camel()}(${proto.prefix}_${packet.response.name}, value );  //${field.desc}
-%endif
 %endfor
 %endif
 
