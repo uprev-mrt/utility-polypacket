@@ -180,6 +180,15 @@ int poly_packet_pack(poly_packet_t* packet, uint8_t* data);
   */
 int poly_packet_pack_encoded(poly_packet_t* packet, uint8_t* data);
 
+
+/**
+  *@brief Copies all fields present in both packets from src to dst
+  *@param dst ptr to packet to copy to
+  *@param src ptr to packet to copy from
+  *@return number of fields copied
+  */
+int poly_packet_copy(poly_packet_t* dst, poly_packet_t* src);
+
 /**
   *@brief prints json representation of packet to a buffer
   *@param packet ptr to packet

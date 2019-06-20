@@ -194,6 +194,7 @@ class packetDesc:
         self.className = name.capitalize() +"Packet"
         self.desc =""
         self.fields = []
+        self.sruct = False
         self.fieldCount=0
         self.respondsTo = {}
         self.requests = {}
@@ -369,7 +370,10 @@ class protocolDesc:
         self.packets = []
         self.packetIdx ={}
         self.packetId =0
-        self.prefix = "pp";
+        self.structs =[]
+        self.structIdx ={}
+        self.structId =0
+        self.prefix = "pp"
         self.snippets = False
         self.genUtility = False
         self.scriptDir =""
@@ -392,6 +396,15 @@ class protocolDesc:
         packet.setPrefix(self.prefix)
         self.packets.append(packet)
         self.packetIdx[packet.name] = self.packetId
+        self.packetId+=1
+
+    def addStruct(self,struct):
+        struct.packetId = self.packetId
+        struct.protocol = self
+        struct.struct = True
+        struct.globalName = self.prefix.upper()+"_STRUCT_"+struct.name.upper()
+        self.structs.append(struct)
+        self.structIdx[struct.name] = self.packetId
         self.packetId+=1
 
     def getPacket(self, name):
@@ -512,6 +525,41 @@ def parseXML(xmlfile):
         newPacket.desc = desc
 
         protocol.addPacket(newPacket)
+
+    #get all packet types
+    for struct in root.findall('./Structs/Struct'):
+        name = struct.attrib['name']
+        desc =""
+        newStruct = packetDesc(name)
+
+
+        if(name in protocol.structIdx):
+            print( 'ERROR Duplicate Struct Name!: ' + name)
+
+        if('desc' in packet.attrib):
+            desc = packet.attrib['desc']
+
+        #get all fields declared for packet
+        for pfield in struct:
+
+            pfname = pfield.attrib['name']
+            strReq =""
+            if not (pfname in protocol.fieldIdx):
+                print( 'ERROR Field not declared: ' + pfname)
+
+            #get id of field and make a copy
+            idx = protocol.fieldIdx[pfname]
+            fieldCopy = copy.deepcopy(protocol.fields[idx])
+
+
+            if('desc' in pfield.attrib):
+                fieldCopy.desc = pfield.attrib['desc']
+
+            newStruct.addField(fieldCopy)
+
+        newStruct.desc = desc
+
+        protocol.addStruct(newStruct)
 
 
     for packet in protocol.packets:

@@ -67,6 +67,10 @@ typedef enum{
 extern poly_packet_desc_t* ${packet.globalName};
 % endfor
 
+% for struct in proto.structs:
+extern poly_packet_desc_t* ${struct.globalName};
+% endfor
+
 
 //Declare extern field descriptors
 % for field in proto.fields:
@@ -81,6 +85,8 @@ typedef struct{
   bool mSpooled;            //spooled data doesnt get cleaned, the spool owns it now
   bool mBuilt;
 }${proto.prefix}_packet_t;
+
+typedef ${proto.prefix}_packet_t ${proto.prefix}_struct_t;
 
 
 /*******************************************************************************
@@ -169,6 +175,8 @@ void ${proto.prefix}_auto_ack(bool enable);
 void ${proto.prefix}_packet_build(${proto.prefix}_packet_t* packet, poly_packet_desc_t* desc);
 
 
+
+
 /**
   *@brief recrusively cleans packet and its contents if it still has ownership
   *@param packet packet to clean
@@ -191,6 +199,12 @@ void ${proto.prefix}_clean(${proto.prefix}_packet_t* packet);
   */
 #define ${proto.prefix}_parse(packet,buf,len) poly_packet_parse_buffer(&(packet)->mPacket, buf, len)
 
+/**
+  *@brief Copies all fields present in both packets from src to dst
+  *@param dst ptr to packet to copy to
+  *@param src ptr to packet to copy from
+  */
+#define ${proto.prefix}_packet_copy(dst,src) poly_packet_copy(&(dst)->mPacket,&(src)->mPacket )
 
 /**
   *@brief packs packet into a byte array

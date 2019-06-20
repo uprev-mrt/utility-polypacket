@@ -17,9 +17,17 @@
 #define ${packet.globalName}_ID ${packet.packetId}
 % endfor
 
+% for packet in proto.structs:
+#define ${packet.globalName}_ID ${packet.packetId}
+% endfor
+
 
 //Global descriptors
 % for packet in proto.packets:
+poly_packet_desc_t* ${packet.globalName};
+% endfor
+
+% for packet in proto.structs:
 poly_packet_desc_t* ${packet.globalName};
 % endfor
 
@@ -29,6 +37,10 @@ poly_field_desc_t* ${field.globalName};
 
 //Global descriptors
 % for packet in proto.packets:
+poly_packet_desc_t _${packet.globalName};
+% endfor
+
+% for packet in proto.structs:
 poly_packet_desc_t _${packet.globalName};
 % endfor
 
@@ -49,10 +61,15 @@ static poly_service_t ${proto.service()};
 void ${proto.prefix}_service_init(int interfaceCount)
 {
   //initialize core service
-  poly_service_init(&${proto.service()},${len(proto.packets)}, interfaceCount);
+  poly_service_init(&${proto.service()},${len(proto.packets) + len(proto.structs)}, interfaceCount);
 
   //Build Packet Descriptors
 % for packet in proto.packets:
+  ${packet.globalName} = poly_packet_desc_init(&_${packet.globalName} ,${packet.globalName}_ID,"${packet.name}", ${len(packet.fields)});
+% endfor
+
+  //Build Struct Descriptors
+% for packet in proto.structs:
   ${packet.globalName} = poly_packet_desc_init(&_${packet.globalName} ,${packet.globalName}_ID,"${packet.name}", ${len(packet.fields)});
 % endfor
 
@@ -63,7 +80,17 @@ void ${proto.prefix}_service_init(int interfaceCount)
 
 % for packet in proto.packets:
 % if len(packet.fields) > 0:
-  //Setting Field Descriptors for ${packet.name}
+  //Setting Field Descriptors for packet: ${packet.name}
+  % for field in packet.fields:
+  poly_packet_desc_add_field(${packet.globalName} , ${field.globalName} , ${str(field.isRequired).lower()} );
+  % endfor
+% endif
+
+% endfor
+
+% for packet in proto.structs:
+% if len(packet.fields) > 0:
+  //Setting Field Descriptors for struct: ${packet.name}
   % for field in packet.fields:
   poly_packet_desc_add_field(${packet.globalName} , ${field.globalName} , ${str(field.isRequired).lower()} );
   % endfor
@@ -73,6 +100,11 @@ void ${proto.prefix}_service_init(int interfaceCount)
 
   //Register packet descriptors with the service
 % for packet in proto.packets:
+  poly_service_register_desc(&${proto.service()}, ${packet.globalName});
+% endfor
+
+  //Register packet descriptors with the service
+% for packet in proto.structs:
   poly_service_register_desc(&${proto.service()}, ${packet.globalName});
 % endfor
 

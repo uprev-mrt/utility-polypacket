@@ -356,6 +356,22 @@ int poly_packet_pack_encoded(poly_packet_t* packet, uint8_t* data)
   return (int)(dst-start);
 }
 
+
+int poly_packet_copy(poly_packet_t* dst, poly_packet_t* src)
+{
+  int count =0;
+  for(int i=0; i< src->mDesc->mFieldCount; i++)
+  {
+    for(int a=0; a< dst->mDesc->mFieldCount; a++)
+    {
+      //poly_field_copy makes sure the fields are compatible
+      count += poly_field_copy(&dst->mFields[a], &src->mFields[i]);
+    }
+  }
+
+  return count;
+}
+
 int poly_packet_print_json(poly_packet_t* packet, char* buf, bool printHeader)
 {
   int idx =0;

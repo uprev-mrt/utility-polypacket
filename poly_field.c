@@ -159,6 +159,20 @@ uint8_t* poly_field_get(poly_field_t* field, uint8_t* data)
   return field->mData;
 }
 
+int poly_field_copy(poly_field_t* dst,poly_field_t* src)
+{
+  //if descriptor is the same and the src has data
+  if((dst->mDesc == src->mDesc) && (src->mPresent))
+  {
+    assert(MEM_EXISTS(dst));
+    assert(MEM_EXISTS(src));
+
+    poly_field_set(dst, src->mData);
+    return 1;
+  }
+  return 0;
+}
+
 int poly_field_parse(poly_field_t* field, const uint8_t* data)
 {
   int idx =0;

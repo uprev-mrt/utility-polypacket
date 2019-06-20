@@ -137,6 +137,14 @@ void poly_field_set(poly_field_t* field, const uint8_t* data);
 uint8_t* poly_field_get(poly_field_t* field, uint8_t* data);
 
 /**
+  *@brief copies data from src field to dst field if descriptors match
+  *@param dst ptr to field to copy TO
+  *@param src ptr to field to copy FROM
+  *@returns 1 if unsuccessful
+  */
+int poly_field_copy(poly_field_t* dst,poly_field_t* src);
+
+/**
   *@brief Parses raw data for a field
   *@param field ptr to field being parsed
   *@param data ptr to raw data to be parsed
