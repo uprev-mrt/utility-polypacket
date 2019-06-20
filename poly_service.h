@@ -116,7 +116,29 @@ void poly_service_start(poly_service_t* pService, int fifoDepth);
   *@param data ptr to data being added
   *@param len number of bytes being fed to service
   */
-void poly_service_feed(poly_service_t* pService, int interface, uint8_t* data, int len);
+void poly_service_feed(poly_service_t* pService, int interface,const uint8_t* data, int len);
+
+
+/**
+  *@brief 'Feeds' the service a complete json message
+  *@param pService ptr to poly service
+  *@param interface index of interface to feed
+  *@param data ptr to chars being added
+  *@param len number of chars being fed to service
+  */
+void poly_service_feed_json_msg(poly_service_t* pService, int interface,const char* msg, int len);
+
+
+/**
+  *@brief parses packet from json
+  *@param pService ptr to poly service
+  *@param packet ptr to store packet if found
+  *@param msg json string
+  *@param len length of json string
+  *@return PACKET_VALID if packet is ok
+  *@return PACKET_PARSING_ERROR if len is longer than it should be (likely missed a delimiter)
+  */
+ParseStatus_e poly_service_parse_json(poly_service_t* pService, poly_packet_t* packet ,const char* msg, int len);
 
 
 /**

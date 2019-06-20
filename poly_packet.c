@@ -34,7 +34,7 @@ poly_packet_desc_t* poly_packet_desc_deinit(poly_packet_desc_t* desc)
     free(desc->mFields);
     free(desc->mRequirementMap);
   }
-  
+
   return desc;
 }
 
@@ -224,6 +224,28 @@ ParseStatus_e poly_packet_parse_buffer(poly_packet_t* packet, const uint8_t* dat
   return PACKET_VALID;
 }
 
+ParseStatus_e poly_packet_parse_json_obj(poly_packet_t* packet, json_obj_t* json)
+{
+  //iterate through text and parse key/value pairs
+  for(int i=0 ; i < json->mAttributeCount; i++)
+  {
+
+    for(int a=0; a < packet->mDesc->mFieldCount; a++)
+    {
+
+      if((!packet->mFields[a].mPresent) && (strcmp(packet->mFields[a].mDesc->mName, json->mAttributes[i].mKey) == 0))
+      {
+        poly_field_parse_str(&packet->mFields[a],json->mAttributes[i].mVal);
+        break;
+      }
+    }
+
+  }
+
+  return PACKET_VALID;
+
+}
+
 
 int poly_packet_pack(poly_packet_t* packet, uint8_t* data)
 {
@@ -332,6 +354,22 @@ int poly_packet_pack_encoded(poly_packet_t* packet, uint8_t* data)
 
 
   return (int)(dst-start);
+}
+
+
+int poly_packet_copy(poly_packet_t* dst, poly_packet_t* src)
+{
+  int count =0;
+  for(int i=0; i< src->mDesc->mFieldCount; i++)
+  {
+    for(int a=0; a< dst->mDesc->mFieldCount; a++)
+    {
+      //poly_field_copy makes sure the fields are compatible
+      count += poly_field_copy(&dst->mFields[a], &src->mFields[i]);
+    }
+  }
+
+  return count;
 }
 
 int poly_packet_print_json(poly_packet_t* packet, char* buf, bool printHeader)

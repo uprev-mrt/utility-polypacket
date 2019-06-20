@@ -6,13 +6,21 @@
   */
 
 #include "poly_field.h"
+//#include <cstdlib>
 #include <assert.h>
 
 #define MEM_EXISTS( field) ((field->mAllocated) || (field->mBound))
 
+#define PARSE_U(x,s,b)  x = strtoul(s, NULL, b);  \
+                          poly_field_set(field, (uint8_t*) &x)
+
+#define PARSE_I(x,s,b)  x = strtol(s, NULL, b);  \
+                          poly_field_set(field, (uint8_t*) &x)
+
 poly_field_desc_t* poly_field_desc_init(poly_field_desc_t* desc, const char* name, eFieldType type, uint32_t len, eFieldFormat format)
 {
   desc->mName = name;
+  desc->mNameLen = strlen(name);
   desc->mFormat = FORMAT_DEC;
   desc->mLen = len;
   desc->mDataType = type;
@@ -85,6 +93,7 @@ void poly_field_init(poly_field_t* field, poly_field_desc_t* desc, bool allocate
   if(allocate)
   {
     field->mData = (uint8_t*) malloc(field->mSize);
+    memset(field->mData,0,field->mSize);
     field->mAllocated = true;
   }
   else
@@ -134,6 +143,7 @@ void poly_field_set(poly_field_t* field, const uint8_t* data)
     {
       field->mSize = field->mDesc->mLen;
     }
+    field->mData[field->mSize] = 0;
   }
 
   field->mPresent =true;
@@ -150,6 +160,20 @@ uint8_t* poly_field_get(poly_field_t* field, uint8_t* data)
   return field->mData;
 }
 
+int poly_field_copy(poly_field_t* dst,poly_field_t* src)
+{
+  //if descriptor is the same and the src has data
+  if((dst->mDesc == src->mDesc) && (src->mPresent))
+  {
+    assert(MEM_EXISTS(dst));
+    assert(MEM_EXISTS(src));
+
+    poly_field_set(dst, src->mData);
+    return 1;
+  }
+  return 0;
+}
+
 int poly_field_parse(poly_field_t* field, const uint8_t* data)
 {
   int idx =0;
@@ -164,6 +188,79 @@ int poly_field_parse(poly_field_t* field, const uint8_t* data)
   idx+= field->mSize;
 
   return idx;
+}
+
+int poly_field_parse_str(poly_field_t* field, const char* str)
+{
+
+  uint8_t u8tmp;
+  uint16_t u16tmp;
+  uint32_t u32tmp;
+  uint64_t u64tmp;
+
+  int8_t i8tmp;
+  int16_t i16tmp;
+  int32_t i32tmp;
+  int64_t i64tmp;
+
+  float ftmp;
+  double dtmp;
+
+  int base = 10;
+
+  if(field->mDesc->mFormat == FORMAT_HEX)
+  {
+    base = 16;
+  }
+  //copy string
+  if((field->mDesc->mNullTerm) || (field->mDesc->mDataType == TYPE_CHAR))
+  {
+    poly_field_set(field, (uint8_t*)str);
+    return 0 ;
+  }
+
+  //parse data types
+  switch(field->mDesc->mDataType)
+  {
+    case TYPE_UINT8:
+      PARSE_U( u8tmp,str,base);
+      break;
+    case TYPE_UINT16:
+      PARSE_U( u16tmp,str,base);
+      break;
+    case TYPE_UINT32:
+      PARSE_U( u32tmp,str,base);
+      break;
+    case TYPE_UINT64:
+      PARSE_U(u64tmp,str,base);
+      break;
+    case TYPE_INT8:
+      PARSE_I(i8tmp,str,base);
+      break;
+    case TYPE_INT16:
+      PARSE_I(i16tmp,str,base);
+      break;
+    case TYPE_INT32:
+    case TYPE_INT:
+      PARSE_I(i32tmp,str,base);
+      break;
+    case TYPE_INT64:
+      PARSE_I(i64tmp,str,base);
+      break;
+    case TYPE_FLOAT:
+      ftmp = atof(str);
+      poly_field_set(field, (uint8_t*) &ftmp);
+      break;
+    case TYPE_DOUBLE:
+      dtmp = atof(str);
+      poly_field_set(field, (uint8_t*) &ftmp);
+      break;
+    case TYPE_STRING:
+    case TYPE_CHAR:
+      break;
+  }
+
+  return 0;
 }
 
 int poly_field_print_json(poly_field_t* field, char* buf)
@@ -228,7 +325,7 @@ int poly_field_print_val(poly_field_t* field, int element, char* buf)
         idx+= MRT_SPRINTF(&buf[idx], "%u", *(uint32_t*)pData);
         break;
       case TYPE_UINT64:
-        idx+= MRT_SPRINTF(&buf[idx], "%lu", *(uint64_t*)pData);
+        idx+= MRT_SPRINTF(&buf[idx], "%llu", *(uint64_t*)pData);
         break;
       case TYPE_INT8:
         idx+= MRT_SPRINTF(&buf[idx], "%i", *(int8_t*)pData);
@@ -241,7 +338,7 @@ int poly_field_print_val(poly_field_t* field, int element, char* buf)
         idx+= MRT_SPRINTF(&buf[idx], "%i", *(int32_t*)pData);
         break;
       case TYPE_INT64:
-        idx+= MRT_SPRINTF(&buf[idx], "%li", *(int64_t*)pData);
+        idx+= MRT_SPRINTF(&buf[idx], "%lli", *(int64_t*)pData);
         break;
       case TYPE_FLOAT:
         idx+= MRT_SPRINTF(&buf[idx], "%f", *(float*)pData);
@@ -255,7 +352,7 @@ int poly_field_print_val(poly_field_t* field, int element, char* buf)
   }
   else if(field->mDesc->mFormat == FORMAT_HEX)
   {
-    idx+= MRT_SPRINTF(&buf[idx], "\"x");
+    idx+= MRT_SPRINTF(&buf[idx], "\"0x");
     for(int i=0; i < field->mDesc->mObjSize; i++)
     {
       idx+= MRT_SPRINTF(&buf[idx], "%02X", pData[i]);

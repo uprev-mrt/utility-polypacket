@@ -123,7 +123,7 @@ cob_fifo_status_e cob_fifo_pop(cob_fifo_t* fifo, uint8_t* data)
 
 cob_fifo_status_e cob_fifo_push_buf(cob_fifo_t* fifo, const uint8_t* data, int len)
 {
-  cob_fifo_status_e result;
+  cob_fifo_status_e result = COB_FIFO_OK;
 
   for(int i=0; i < len; i++)
   {
@@ -135,7 +135,7 @@ cob_fifo_status_e cob_fifo_push_buf(cob_fifo_t* fifo, const uint8_t* data, int l
 
 cob_fifo_status_e cob_fifo_pop_buf(cob_fifo_t* fifo, uint8_t* data, int len)
 {
-  cob_fifo_status_e result;
+  cob_fifo_status_e result= COB_FIFO_OK;
 
   for(int i=0; i < len; i++)
   {

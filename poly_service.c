@@ -100,7 +100,7 @@ void poly_service_start(poly_service_t* pService, int depth)
 
 
 
-void poly_service_feed(poly_service_t* pService, int interface, uint8_t* data, int len)
+void poly_service_feed(poly_service_t* pService, int interface, const uint8_t* data, int len)
 {
   assert(interface < pService->mInterfaceCount);
 
@@ -109,6 +109,80 @@ void poly_service_feed(poly_service_t* pService, int interface, uint8_t* data, i
 
   cob_fifo_push_buf(&iface->mBytefifo, data, len);
 }
+
+void poly_service_feed_json_msg(poly_service_t* pService, int interface,const char* msg, int len)
+{
+  //parse json to packet
+  poly_packet_t packet;
+  uint8_t tmp[pService->mMaxPacketSize];
+  int packedLen=0;
+
+  poly_service_parse_json(pService, &packet, msg, len);
+
+
+  //pack packet
+  packedLen = poly_packet_pack_encoded(&packet, tmp);
+
+  //feed packet to service
+  poly_service_feed(pService, interface, tmp, packedLen);
+
+  //destroy packet
+  poly_packet_clean(&packet);
+
+}
+
+ParseStatus_e poly_service_parse_json(poly_service_t* pService, poly_packet_t* packet ,const char* msg, int len)
+{
+  //parse json to packet
+  json_obj_t json;
+  int typeId = -1;
+  uint8_t tmp[pService->mMaxPacketSize];
+  int packedLen=0;
+
+
+  json_parse_string(&json, msg, len);
+
+
+  //get type
+  for(int i=0; i < json.mAttributeCount; i++)
+  {
+    if(strcmp("packetType",json.mAttributes[i].mKey) == 0)
+    {
+      for(int a=0; a < pService->mDescCount; a++)
+      {
+        if(strcmp(pService->mPacketDescs[a]->mName,json.mAttributes[i].mVal) == 0)
+        {
+          typeId = a;
+          break;
+        }
+      }
+      break;
+    }
+  }
+
+
+  if(typeId > -1)
+  {
+      poly_packet_build(packet, pService->mPacketDescs[typeId],true);
+
+      poly_packet_parse_json_obj(packet, &json);
+
+      #if defined(POLY_PACKET_DEBUG_LVL) && POLY_PACKET_DEBUG_LVL >0
+        //If debug is enabled, print json of outgoing packets
+        #if POLY_PACKET_DEBUG_LVL == 4
+        poly_packet_print_json(&packet, POLY_DEBUG_PRINTBUF, true );
+        printf("  JSON PARSED:  %s\n\n",POLY_DEBUG_PRINTBUF );
+        #endif
+      #endif
+
+      return PACKET_VALID;
+  }
+
+  json_clean(&json);
+
+  return PACKET_PARSING_ERROR;
+}
+
 
 
 ParseStatus_e poly_service_try_parse_interface(poly_service_t* pService, poly_packet_t* packet, poly_interface_t* iface)

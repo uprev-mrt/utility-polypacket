@@ -194,6 +194,7 @@ class packetDesc:
         self.className = name.capitalize() +"Packet"
         self.desc =""
         self.fields = []
+        self.sruct = False
         self.fieldCount=0
         self.respondsTo = {}
         self.requests = {}
@@ -369,7 +370,10 @@ class protocolDesc:
         self.packets = []
         self.packetIdx ={}
         self.packetId =0
-        self.prefix = "pp";
+        self.structs =[]
+        self.structIdx ={}
+        self.structId =0
+        self.prefix = "pp"
         self.snippets = False
         self.genUtility = False
         self.scriptDir =""
@@ -392,6 +396,15 @@ class protocolDesc:
         packet.setPrefix(self.prefix)
         self.packets.append(packet)
         self.packetIdx[packet.name] = self.packetId
+        self.packetId+=1
+
+    def addStruct(self,struct):
+        struct.packetId = self.packetId
+        struct.protocol = self
+        struct.struct = True
+        struct.globalName = self.prefix.upper()+"_STRUCT_"+struct.name.upper()
+        self.structs.append(struct)
+        self.structIdx[struct.name] = self.packetId
         self.packetId+=1
 
     def getPacket(self, name):
@@ -513,6 +526,41 @@ def parseXML(xmlfile):
 
         protocol.addPacket(newPacket)
 
+    #get all packet types
+    for struct in root.findall('./Structs/Struct'):
+        name = struct.attrib['name']
+        desc =""
+        newStruct = packetDesc(name)
+
+
+        if(name in protocol.structIdx):
+            print( 'ERROR Duplicate Struct Name!: ' + name)
+
+        if('desc' in packet.attrib):
+            desc = packet.attrib['desc']
+
+        #get all fields declared for packet
+        for pfield in struct:
+
+            pfname = pfield.attrib['name']
+            strReq =""
+            if not (pfname in protocol.fieldIdx):
+                print( 'ERROR Field not declared: ' + pfname)
+
+            #get id of field and make a copy
+            idx = protocol.fieldIdx[pfname]
+            fieldCopy = copy.deepcopy(protocol.fields[idx])
+
+
+            if('desc' in pfield.attrib):
+                fieldCopy.desc = pfield.attrib['desc']
+
+            newStruct.addField(fieldCopy)
+
+        newStruct.desc = desc
+
+        protocol.addStruct(newStruct)
+
 
     for packet in protocol.packets:
         for request in packet.requests:
@@ -572,7 +620,8 @@ def init_args():
     parser = argparse.ArgumentParser("Tool to generate code and documentation for PolyPacket protocol")
     parser.add_argument('-i', '--input', type=str, help='Xml file to parse', required=True)
     parser.add_argument('-o', '--output', type=str, help='Output path', default="")
-    parser.add_argument('-d', '--document', action='store_true', help='Enable documentation', default=True)
+    parser.add_argument('-d', '--document', type=str, help='documentation path', default="")
+    parser.add_argument('-j', '--javascript', type=str, help='javascript output path', default="")
     parser.add_argument('-a', '--app', action='store_true', help='Generates the app layer code to fill out', default=False)
     parser.add_argument('-s', '--snippets', action='store_true', help='Adds helpful code snippets to files', default=False)
     parser.add_argument('-u', '--utility', action='store_true', help='Generates Linux host utility application', default=False)
@@ -587,8 +636,11 @@ def main():
     args= parser.parse_args()
     argCount = len(sys.argv)
 
+
     xmlFile = args.input
     path = args.output
+    docPath = args.document
+    jsPath = args.javascript
 
     fileCrc = crc(xmlFile)
 
@@ -602,15 +654,18 @@ def main():
     #get path of this script so we can run remotely
     script_dir = os.path.dirname(__file__)
     xmlPath = os.path.dirname(xmlFile)
+    if(docPath == ""):
+        docPath = xmlPath
 
     protocol.scriptDir = script_dir
 
-    if(args.document):
-        buildTemplate(protocol, script_dir +'/templates/doc_template.md', xmlPath + protocol.name+"_ICD.md")
+    buildTemplate(protocol, script_dir +'/templates/doc_template.md', docPath + protocol.name+"_ICD.md")
 
-    if(args.html):
-        buildTemplate(protocol, script_dir +'/templates/doc_template.html', xmlPath + protocol.name+"_ICD.html")
+    buildTemplate(protocol, script_dir +'/templates/doc_template.html', docPath + protocol.name+"_ICD.html")
         #pdfkit.from_file(xmlPath + protocol.name+"_ICD.html", xmlPath + protocol.name+"_ICD.pdf" )
+
+    if(jsPath != ""):
+        buildTemplate(protocol, script_dir + '/templates/javascript_template.js', jsPath + protocol.fileName+".js");
 
     if(args.utility):
         genUtility(protocol,xmlFile, script_dir, path+"/" + protocol.name + "_utility/")
