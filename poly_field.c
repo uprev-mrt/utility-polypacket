@@ -93,6 +93,7 @@ void poly_field_init(poly_field_t* field, poly_field_desc_t* desc, bool allocate
   if(allocate)
   {
     field->mData = (uint8_t*) malloc(field->mSize);
+    memset(field->mData,0,field->mSize);
     field->mAllocated = true;
   }
   else
