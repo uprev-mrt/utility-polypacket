@@ -3,12 +3,20 @@ function ${proto.prefix}_send_req(req, callback) {
 
    var full_url = "http://" + window.location.host + req.url + "?";
 
+   console.log("OUT >>> " + JSON.stringify(req.packet) );
+
    $.ajax({
        type: "POST",
        url: full_url,
        data: JSON.stringify(req.packet),
        cache: false,
-       success: callback
+       success: function(response){
+         console.log(" IN <<< " + response);
+
+         if(typeof callback === 'function'){
+           callback(response);
+         };
+       }
    });
 }
 
