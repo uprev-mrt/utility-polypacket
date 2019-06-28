@@ -231,7 +231,12 @@ HandlerStatus_e ${proto.prefix}_handle_json(const char* req, int len, char* resp
   ${proto.prefix}_packet_t packet;
   ${proto.prefix}_packet_t response;
 
-  HandlerStatus_e ${proto.prefix}_status = PACKET_NOT_HANDLED;
+  //reset states of static packets
+  HandlerStatus_e sf_status = PACKET_NOT_HANDLED;
+  packet.mBuilt = false;
+  packet.mSpooled = false;
+  response.mSpooled = false;
+  response.mBuilt = false;
 
 
   if(poly_service_parse_json(&${proto.service()}, &packet.mPacket, req, len) == PACKET_VALID)

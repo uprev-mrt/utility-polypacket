@@ -138,7 +138,7 @@ int poly_packet_get_field(poly_packet_t* packet, const poly_field_desc_t* desc, 
   *@param data pointer to store value
   *@return 1 on success
   */
-int poly_packet_set_field(poly_packet_t* packet, const poly_field_desc_t* desc, void* data);
+int poly_packet_set_field(poly_packet_t* packet, const poly_field_desc_t* desc,const void* data);
 
 /**
   *@brief gets the ID from a raw data buffer

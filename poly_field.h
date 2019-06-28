@@ -138,7 +138,7 @@ void poly_field_set(poly_field_t* field, const uint8_t* data);
   *@param field ptr to field
   *@returns pointer to data
   */
-uint8_t* poly_field_get(poly_field_t* field, uint8_t* data);
+int poly_field_get(poly_field_t* field, uint8_t* data);
 
 /**
   *@brief copies data from src field to dst field if descriptors match

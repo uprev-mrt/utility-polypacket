@@ -115,8 +115,8 @@ int poly_packet_get_field(poly_packet_t* packet, const poly_field_desc_t* desc, 
   {
     if(packet->mDesc->mFields[i] == desc)
     {
-      poly_field_get(&packet->mFields[i], data);
-      ret = &packet->mFields[i].mSize;
+      poly_field_get(&packet->mFields[i], (uint8_t*)data);
+      ret = packet->mFields[i].mSize;
     }
   }
 
@@ -124,7 +124,7 @@ int poly_packet_get_field(poly_packet_t* packet, const poly_field_desc_t* desc, 
   return ret;
 }
 
-int poly_packet_set_field(poly_packet_t* packet, const poly_field_desc_t* desc, void* data)
+int poly_packet_set_field(poly_packet_t* packet, const poly_field_desc_t* desc,const void* data)
 {
   MRT_MUTEX_LOCK(packet->mMutex);
   int ret =0;
@@ -132,7 +132,7 @@ int poly_packet_set_field(poly_packet_t* packet, const poly_field_desc_t* desc, 
   {
     if(packet->mDesc->mFields[i] == desc)
     {
-      poly_field_set(&packet->mFields[i], data);
+      poly_field_set(&packet->mFields[i], (const uint8_t*)data);
       ret = 1;
     }
   }
@@ -417,7 +417,7 @@ int poly_packet_print_json(poly_packet_t* packet, char* buf, bool printHeader)
   if(printHeader)
   {
     idx += MRT_SPRINTF(&buf[idx],", \"typeId\" : \"%02X\" ,", packet->mHeader.mTypeId);
-    idx += MRT_SPRINTF(&buf[idx]," \"token\" : \%04X\" ,", packet->mHeader.mToken);
+    idx += MRT_SPRINTF(&buf[idx]," \"token\" : \"\%04X\" ,", packet->mHeader.mToken);
     idx += MRT_SPRINTF(&buf[idx]," \"checksum\" : \"%04X\" ,", packet->mHeader.mCheckSum);
     idx += MRT_SPRINTF(&buf[idx]," \"len\" : %d ", packet->mHeader.mDataLen);
   }
