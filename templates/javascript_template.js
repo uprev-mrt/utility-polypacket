@@ -1,7 +1,13 @@
-
 function ${proto.prefix}_send_req(req, callback) {
 
    var full_url = "http://" + window.location.host + req.url + "?";
+
+   //Remove all null fields from object
+   for (var propName in req.packet) {
+     if (req.packet[propName] === null || req.packet[propName] === undefined) {
+       delete req.packet[propName];
+     }
+   }
 
    console.log("OUT >>> " + JSON.stringify(req.packet) );
 
@@ -14,7 +20,7 @@ function ${proto.prefix}_send_req(req, callback) {
          console.log(" IN <<< " + response);
 
          if(typeof callback === 'function'){
-           callback(response);
+           callback(JSON.parse(response));
          };
        }
    });
