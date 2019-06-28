@@ -12,11 +12,6 @@
 #include <string.h>
 #include <stdio.h>
 
-
-#define COB_FIFO_LOCK //fifo->mLock =1//while(fifo->lock){delay_ms(1);} fifo->lock = 1
-#define COB_FIFO_UNLOCK //fifo->mLock = 0
-
-
 /**
   *@brief finds the next zero
   *@param fifo ptr to the fifo
@@ -29,7 +24,7 @@ void cob_fifo_init(cob_fifo_t* fifo, int len)
   fifo->mHead = 0;
   fifo->mTail = 0;
   fifo->mCount = 0;
-  fifo->mLock = 0;
+  MRT_MUTEX_CREATE(fifo->mMutex);
   fifo->mFrameCount = 0;
   fifo->mNextLen = 0;
   fifo->mMaxLen = len;
@@ -38,13 +33,14 @@ void cob_fifo_init(cob_fifo_t* fifo, int len)
 
 void cob_fifo_deinit(cob_fifo_t* fifo)
 {
+  MRT_MUTEX_DELETE(fifo->mMutex);
   free(fifo->mBuffer);
 }
 
 
 cob_fifo_status_e cob_fifo_push(cob_fifo_t* fifo, uint8_t data)
 {
-  COB_FIFO_LOCK;
+  MRT_MUTEX_LOCK(fifo->mMutex);
 
     // next is where head will point to after this write.
     int next = fifo->mHead + 1;
@@ -55,7 +51,7 @@ cob_fifo_status_e cob_fifo_push(cob_fifo_t* fifo, uint8_t data)
     }
     if (next == fifo->mTail) // check if circular buffer is full
     {
-		COB_FIFO_UNLOCK;
+		MRT_MUTEX_UNLOCK(fifo->mMutex);
         return COB_FIFO_OVERFLOW;
     }
 
@@ -77,7 +73,7 @@ cob_fifo_status_e cob_fifo_push(cob_fifo_t* fifo, uint8_t data)
 
     fifo->mHead = next;            // head to next data offset.
 
-    COB_FIFO_UNLOCK;
+    MRT_MUTEX_UNLOCK(fifo->mMutex);
 
     return COB_FIFO_OK;  // return success to indicate successful push.
 }
@@ -85,11 +81,11 @@ cob_fifo_status_e cob_fifo_push(cob_fifo_t* fifo, uint8_t data)
 
 cob_fifo_status_e cob_fifo_pop(cob_fifo_t* fifo, uint8_t* data)
 {
-  COB_FIFO_LOCK;
+  MRT_MUTEX_LOCK(fifo->mMutex);
     // if the head isn't ahead of the tail, we don't have any characters
     if (fifo->mHead == fifo->mTail) // check if circular buffer is empty
     {
-		COB_FIFO_UNLOCK;
+		MRT_MUTEX_UNLOCK(fifo->mMutex);
         return COB_FIFO_UNDERFLOW;          // and return with an error
     }
 
@@ -115,7 +111,7 @@ cob_fifo_status_e cob_fifo_pop(cob_fifo_t* fifo, uint8_t* data)
     {
         fifo->mCount--;
     }
-    COB_FIFO_UNLOCK;
+    MRT_MUTEX_UNLOCK(fifo->mMutex);
 
     return COB_FIFO_OK;  // return success to indicate successful push.
 }
@@ -231,12 +227,12 @@ int cob_fifo_pop_frame(cob_fifo_t* fifo, uint8_t* data, int len)
 
 int cob_fifo_find_next_len(cob_fifo_t* fifo)
 {
-  COB_FIFO_LOCK;
+  MRT_MUTEX_LOCK(fifo->mMutex);
   int i;
 
   if(fifo->mFrameCount ==0)
   {
-    COB_FIFO_UNLOCK;
+    MRT_MUTEX_UNLOCK(fifo->mMutex);
     fifo->mNextLen = 0;
     return 0;
   }
@@ -256,14 +252,14 @@ int cob_fifo_find_next_len(cob_fifo_t* fifo)
 
   fifo->mNextLen = i;
 
-  COB_FIFO_UNLOCK;
+  MRT_MUTEX_UNLOCK(fifo->mMutex);
   return i;
 }
 
 int cob_fifo_get_next_len(cob_fifo_t* fifo)
 {
-  COB_FIFO_LOCK;
+  MRT_MUTEX_LOCK(fifo->mMutex);
   int retVal = fifo->mNextLen;
-  COB_FIFO_UNLOCK;
+  MRT_MUTEX_UNLOCK(fifo->mMutex);
   return retVal;
 }

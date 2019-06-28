@@ -11,7 +11,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "Platforms/Common/mrt_platform.h"
 #include "Utilities/JSON/json.h"
+
 
 #ifndef MRT_SPRINTF
 #define MRT_SPRINTF(f_, ...) sprintf((f_), __VA_ARGS__)
@@ -19,6 +21,8 @@
 
 //Seed the checksum so even in packets with no data (acks) still have a partial check
 #define CHECKSUM_SEED 1738
+
+#define FIELD_LEN(x) ((x)->mLen)
 
 #pragma pack(push)
 #pragma pack(1)

@@ -179,6 +179,12 @@ class fieldDesc:
         else:
             return self.cType;
 
+    def getDeclaration(self):
+        if self.isArray:
+            return self.cType +" "+self.name+"["+ str(self.arrayLen)+"]"
+        else:
+            return self.cType + " " + self.name;
+
     def getFormat(self):
         if self.isString:
             return "%s"

@@ -215,14 +215,6 @@ void ${proto.prefix}_clean(${proto.prefix}_packet_t* packet);
   */
 #define ${proto.prefix}_pack(packet, buf) poly_packet_pack(&(packet)->mPacket, buf)
 
-/**
-  *@brief gets the length of a give field in a packet
-  *@param packet ptr to ${proto.prefix}_packet_t
-  *@param field ptr to field descriptor
-  *@return size of field
-  */
-int ${proto.prefix}_fieldLen(${proto.prefix}_packet_t* packet, poly_field_desc_t* fieldDesc );
-
 /*******************************************************************************
   Meta-Packet setters
 *******************************************************************************/
@@ -238,7 +230,11 @@ void ${proto.prefix}_set${field.camel()}(${proto.prefix}_packet_t* packet, ${fie
   Meta-Packet getters
 *******************************************************************************/
 % for field in proto.fields:
+  %if field.isArray:
+void ${proto.prefix}_get${field.camel()}(${proto.prefix}_packet_t* packet, ${field.getParamType()} val);
+  % else:
 ${field.getParamType()} ${proto.prefix}_get${field.camel()}(${proto.prefix}_packet_t* packet);
+  % endif
 % endfor
 
 /*******************************************************************************

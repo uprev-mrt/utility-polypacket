@@ -154,10 +154,22 @@ void poly_field_set(poly_field_t* field, const uint8_t* data)
 uint8_t* poly_field_get(poly_field_t* field, uint8_t* data)
 {
   assert(MEM_EXISTS(field));
-  if(data != NULL)
-    memcpy(data, field->mData, field->mSize);
 
-  return field->mData;
+  uint8_t* ret = field->mData;
+
+  if(data != NULL)
+  {
+    memcpy(data, field->mData, field->mSize);
+    ret = data;
+
+    if(field->mDesc->mNullTerm)
+    {
+      data[field->mSize] =0;
+    }
+  }
+
+
+  return ret;
 }
 
 int poly_field_copy(poly_field_t* dst,poly_field_t* src)
