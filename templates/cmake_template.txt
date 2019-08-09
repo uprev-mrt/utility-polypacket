@@ -7,9 +7,11 @@ include_directories("src/lib")
 add_definitions(
     -g
     -DPOLY_PACKET_DEBUG_LVL=1
+    -DCMAKE_BUILD_TYPE=Debug
+    -DMRT_PLATFORM_NONE
     )
 
-#SET(CMAKE_C_FLAGS "-fsanitize=address -fsanitize=undefined -DCMAKE_BUILD_TYPE=Debug")
+#SET(CMAKE_C_FLAGS "-fsanitize=address -fsanitize=undefined")
 
 SET(CMAKE_C_FLAGS "-Wformat=0")
 

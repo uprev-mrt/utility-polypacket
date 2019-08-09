@@ -592,6 +592,7 @@ def genUtility(protocol, xmlFile, script_dir, path):
     srcPath = path +"src/"
     libPath = path +"src/lib/"
     buildPath = path+"build/"
+    platformPath = path+"Mrt/Modules/Platforms/Common"
     polyPath = path+"MrT/Modules/Utilities/PolyPacket"
     jsonPath = path+"MrT/Modules/Utilities/JSON"
     xmlPath = os.path.dirname(xmlFile)
@@ -603,7 +604,9 @@ def genUtility(protocol, xmlFile, script_dir, path):
         os.makedirs(buildPath)
         os.makedirs(polyPath)
         os.makedirs(jsonPath)
+        os.makedirs(platformPath)
 
+    os.system('cp '+ script_dir+'/../../Platforms/Common/* '+ platformPath)
     os.system('cp '+ script_dir+'/poly_* '+ polyPath)
     os.system('cp '+ script_dir+'/cob_* '+ polyPath)
     os.system('cp ' + script_dir+'/../JSON/json.* '+ jsonPath)
