@@ -11,7 +11,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "Platforms/Common/mrt_platform.h"
 #include "Utilities/JSON/json.h"
+
 
 #ifndef MRT_SPRINTF
 #define MRT_SPRINTF(f_, ...) sprintf((f_), __VA_ARGS__)
@@ -19,6 +21,8 @@
 
 //Seed the checksum so even in packets with no data (acks) still have a partial check
 #define CHECKSUM_SEED 1738
+
+#define FIELD_LEN(x) ((x)->mLen)
 
 #pragma pack(push)
 #pragma pack(1)
@@ -134,7 +138,7 @@ void poly_field_set(poly_field_t* field, const uint8_t* data);
   *@param field ptr to field
   *@returns pointer to data
   */
-uint8_t* poly_field_get(poly_field_t* field, uint8_t* data);
+int poly_field_get(poly_field_t* field, uint8_t* data);
 
 /**
   *@brief copies data from src field to dst field if descriptors match

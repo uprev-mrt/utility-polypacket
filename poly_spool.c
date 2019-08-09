@@ -8,11 +8,10 @@
 #include "poly_spool.h"
 #include <assert.h>
 
-#define SPOOL_LOCK //while(pFifo->lock){delay_ms(1);} pFifo->lock = 1
-#define SPOOL_UNLOCK //spool->mLock = 0
 void poly_spool_init(poly_spool_t* spool, int len)
 {
-  SPOOL_LOCK;
+
+  MRT_MUTEX_CREATE(spool->mMutex);
 
   //set default values
   spool->mMaxEntries = len;
@@ -22,7 +21,6 @@ void poly_spool_init(poly_spool_t* spool, int len)
   spool->mWaitingCount =0;
   spool->mTimeOut = 400; //Doherty Threshold?
   spool->mMaxRetries = 10;
-  spool->mLock  = false;
   spool->mSuccessfulMessages =0;
   spool->mFailedMessages =0;
 
@@ -33,7 +31,6 @@ void poly_spool_init(poly_spool_t* spool, int len)
     spool->mEntries[i].mTrash = false;
   }
 
-  SPOOL_UNLOCK;
 }
 
 /**
@@ -61,7 +58,7 @@ static inline int poly_spool_get_next(poly_spool_t* spool, spool_entry_state_e s
 
 void poly_spool_deinit(poly_spool_t* spool)
 {
-  SPOOL_LOCK;
+  MRT_MUTEX_DELETE(spool->mMutex);
   spool->mMaxEntries = 0;
   spool->mReadyCount =0;
   spool->mCount =0;
@@ -73,13 +70,13 @@ void poly_spool_deinit(poly_spool_t* spool)
     }
   }
   free(spool->mEntries);
-  SPOOL_UNLOCK;
+
 }
 
 
 spool_status_e poly_spool_push(poly_spool_t* spool, poly_packet_t* packet )
 {
-  SPOOL_LOCK;
+  MRT_MUTEX_LOCK(spool->mMutex);
   spool_status_e status;
 
   //get next free Entry
@@ -89,7 +86,7 @@ spool_status_e poly_spool_push(poly_spool_t* spool, poly_packet_t* packet )
   //make sure we arent full
   if(spool->mCount >= spool->mMaxEntries)
   {
-    SPOOL_UNLOCK;
+    MRT_MUTEX_UNLOCK(spool->mMutex);
     return SPOOL_OVERFLOW;
   }
 
@@ -114,14 +111,14 @@ spool_status_e poly_spool_push(poly_spool_t* spool, poly_packet_t* packet )
     spool->mReadyCount++;  //decrement ready count
   }
 
-  SPOOL_UNLOCK;
+  MRT_MUTEX_UNLOCK(spool->mMutex);
   return SPOOL_OK;
 }
 
 
 spool_status_e poly_spool_pop(poly_spool_t* spool, poly_packet_t* packet)
 {
-  SPOOL_LOCK;
+  MRT_MUTEX_LOCK(spool->mMutex);
   spool_status_e status;
 
   //get next ready packet
@@ -172,7 +169,7 @@ spool_status_e poly_spool_pop(poly_spool_t* spool, poly_packet_t* packet)
     status = SPOOL_UNDERFLOW;
   }
 
-  SPOOL_UNLOCK;
+  MRT_MUTEX_UNLOCK(spool->mMutex);
   return status;
 }
 
@@ -188,7 +185,7 @@ bool poly_spool_ack(poly_spool_t* spool, poly_packet_t* response)
     return false;
   }
 
-  SPOOL_LOCK;
+  MRT_MUTEX_LOCK(spool->mMutex);
 
   //Check each entry in the state ENTRY_STATE_WAITING to see if the token matches
   for( i=0;i < spool->mMaxEntries; i++)
@@ -210,7 +207,7 @@ bool poly_spool_ack(poly_spool_t* spool, poly_packet_t* response)
     }
   }
 
-  SPOOL_UNLOCK;
+  MRT_MUTEX_UNLOCK(spool->mMutex);
 
   //if we found a match and the entry has a callback, call it
   if(match && (spool->mEntries[i].mPacket.f_mAckCallback != NULL))
@@ -224,7 +221,7 @@ bool poly_spool_ack(poly_spool_t* spool, poly_packet_t* response)
 
 void poly_spool_tick(poly_spool_t* spool, int ms)
 {
-  SPOOL_LOCK;
+  MRT_MUTEX_LOCK(spool->mMutex);
   spool_entry_t* entry;
 
   for(int i=0; i < spool->mMaxEntries; i++)
@@ -260,5 +257,5 @@ void poly_spool_tick(poly_spool_t* spool, int ms)
       }
     }
   }
-  SPOOL_UNLOCK;
+  MRT_MUTEX_UNLOCK(spool->mMutex);
 }

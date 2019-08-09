@@ -6,7 +6,11 @@
   */
 
 #include "poly_field.h"
-//#include <cstdlib>
+
+#ifdef __cplusplus
+#include <cstdlib>
+#endif
+
 #include <assert.h>
 
 #define MEM_EXISTS( field) ((field->mAllocated) || (field->mBound))
@@ -151,13 +155,25 @@ void poly_field_set(poly_field_t* field, const uint8_t* data)
   memcpy(field->mData, data, field->mSize);
 }
 
-uint8_t* poly_field_get(poly_field_t* field, uint8_t* data)
+int poly_field_get(poly_field_t* field, uint8_t* data)
 {
   assert(MEM_EXISTS(field));
-  if(data != NULL)
-    memcpy(data, field->mData, field->mSize);
+  int ret =0;
 
-  return field->mData;
+
+  if(data != NULL)
+  {
+    memcpy(data, field->mData, field->mSize);
+    ret = field->mSize;
+
+    if(field->mDesc->mNullTerm)
+    {
+      data[field->mSize] =0;
+    }
+  }
+
+
+  return ret;
 }
 
 int poly_field_copy(poly_field_t* dst,poly_field_t* src)

@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Sample ICD</title>
+  <title>test ICD</title>
 </head>
 <body>
 <div class="content">
-<h1>Sample ICD</h1>
+<h1>test ICD</h1>
 <ul>
-  <li> Generated: 08/09/19</li>
-  <li> CRC: 67837EF9</li>
+  <li> Generated: 06/28/19</li>
+  <li> CRC: 47A47C67</li>
   <li> Transport Encoding: (COBS) <a href="https://en.wikipedia.org/wiki/Consistent_Overhead_Byte_Stuffing">Consistent Overhead ByteStuffing</a></li>
 </ul>
 <hr/>
 <h2>Description: </h2>
-<p>This is a sample protocol made up to demonstrate features of the PolyPacket code generation tool. The idea   is to have a tool that can automatically create parseable/serializable messaging for embedded systems.</p>
+<p>This is a sample protocol used for unit testing the Poly Packet module</p>
 
 <br/>
 <hr class="thick">
@@ -127,7 +127,7 @@
   <li class="note">  Packet ID: <b>[02]</b></li>
 </ul>
 
-<p class="desc">Message to send command to node</p>
+<p class="desc">Message to set command in node</p>
 <br/>
 <b>Structure:</b>
 <table class="fixed" style="width:4%">
@@ -153,7 +153,7 @@
   </tr>
   <tr>
     <td width="">cmd</td>
-    <td>command byte for controlling node      <br/>
+    <td>      <br/>
       <ul>
       <li class="val">0x00 : <b>LED_ON</b> - turns on led</li>
       <li class="val">0x01 : <b>LED_OFF</b> - turns off led</li>

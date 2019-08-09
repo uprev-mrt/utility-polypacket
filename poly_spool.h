@@ -52,7 +52,7 @@ typedef struct{
     int mWaitingCount;              //number of entries waiting for acks
     int mTimeOut;                   //timeout for entries
     int mMaxRetries;                //maximum attempts for each packet before giving up
-    uint8_t mLock;                  //lock bit/mutex //TODO add mutex support when available
+    MRT_MUTEX_TYPE mMutex;           //lock bit/mutex //TODO add mutex support when available
     //used for debugging
     int mSuccessfulMessages;        //successful messages
     int mFailedMessages;            //failed

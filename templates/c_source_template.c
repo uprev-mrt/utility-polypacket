@@ -231,7 +231,12 @@ HandlerStatus_e ${proto.prefix}_handle_json(const char* req, int len, char* resp
   ${proto.prefix}_packet_t packet;
   ${proto.prefix}_packet_t response;
 
+  //reset states of static packets
   HandlerStatus_e ${proto.prefix}_status = PACKET_NOT_HANDLED;
+  packet.mBuilt = false;
+  packet.mSpooled = false;
+  response.mSpooled = false;
+  response.mBuilt = false;
 
 
   if(poly_service_parse_json(&${proto.service()}, &packet.mPacket, req, len) == PACKET_VALID)
@@ -321,11 +326,7 @@ void ${proto.prefix}_clean(${proto.prefix}_packet_t* packet)
 
 }
 
-int ${proto.prefix}_fieldLen(${proto.prefix}_packet_t* packet, poly_field_desc_t* fieldDesc )
-{
-  poly_field_t* field = poly_packet_get_field(&packet->mPacket, ${field.globalName});
-  return (int)field->mSize;
-}
+
 
 /*******************************************************************************
 
@@ -350,11 +351,10 @@ void ${proto.prefix}_set${field.camel()}(${proto.prefix}_packet_t* packet, const
 void ${proto.prefix}_set${field.camel()}(${proto.prefix}_packet_t* packet, ${field.getParamType()} val)
 %endif
 {
-  poly_field_t* field = poly_packet_get_field(&packet->mPacket, ${field.globalName});
 %if field.isArray:
-  poly_field_set(field,( const uint8_t*) val);
+  poly_packet_set_field(&packet->mPacket, ${field.globalName}, val);
 % else:
-  poly_field_set(field,( const uint8_t*) &val);
+  poly_packet_set_field(&packet->mPacket, ${field.globalName}, &val);
 % endif
 }
 
@@ -378,17 +378,19 @@ void ${proto.prefix}_set${field.camel()}(${proto.prefix}_packet_t* packet, ${fie
   *@return ${field.getParamType()} data from field
   */
 %endif
+%if field.isArray:
+void ${proto.prefix}_get${field.camel()}(${proto.prefix}_packet_t* packet, ${field.getParamType()} val)
+{
+  poly_packet_get_field(&packet->mPacket, ${field.globalName}, val);
+}
+% else:
 ${field.getParamType()} ${proto.prefix}_get${field.camel()}(${proto.prefix}_packet_t* packet)
 {
   ${field.getParamType()} val;
-  poly_field_t* field = poly_packet_get_field(&packet->mPacket, ${field.globalName});
-%if field.isArray:
-  val = (${field.getParamType()})poly_field_get(field, NULL);
-% else:
-  poly_field_get(field,(uint8_t*) &val);
-% endif
+  poly_packet_get_field(&packet->mPacket, ${field.globalName}, &val);
   return val;
 }
+% endif
 
 % endfor
 
@@ -499,7 +501,15 @@ __attribute__((weak)) HandlerStatus_e ${proto.prefix}_${packet.camel()}_handler(
 {
   /*  Get Required Fields in packet */
 % for field in packet.fields:
-  //${field.getParamType()} ${field.name} = ${proto.prefix}_get${field.camel()}(${proto.prefix}_${packet.name}); //${field.desc}
+  //${field.getDeclaration()};  //${field.desc}
+%endfor
+
+% for field in packet.fields:
+  %if field.isArray:
+  //${proto.prefix}_get${field.camel()}(${proto.prefix}_${packet.name}, ${field.name});
+  %else:
+  //${field.name} = ${proto.prefix}_get${field.camel()}(${proto.prefix}_${packet.name});
+  %endif
 % endfor
 %if packet.hasResponse:
   /*    Set required Fields in response  */

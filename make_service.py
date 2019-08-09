@@ -179,6 +179,12 @@ class fieldDesc:
         else:
             return self.cType;
 
+    def getDeclaration(self):
+        if self.isArray:
+            return self.cType +" "+self.name+"["+ str(self.arrayLen)+"]"
+        else:
+            return self.cType + " " + self.name;
+
     def getFormat(self):
         if self.isString:
             return "%s"
@@ -586,7 +592,9 @@ def genUtility(protocol, xmlFile, script_dir, path):
     srcPath = path +"src/"
     libPath = path +"src/lib/"
     buildPath = path+"build/"
+    platformPath = path+"Mrt/Modules/Platforms/Common"
     polyPath = path+"MrT/Modules/Utilities/PolyPacket"
+    jsonPath = path+"MrT/Modules/Utilities/JSON"
     xmlPath = os.path.dirname(xmlFile)
 
     if not os.path.isdir(path):
@@ -595,7 +603,14 @@ def genUtility(protocol, xmlFile, script_dir, path):
         os.makedirs(libPath)
         os.makedirs(buildPath)
         os.makedirs(polyPath)
+        os.makedirs(jsonPath)
+        os.makedirs(platformPath)
+
+    os.system('cp '+ script_dir+'/../../Platforms/Common/* '+ platformPath)
     os.system('cp '+ script_dir+'/poly_* '+ polyPath)
+    os.system('cp '+ script_dir+'/cob_* '+ polyPath)
+    os.system('cp ' + script_dir+'/../JSON/json.* '+ jsonPath)
+    os.system('cp ' + script_dir+'/../JSON/CMakeLists.txt '+ jsonPath)
     os.system('cp -r '+ script_dir+'/templates '+ polyPath)
     os.system('cp '+ script_dir+'/make_service.py '+ polyPath)
     os.system('cp '+ xmlFile +' '+ path)
@@ -607,6 +622,7 @@ def genUtility(protocol, xmlFile, script_dir, path):
 
     protocol.genUtility = True
     buildTemplate(protocol, script_dir +'/templates/cmake_template.txt', path + 'CMakeLists.txt')
+    buildTemplate(protocol, script_dir +'/templates/cmake_lib_template.txt', libPath+"CMakeLists.txt")
     buildTemplate(protocol, script_dir +'/templates/c_header_template.h', libPath + protocol.fileName+".h")
     buildTemplate(protocol, script_dir +'/templates/c_source_template.c', libPath + protocol.fileName+".c")
     buildTemplate(protocol, script_dir +'/templates/app_template.h', srcPath+"app_" + protocol.name.lower() +".h")

@@ -1,113 +1,233 @@
 # Sample ICD
-* Generated: 04/02/19<br/>
+* Generated: 08/09/19<br/>
 * CRC: 67837EF9
 * Transport Encoding: (COBS) [Consistent Overhead ByteStuffing](https://en.wikipedia.org/wiki/Consistent_Overhead_Byte_Stuffing)
 
 ** This is a sample protocol made up to demonstrate features of the PolyPacket code generation tool. The idea   is to have a tool that can automatically create parseable/serializable messaging for embedded systems. **
 
 ---
-## Header
+<div id="header" class="packet">
+<h2>Header </h2>
+<hr/>
 
-All packets begin with a standard header:
+<p class="desc">All packets contain a standard header</p>
+<br/>
+<b>Structure:</b>
+<table class="fixed" style="width:40%">
+  <tr>
+  <th  >Byte</th>
+        <th >0</th>
+        <th >1</th>
+        <th >2</th>
+        <th >3</th>
+        <th >4</th>
+        <th >5</th>
+        <th >6</th>
+  </tr>
+  <tr>
+    <td>Field</td>
+      <td colspan="1">Id</td>
+      <td colspan="2">Length</td>
+      <td colspan="2">Token</td>
+      <td colspan="2">Checksum</td>
+  </tr>
+  <tr>
+    <td>Type</td>
+    <td colspan="1">uint8_t</td>
+    <td colspan="2">uint16_t</td>
+    <td colspan="2">uint16_t</td>
+    <td colspan="2">uint16_t</td>
+  </tr>
+</table>
+<br/>
+<b>Fields:</b>
+<table class="fields">
+  <tr>
+    <th> Field</th>
+    <th> Description</th>
+  </tr>
+  <tr>
+    <td width="">Id</td>
+    <td>Packet Type identifier</td>
+  </tr>
+  <tr>
+    <td width="">Length</td>
+    <td>Number of bytes in packet (not including header)</td>
+  </tr>
+  <tr>
+    <td width="">Token</td>
+    <td>Psuedo random token generated for message</td>
+  </tr>
+  <tr>
+    <td width="">Checksum</td>
+    <td>16bit checksum used for data validation</td>
+  </tr>
+</table>
 
-|***Byte***|0|1|2|3|4|5|6|
-|---|---|---|---|---|---|---|---|
-|***Field***<td colspan='1'>***Id***<td colspan='2'>***Len***<td colspan='2'>***Token***<td colspan='2'>***Checksum***
-|***Type***<td colspan='1'>uint8<td colspan='2'>uint16<td colspan='2'>uint16<td colspan='2'>uint16
+<br/>
+<hr class="thick">
 
->***Id*** : The ID used to identify the type of packet, packet Ids are assigned and managed automatically<br/>
->***Len*** : This is the number of data bytes in the packet data, this does not include the header<br/>
->***Token*** : A randomly generated token. Each packet is tokenized to provide functions like ack/retry and preventing duplicates <br/>
->***Checksum*** : A calculated checksum of the data in the packet
-----
-# Packet Types:
+</div>
 
+<h2> Packet Types </h2>
+<hr/>
 
-### Ping
-This message requests an Ack from a remote device to test connectivity
+<ul>
+  <li><a href="#packet_ping">[00]  Ping </a></li>
+  <li><a href="#packet_ack">[01]  Ack </a></li>
+  <li><a href="#packet_sendcmd">[02]  SendCmd </a></li>
+  <li><a href="#packet_getdata">[03]  GetData </a></li>
+  <li><a href="#packet_data">[04]  Data </a></li>
+</ul>
 
-* Packet ID: *[00]*
-* *Requests: Ack*
+<hr class="thick">
 
+<div class="packet" id="packet_ping">
+<h2>Ping </h2>
+<hr/>
+<ul>
+  <li class="note">Packet ID: <b>[00]</b></li>
+  <li class="note"> Requests: <a href="#packet_ack">Ack</a></li>
+</ul>
 
->This Packet type does not contain any data fields
+<span class="note"> This Packet type does not contain any data fields </span><br/>
+<br/>
+<hr class="thick">
+</div>
 
+<div class="packet" id="packet_ack">
+<h2>Ack </h2>
+<hr>
+<ul>
+  <li class="note">  Packet ID: <b>[01]</b></li>
+  <li class="note">Responds To: <a href="#packet_ping">Ping</a></li>
+</ul>
 
-------
-
-
-
-
-### Ack
-Acknowledges any packet that does not have an explicit response
-
-* Packet ID: *[01]*
-* *Responds To: Any Packet without a defined response*
-
-
->This Packet type does not contain any data fields
-
-
-------
-
-
-
-
-### SendCmd
-Message to send command to node
-
-* Packet ID: *[02]*
-
-|***Byte***|0|
-|---|---|
-|***Field***<td colspan='1'>***cmd***
-|***Type***<td colspan='1'>uint8_t
-
-
-Fields:
->***cmd*** : command byte for controlling node<br/>
->> **0x00** : LED_ON - turns on led<br/>
->> **0x01** : LED_OFF - turns off led<br/>
->> **0x02** : RESET - resets the device<br/>
->
-
-------
-
-
-
-
-### GetData
-Message to get data from node
-
-* Packet ID: *[03]*
-* *Requests: Data*
-
-
->This Packet type does not contain any data fields
-
-
-------
-
-
-
-
-### Data
-Message containing data from sensor
-
-* Packet ID: *[04]*
-* *Responds To: GetData*
-
-|***Byte***|0|1|2|3|4|5|6| . . . . . . . |37
-|---|---|---|---|---|---|---|---|---|---|---|
-|***Field***<td colspan='2'>sensorA<td colspan='4'>sensorB<td colspan='4'>sensorName
-|***Type***<td colspan='2'>int16_t<td colspan='4'>int<td colspan='4'>char[32]
-
-
-Fields:
->***sensorA*** : Value of Sensor A<br/>
->***sensorB*** : Value of Sensor B<br/>
->***sensorName*** : Name of sensor responding to message <br/>
-
-------
+<span class="note"> This Packet type does not contain any data fields </span><br/>
+<br/>
+<hr class="thick">
+</div>
 
 
+<div id="packet_sendcmd" class="packet">
+<h2>SendCmd </h2>
+<hr/>
+<ul>
+  <li class="note">  Packet ID: <b>[02]</b></li>
+</ul>
+
+<p class="desc">Message to send command to node</p>
+<br/>
+<b>Structure:</b>
+<table class="fixed" >
+  <tr>
+  <th  >Byte</th>
+      <th >0</th>
+      </tr>
+  <tr>
+    <td>Field</td>
+      <td colspan="1">cmd</td>
+  </tr>
+  <tr>
+    <td>Type</td>
+      <td colspan="1">    uint8_t  </td>
+  </tr>
+</table>
+<br/>
+<b>Fields:</b>
+<table class="fields">
+  <tr>
+    <th> Field</th>
+    <th> Description</th>
+  </tr>
+  <tr>
+    <td width="">cmd</td>
+    <td>command byte for controlling node      <br/>
+      <ul>
+      <li class="val">0x00 : <b>LED_ON</b> - turns on led</li>
+      <li class="val">0x01 : <b>LED_OFF</b> - turns off led</li>
+      <li class="val">0x02 : <b>RESET</b> - resets the device</li>
+      </ul>
+    </td>
+  </tr>
+</table>
+
+<br/>
+<hr class="thick">
+</div>
+<div id="packet_getdata" class="packet">
+<h2>GetData </h2>
+<hr/>
+<ul>
+  <li class="note">  Packet ID: <b>[03]</b></li>
+  <li class="note">   Requests: <a href="#packet_data">Data</a></li>
+</ul>
+
+<p class="desc">Message to get data from node</p>
+<br/>
+<span class="note"> This Packet type does not contain any data fields </span><br/>
+<br/>
+<hr class="thick">
+</div>
+<div id="packet_data" class="packet">
+<h2>Data </h2>
+<hr/>
+<ul>
+  <li class="note">  Packet ID: <b>[04]</b></li>
+  <li class="note">Responds To:   <a href="#packet_getdata">GetData</a>  </li>
+</ul>
+
+<p class="desc">Message containing data from sensor</p>
+<br/>
+<b>Structure:</b>
+<table class="fixed" >
+  <tr>
+  <th  >Byte</th>
+      <th >0</th>
+        <th >1</th>
+        <th >2</th>
+        <th >3</th>
+        <th >4</th>
+        <th >5</th>
+        <th >6</th>
+    <th colspan="2">........</th>
+    <th >38</th>
+  </tr>
+  <tr>
+    <td>Field</td>
+      <td colspan="2">sensorA</td>
+      <td colspan="4">sensorB</td>
+      <td colspan="4">sensorName</td>
+  </tr>
+  <tr>
+    <td>Type</td>
+      <td colspan="2">    int16_t  </td>
+      <td colspan="4">    int  </td>
+      <td colspan="4">    char    [32]  </td>
+  </tr>
+</table>
+<br/>
+<b>Fields:</b>
+<table class="fields">
+  <tr>
+    <th> Field</th>
+    <th> Description</th>
+  </tr>
+  <tr>
+    <td width="">sensorA</td>
+    <td>Value of Sensor A    </td>
+  </tr>
+  <tr>
+    <td width="">sensorB</td>
+    <td>Value of Sensor B    </td>
+  </tr>
+  <tr>
+    <td width="">sensorName</td>
+    <td>Name of sensor responding to message     </td>
+  </tr>
+</table>
+
+<br/>
+<hr class="thick">
+</div>
+</div>

@@ -85,6 +85,7 @@ typedef struct poly_packet{
   packet_ack_type_e mAckType;     //indicates what type of ack the packet should use
   packet_ack_cb f_mAckCallback;   //callback for when packet is acknowledged
   packet_failed_cb f_mFailedCallback; //callback for when the packet timesout
+  MRT_MUTEX_TYPE mMutex;
 }poly_packet_t;
 
 #pragma pack(pop)
@@ -120,14 +121,24 @@ void poly_packet_build(poly_packet_t* packet, const poly_packet_desc_t* desc, bo
   */
 void poly_packet_clean(poly_packet_t* packet);
 
+
 /**
-  *@brief gets ptr to field from descriptor
+  *@brief copies data from field
   *@param packet ptr to packet
   *@param desc ptr to field descriptor
-  *@return ptr to field
+  *@param data pointer to store value
+  *@return 1 on success
   */
-poly_field_t* poly_packet_get_field(poly_packet_t* packet, const poly_field_desc_t* desc);
+int poly_packet_get_field(poly_packet_t* packet, const poly_field_desc_t* desc, void* data);
 
+/**
+  *@brief copies data to field
+  *@param packet ptr to packet
+  *@param desc ptr to field descriptor
+  *@param data pointer to store value
+  *@return 1 on success
+  */
+int poly_packet_set_field(poly_packet_t* packet, const poly_field_desc_t* desc,const void* data);
 
 /**
   *@brief gets the ID from a raw data buffer

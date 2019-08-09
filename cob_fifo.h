@@ -20,6 +20,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "Platforms/Common/mrt_platform.h"
 
 typedef enum{
   COB_FIFO_OK=0,
@@ -36,7 +37,7 @@ typedef struct {
     int mFrameCount;     //number of frames in the fifo
     int mMaxLen;          //max number of bytes in fifo
     int mNextLen;        //length of next frame in fifo (including delim)
-    uint8_t mLock;        //lock for fifo that is accessed by multiple threads
+    MRT_MUTEX_TYPE mMutex;        //lock for fifo that is accessed by multiple threads
 } cob_fifo_t;
 
 /**

@@ -7,6 +7,8 @@ include_directories("src/lib")
 add_definitions(
     -g
     -DPOLY_PACKET_DEBUG_LVL=1
+    -DCMAKE_BUILD_TYPE=Debug
+    -DMRT_PLATFORM_NONE
     )
 
 #SET(CMAKE_C_FLAGS "-fsanitize=address -fsanitize=undefined")
@@ -14,13 +16,8 @@ add_definitions(
 SET(CMAKE_C_FLAGS "-Wformat=0")
 
 add_subdirectory(MrT/Modules/Utilities/PolyPacket)
-
-
-add_library(
-  ${proto.fileName}_lib
-  src/lib/${proto.fileName}.c
-  src/lib/linux_uart.c
-  )
+add_subdirectory(MrT/Modules/Utilities/JSON)
+add_subdirectory(src/lib)
 
 
 add_executable(
@@ -29,6 +26,4 @@ add_executable(
   src/app_${proto.name.lower()}.c
   )
 
-target_link_libraries(${proto.fileName}_lib PolyPacket)
-
-target_link_libraries(${proto.name}_util ${proto.fileName}_lib )
+target_link_libraries(${proto.name}_util lib${proto.fileName} )
