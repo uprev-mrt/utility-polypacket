@@ -1,0 +1,9 @@
+cmake_minimum_required(VERSION 2.6)
+
+add_library(
+  lib${proto.fileName}
+  ${proto.fileName}.c
+  linux_uart.c
+  )
+
+target_link_libraries(lib${proto.fileName} mrtPolyPacket)
