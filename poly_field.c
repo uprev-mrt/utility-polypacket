@@ -6,7 +6,11 @@
   */
 
 #include "poly_field.h"
-//#include <cstdlib>
+
+#ifdef __cplusplus
+#include <cstdlib>
+#endif
+
 #include <assert.h>
 
 #define MEM_EXISTS( field) ((field->mAllocated) || (field->mBound))
