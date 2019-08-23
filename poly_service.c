@@ -231,7 +231,7 @@ ParseStatus_e poly_service_try_parse(poly_service_t* pService, poly_packet_t* pa
         //If debug is enabled, print json of outgoing packets
         #if POLY_PACKET_DEBUG_LVL == 1
         poly_packet_print_json(packet, POLY_DEBUG_PRINTBUF, false );
-        printf("  IN <<< %s\n\n",POLY_DEBUG_PRINTBUF );
+        printf("\n\033[1;33mIN <<< %s\n",POLY_DEBUG_PRINTBUF );
         #elif POLY_PACKET_DEBUG_LVL > 1
         poly_packet_print_json(packet, POLY_DEBUG_PRINTBUF, true );
         printf("  IN <<< %s\n\n",POLY_DEBUG_PRINTBUF);
@@ -294,7 +294,7 @@ HandlerStatus_e poly_service_despool(poly_service_t* pService)
           //If debug is enabled, print json of outgoing packets
           #if POLY_PACKET_DEBUG_LVL == 1
           poly_packet_print_json(&outPacket, POLY_DEBUG_PRINTBUF, false );
-          printf(" OUT >>> %s\n",POLY_DEBUG_PRINTBUF );
+          printf("\n\033[1;34mOUT >>> %s\n",POLY_DEBUG_PRINTBUF );
           #elif POLY_PACKET_DEBUG_LVL > 1
           poly_packet_print_json(&outPacket, POLY_DEBUG_PRINTBUF, true );
           printf(" OUT >>> %s\n",POLY_DEBUG_PRINTBUF );
