@@ -36,7 +36,7 @@ void poly_service_deinit(poly_service_t* service)
   for(int i=0; i < service->mInterfaceCount;i++)
   {
 
-    cob_fifo_deinit(&service->mInterfaces[i].mBytefifo);
+    cobs_fifo_deinit(&service->mInterfaces[i].mBytefifo);
 
     poly_spool_deinit(&service->mInterfaces[i].mOutSpool);
   }
@@ -64,6 +64,13 @@ void poly_service_register_tx_callback(poly_service_t* pService, int interface, 
   pService->mInterfaces[interface].f_TxCallBack = callback;
 }
 
+void poly_service_register_send_callback(poly_service_t* pService, int interface, poly_send_callback callback)
+{
+  assert(interface < pService->mInterfaceCount);
+
+  pService->mInterfaces[interface].f_SendCallBack = callback;
+}
+
 
 void poly_service_start(poly_service_t* pService, int depth)
 {
@@ -86,9 +93,10 @@ void poly_service_start(poly_service_t* pService, int depth)
     pService->mInterfaces[i].mPacketsIn = 0;
     pService->mInterfaces[i].mPacketsOut = 0;
     pService->mInterfaces[i].f_TxCallBack = NULL;
+    pService->mInterfaces[i].f_SendCallBack = NULL;
 
     //set up buffers for incoming data
-    cob_fifo_init(&pService->mInterfaces[i].mBytefifo, depth * pService->mMaxPacketSize );
+    cobs_fifo_init(&pService->mInterfaces[i].mBytefifo, depth * pService->mMaxPacketSize );
 
     //set up spool for outgoing
     poly_spool_init(&pService->mInterfaces[i].mOutSpool, depth);
@@ -107,7 +115,7 @@ void poly_service_feed(poly_service_t* pService, int interface, const uint8_t* d
   poly_interface_t* iface = &pService->mInterfaces[interface];
 
 
-  cob_fifo_push_buf(&iface->mBytefifo, data, len);
+  cobs_fifo_push_buf(&iface->mBytefifo, data, len);
 }
 
 void poly_service_feed_json_msg(poly_service_t* pService, int interface,const char* msg, int len)
@@ -189,13 +197,13 @@ ParseStatus_e poly_service_try_parse_interface(poly_service_t* pService, poly_pa
 {
   ParseStatus_e retVal = PACKET_NONE;
   uint16_t checksumComp;
-  int encodedLen = cob_fifo_get_next_len(&iface->mBytefifo);  //gets the length of the encoded frame which is always longer than decoded
+  int encodedLen = cobs_fifo_get_next_len(&iface->mBytefifo);  //gets the length of the encoded frame which is always longer than decoded
   int decodedLen;
   if(encodedLen > 0)
   {
 
     uint8_t frame[encodedLen];
-    decodedLen = cob_fifo_pop_frame(&iface->mBytefifo,frame,encodedLen);
+    decodedLen = cobs_fifo_pop_frame(&iface->mBytefifo,frame,encodedLen);
 
 
 
@@ -283,11 +291,17 @@ HandlerStatus_e poly_service_despool(poly_service_t* pService)
     {
       if(poly_spool_pop(&iface->mOutSpool, &outPacket) == SPOOL_OK)
       {
-        uint8_t encoded[outPacket.mDesc->mMaxPacketSize +2+ (outPacket.mDesc->mMaxPacketSize/254)];
-
+        uint8_t encoded[COBS_MAX_LEN(outPacket.mDesc->mMaxPacketSize)];
 
         //encode packed frame
         len = poly_packet_pack_encoded(&outPacket, encoded);
+
+        if(iface->f_TxCallBack)
+          status = iface->f_TxCallBack(encoded,len);
+        else if(iface->f_SendCallBack)
+          status = iface->f_SendCallBack(&outPacket);
+        else
+          status = PACKET_IGNORED;
 
 
         #if defined(POLY_PACKET_DEBUG_LVL) && POLY_PACKET_DEBUG_LVL >0
@@ -305,7 +319,6 @@ HandlerStatus_e poly_service_despool(poly_service_t* pService)
           #endif
         #endif
 
-        status = iface->f_TxCallBack(encoded,len);
         break;
       }
     }

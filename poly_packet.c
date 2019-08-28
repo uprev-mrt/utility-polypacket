@@ -348,37 +348,7 @@ int poly_packet_pack_encoded(poly_packet_t* packet, uint8_t* data)
   uint8_t decoded[packet->mDesc->mMaxPacketSize];
   int decodedLen = poly_packet_pack(packet, decoded);
 
-  const uint8_t* ptr = decoded;
-  uint8_t* dst = data;
-  const uint8_t *start = dst, *end = ptr + decodedLen;
-	uint8_t code, *code_ptr; /* Where to insert the leading count */
-
-
-  //TODO optimize
-  code_ptr = dst++;
-  code = 1;
-	while (ptr < end)
-  {
-		if (code != 0xFF)
-    {
-			uint8_t c = *ptr++;
-			if (c != 0)
-      {
-				*dst++ = c;
-				code++;
-				continue;
-			}
-		}
-    *code_ptr = code;
-    code_ptr = dst++;
-    code = 1;
-
-	}
-  *code_ptr++ = code;
-  *dst++ = 0; //add delimiter
-
-
-  return (int)(dst-start);
+  return cobs_encode(decoded, decodedLen, data);
 }
 
 
