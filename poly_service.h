@@ -13,7 +13,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "Utilties/COB/cobs_fifo.h"
+#include "Utilities/COBS/cobs_fifo.h"
 #include "poly_packet.h"
 #include "poly_spool.h"
 
@@ -41,7 +41,7 @@ typedef enum HandlerStatus {
 } HandlerStatus_e;
 
 typedef HandlerStatus_e (*poly_tx_callback)(uint8_t* data , int len);
-typedef HandlerStatus_e (*poly_send_callback)(pooly_packet_t* packet );
+typedef HandlerStatus_e (*poly_send_callback)(poly_packet_t* packet );
 
 
 
