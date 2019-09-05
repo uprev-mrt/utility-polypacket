@@ -2,7 +2,7 @@
   *@file testService.h
   *@brief generated code for test packet service
   *@author make_protocol.py
-  *@date 06/28/19
+  *@date 09/05/19
   *@hash 47A47C67
   */
 
@@ -93,9 +93,16 @@ void tp_service_process();
 /**
   *@brief registers a callback to let the service know how to send bytes for a given interface
   *@param iface index of interface to register with
-  *@param txCallBack a function pointer for the callback
+  *@param txBytesCallBack a function pointer for the callback
   */
-void tp_service_register_tx( int iface, poly_tx_callback txCallBack);
+void tp_service_register_bytes_tx( int iface, poly_tx_bytes_callback txBytesCallBack);
+
+/**
+  *@brief registers a callback to let the service know how to send entire packets
+  *@param iface index of interface to register with
+  *@param txPacketCallBack a function pointer for the callback
+  */
+void tp_service_register_packet_tx( int iface, poly_tx_packet_callback txPacketCallBack);
 
 /**
   *@brief 'Feeds' bytes to service at given interface for processing
@@ -144,7 +151,7 @@ void tp_auto_ack(bool enable);
   *@param desc ptr to packet descriptor to model packet from
   */
 void tp_packet_build(tp_packet_t* packet, poly_packet_desc_t* desc);
-
+#define tp_struct_build(packet,desc) tp_packet_build(packet,desc)
 
 
 

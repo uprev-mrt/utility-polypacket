@@ -40,8 +40,8 @@ typedef enum HandlerStatus {
   PACKET_NOT_HANDLED
 } HandlerStatus_e;
 
-typedef HandlerStatus_e (*poly_tx_callback)(uint8_t* data , int len);
-typedef HandlerStatus_e (*poly_send_callback)(poly_packet_t* packet );
+typedef HandlerStatus_e (*poly_tx_bytes_callback)(uint8_t* data , int len);
+typedef HandlerStatus_e (*poly_tx_packet_callback)(poly_packet_t* packet );
 
 
 
@@ -51,8 +51,8 @@ typedef struct {
   poly_packet_hdr_t mCurrentHdr;    //header for current message candidate
   /*    Outgoing      */
   poly_spool_t mOutSpool;           //ack/rety spool for outgoing messages
-  poly_tx_callback f_TxCallBack;    //call back for writing bytes to interface
-  poly_send_callback f_SendCallBack; //call back for writing entire packet
+  poly_tx_bytes_callback f_TxBytes;    //call back for writing bytes to interface
+  poly_tx_packet_callback f_TxPacket; //call back for writing entire packet
   /*    Diagnostic      */
   int mPacketsIn;     //Total number of incoming packets parsed
   int mPacketsOut;    //Total packets sent on on spool
@@ -95,20 +95,20 @@ void poly_service_deinit(poly_service_t* service);
 void poly_service_register_desc(poly_service_t* pService, poly_packet_desc_t* pDesc);
 
 /**
-  *@brief registers a tx callback for an interface, used to send messages
+  *@brief registers a bytes tx callback for an interface, used to send messages as encoded bytes
   *@param pService ptr to poly service
   *@param interface index of interface to register callback with
   *@post callback callback function
   */
-void poly_service_register_tx_callback(poly_service_t* pService, int interface, poly_tx_callback callback);
+void poly_service_register_bytes_tx_callback(poly_service_t* pService, int interface, poly_tx_bytes_callback callback);
 
 /**
-  *@brief registers a sebd callback for an interface, used to send messages
+  *@brief registers a packet tx callback for an interface, used to send packets
   *@param pService ptr to poly service
   *@param interface index of interface to register callback with
   *@post callback callback function
   */
-void poly_service_register_send_callback(poly_service_t* pService, int interface, poly_send_callback callback);
+void poly_service_register_packet_tx_callback(poly_service_t* pService, int interface, poly_tx_packet_callback callback);
 
 /**
   *@brief Starts the service with a given number of interfaces

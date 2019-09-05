@@ -2,7 +2,7 @@
   *@file testService.c
   *@brief generated code for test packet service
   *@author make_protocol.py
-  *@date 06/28/19
+  *@date 09/05/19
   */
 
 /***********************************************************
@@ -207,9 +207,14 @@ void tp_service_process()
 }
 
 
-void tp_service_register_tx( int iface, poly_tx_callback txCallBack)
+void tp_service_register_bytes_tx( int iface, poly_tx_bytes_callback txBytesCallBack)
 {
-  poly_service_register_tx_callback(&TP_SERVICE, iface,txCallBack);
+  poly_service_register_bytes_tx_callback(&TP_SERVICE, iface,txBytesCallBack);
+}
+
+void tp_service_register_packet_tx( int iface, poly_tx_packet_callback txPacketCallBack)
+{
+  poly_service_register_packet_tx_callback(&TP_SERVICE, iface,txPacketCallBack);
 }
 
 void tp_service_feed(int iface, uint8_t* data, int len)
@@ -222,7 +227,12 @@ HandlerStatus_e tp_handle_json(const char* req, int len, char* resp)
   tp_packet_t packet;
   tp_packet_t response;
 
+  //reset states of static packets
   HandlerStatus_e tp_status = PACKET_NOT_HANDLED;
+  packet.mBuilt = false;
+  packet.mSpooled = false;
+  response.mSpooled = false;
+  response.mBuilt = false;
 
 
   if(poly_service_parse_json(&TP_SERVICE, &packet.mPacket, req, len) == PACKET_VALID)
@@ -550,7 +560,7 @@ __attribute__((weak)) HandlerStatus_e tp_GetData_handler(tp_packet_t* tp_GetData
   /*    Set required Fields in response  */
   //tp_setSensorA(tp_Data, value );  //Value of Sensor A
   //tp_setSensorB(tp_Data, value );  //Value of Sensor B
-  //tp_setSensorName(tp_Data, value );  //Name of sensor responding to message
+  //tp_setSensorName(tp_Data, value );  //Name of sensor responding to message 
 
 
   /* NOTE : This function should not be modified! If needed,  It should be overridden in the application code */
@@ -568,7 +578,7 @@ __attribute__((weak)) HandlerStatus_e tp_Data_handler(tp_packet_t* tp_Data)
   /*  Get Required Fields in packet */
   //int16_t sensorA;  //Value of Sensor A
   //int sensorB;  //Value of Sensor B
-  //char sensorName[32];  //Name of sensor responding to message
+  //char sensorName[32];  //Name of sensor responding to message 
 
   //sensorA = tp_getSensorA(tp_Data);
   //sensorB = tp_getSensorB(tp_Data);
@@ -576,6 +586,22 @@ __attribute__((weak)) HandlerStatus_e tp_Data_handler(tp_packet_t* tp_Data)
 
 
   /* NOTE : This function should not be modified! If needed,  It should be overridden in the application code */
+
+  return PACKET_NOT_HANDLED;
+}
+
+
+/**
+  *@brief catch-all handler for any packet not handled by its default handler
+  *@param metaPacket ptr to tp_packet_t containing packet
+  *@return handling tp_status
+  */
+__attribute__((weak)) HandlerStatus_e tp_default_handler( tp_packet_t * tp_packet)
+{
+
+  /* NOTE : This function should not be modified, when the callback is needed,
+          tp_default_handler  should be implemented in the user file
+  */
 
   return PACKET_NOT_HANDLED;
 }

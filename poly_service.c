@@ -57,18 +57,18 @@ void poly_service_register_desc(poly_service_t* pService, poly_packet_desc_t* pD
   pService->mPacketDescs[pService->mDescCount++] = pDesc;
 }
 
-void poly_service_register_tx_callback(poly_service_t* pService, int interface, poly_tx_callback callback)
+void poly_service_register_bytes_tx_callback(poly_service_t* pService, int interface, poly_tx_bytes_callback callback)
 {
   assert(interface < pService->mInterfaceCount);
 
-  pService->mInterfaces[interface].f_TxCallBack = callback;
+  pService->mInterfaces[interface].f_TxBytes = callback;
 }
 
-void poly_service_register_send_callback(poly_service_t* pService, int interface, poly_send_callback callback)
+void poly_service_register_packet_tx_callback(poly_service_t* pService, int interface, poly_tx_packet_callback callback)
 {
   assert(interface < pService->mInterfaceCount);
 
-  pService->mInterfaces[interface].f_SendCallBack = callback;
+  pService->mInterfaces[interface].f_TxPacket = callback;
 }
 
 
@@ -92,8 +92,8 @@ void poly_service_start(poly_service_t* pService, int depth)
     //reset diagnostic info
     pService->mInterfaces[i].mPacketsIn = 0;
     pService->mInterfaces[i].mPacketsOut = 0;
-    pService->mInterfaces[i].f_TxCallBack = NULL;
-    pService->mInterfaces[i].f_SendCallBack = NULL;
+    pService->mInterfaces[i].f_TxBytes = NULL;
+    pService->mInterfaces[i].f_TxPacket = NULL;
 
     //set up buffers for incoming data
     cobs_fifo_init(&pService->mInterfaces[i].mBytefifo, depth * pService->mMaxPacketSize );
@@ -264,7 +264,7 @@ HandlerStatus_e poly_service_spool(poly_service_t* pService, int interface,  pol
    poly_interface_t* iface = &pService->mInterfaces[interface];
 
 
-   if(iface->f_TxCallBack == NULL)
+   if((iface->f_TxBytes == NULL) && (iface->f_TxPacket == NULL))
    {
      return PACKET_NOT_HANDLED; /* no tx callback registered */
    }
@@ -296,10 +296,10 @@ HandlerStatus_e poly_service_despool(poly_service_t* pService)
         //encode packed frame
         len = poly_packet_pack_encoded(&outPacket, encoded);
 
-        if(iface->f_TxCallBack)
-          status = iface->f_TxCallBack(encoded,len);
-        else if(iface->f_SendCallBack)
-          status = iface->f_SendCallBack(&outPacket);
+        if(iface->f_TxBytes)
+          status = iface->f_TxBytes(encoded,len);
+        else if(iface->f_TxPacket)
+          status = iface->f_TxPacket(&outPacket);
         else
           status = PACKET_IGNORED;
 
