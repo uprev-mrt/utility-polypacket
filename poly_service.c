@@ -211,7 +211,7 @@ ParseStatus_e poly_service_try_parse_interface(poly_service_t* pService, poly_pa
     {
       memcpy((uint8_t*)&iface->mCurrentHdr, frame, sizeof(poly_packet_hdr_t));
 
-      poly_packet_build(packet, pService->mPacketDescs[iface->mCurrentHdr.mTypeId],true);
+      poly_packet_build(packet, pService->mPacketDescs[iface->mCurrentHdr.mTypeId], true);
 
       retVal = poly_packet_parse_buffer(packet, frame, decodedLen );
 

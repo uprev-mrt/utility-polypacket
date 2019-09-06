@@ -1,0 +1,2 @@
+/usr/bin/ar qc liblibPolyPacket.a  CMakeFiles/libPolyPacket.dir/poly_packet.c.o CMakeFiles/libPolyPacket.dir/poly_field.c.o CMakeFiles/libPolyPacket.dir/poly_service.c.o CMakeFiles/libPolyPacket.dir/poly_spool.c.o
+/usr/bin/ranlib liblibPolyPacket.a

@@ -52,6 +52,15 @@ HandlerStatus_e tp_default_handler( tp_packet_t * tp_packet)
   return PACKET_HANDLED;
 }
 
+void poly_show_buf(uint8_t* buf, int len)
+{
+  for(int i =0; i < len; i++)
+  {
+    printf("0x%02X, ",  buf[i]);
+    //ASSERT_EQ(cobs_Comp0[i],cobs_Frame0[i]);
+  }
+  printf("\n");
+}
 
 void feed_packet(int interface, tp_packet_t* packet)
 {
@@ -63,6 +72,53 @@ void feed_packet(int interface, tp_packet_t* packet)
 int getFrameCount(int i)
 {
   return TP_SERVICE.mInterfaces[i].mBytefifo.mFrameCount;
+}
+
+
+
+TEST(PolyPacket, packTest )
+{
+  tp_service_init(1); // initialize with 1 interface
+
+  tp_packet_t msg;
+  tp_packet_t msgParsed;
+  int len;
+  int16_t valA =-1;
+  int valB = -1;
+  bool present = false;
+  ParseStatus_e status;
+
+  tp_packet_build(&msg,TP_PACKET_DATA );
+  tp_packet_build(&msgParsed,TP_PACKET_DATA );
+  tp_setSensorA(&msg, 1738);
+  tp_setSensorB(&msg, 898989);
+  tp_setSensorName(&msg, "test name");
+
+  len = poly_packet_pack(&msg.mPacket, txBuf);
+
+  ASSERT_EQ(len,27);
+
+
+
+  status = poly_packet_parse_buffer(&msgParsed.mPacket, txBuf, len);
+  ASSERT_EQ(status,PACKET_VALID);
+
+  present = poly_packet_has(&msgParsed.mPacket, TP_FIELD_SENSORA);
+  ASSERT_EQ(present,true);
+
+  present = poly_packet_has(&msgParsed.mPacket, TP_FIELD_SENSORB);
+  ASSERT_EQ(present,true);
+
+  valA = tp_getSensorA(&msgParsed);
+  valB = tp_getSensorB(&msgParsed);
+
+  ASSERT_EQ(valA,1738);
+  ASSERT_EQ(valB,898989);
+
+  tp_clean(&msg);
+  tp_clean(&msgParsed);
+
+  tp_service_teardown();
 }
 
 TEST(PolyService, FeedTest )
@@ -130,7 +186,7 @@ TEST(PolyService, JSON_byte_mix )
 
   //msg2
   tp_packet_build(&msg2,TP_PACKET_DATA );
-  tp_setSensorA(&msg2, 1738);
+  //tp_setSensorA(&msg2, 1738);
   tp_setSensorB(&msg2, 898989);
   tp_setSensorName(&msg2, "test name2");
 
@@ -161,7 +217,9 @@ TEST(PolyService, JSON_byte_mix )
   ASSERT_EQ(getFrameCount(0),0);
   ASSERT_EQ(lastRxDesc,TP_PACKET_DATA);
 
-
+  tp_clean(&msg0);
+  tp_clean(&msg1);
+  tp_clean(&msg2);
   tp_service_teardown();
 }
 
@@ -194,6 +252,7 @@ TEST(PolyService, ProcessTest )
   frames = getFrameCount(0);
   ASSERT_EQ(frames,0);
 
+  tp_clean(&msg);
   tp_service_teardown();
 }
 
@@ -236,6 +295,7 @@ TEST(PolyService, multipleFrames )
   //feed 3
   feed_packet(0,&msg2);
 
+
   //verify 3 frames in fifo
   ASSERT_EQ(getFrameCount(0),3);
 
@@ -258,7 +318,9 @@ TEST(PolyService, multipleFrames )
   ASSERT_EQ(getFrameCount(0),0);
   ASSERT_EQ(lastRxDesc,TP_PACKET_DATA);
 
-
+  tp_clean(&msg0);
+  tp_clean(&msg1);
+  tp_clean(&msg2);
   tp_service_teardown();
 }
 
@@ -304,6 +366,7 @@ TEST(PolyService, byteSkip )
   //feed 3
   feed_packet(0,&msg2);
 
+
   //verify 3 frames in fifo (cob_fifo doesnt know one if bad. it just sees delimiters)
   ASSERT_EQ(getFrameCount(0),3);
 
@@ -326,7 +389,9 @@ TEST(PolyService, byteSkip )
   ASSERT_EQ(getFrameCount(0),0);
   ASSERT_EQ(lastRxDesc,TP_PACKET_DATA);
 
-
+  tp_clean(&msg0);
+  tp_clean(&msg1);
+  tp_clean(&msg2);
   tp_service_teardown();
 }
 
@@ -393,6 +458,10 @@ TEST(PolyService, byteCorrupt )
   ASSERT_EQ(packet_count,2);
   ASSERT_EQ(getFrameCount(0),0);
   ASSERT_EQ(lastRxDesc,TP_PACKET_DATA);
+
+  tp_clean(&msg0);
+  tp_clean(&msg1);
+  tp_clean(&msg2);
 
 
   tp_service_teardown();
@@ -466,6 +535,10 @@ TEST(PolyService, addZero )
   ASSERT_EQ(packet_count,2);
   ASSERT_EQ(getFrameCount(0),0);
   ASSERT_EQ(lastRxDesc,TP_PACKET_DATA);
+
+  tp_clean(&msg0);
+  tp_clean(&msg1);
+  tp_clean(&msg2);
 
 
   tp_service_teardown();
