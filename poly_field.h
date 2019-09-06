@@ -182,9 +182,23 @@ int poly_field_print_json(poly_field_t* field, char* buf);
   */
 int poly_field_print_val(poly_field_t* field, int element, char* buf);
 
-inline int poly_var_size_pack(uint32_t, uint8_t* buf);
 
-inline uint32_t poly_var_size_read(const uint8_t* buf, int* idx);
+
+/**
+  *@brief packs a variable sized val
+  *@param val uint32_t to be packed
+  *@param buf where to store the value
+  *@return number of bytes required to store value
+  */
+inline int poly_var_size_pack(uint32_t val, uint8_t* buf);
+
+/**
+  *@brief reads a variable sized value from a buffer
+  *@param buf where to read from
+  *@param val uint32_t to store value
+  *@return number of bytes in the buffer used for value
+  */
+inline int poly_var_size_read(const uint8_t* buf, uint32_t* val);
 
 #ifdef __cplusplus
 }

@@ -193,7 +193,7 @@ int poly_field_parse(poly_field_t* field, const uint8_t* data)
   //if field is variable length, the first byte is the length
   if(field->mDesc->mVarLen)
   {
-    field->mSize = poly_var_size_read(data,&idx);
+    idx += poly_var_size_read(&data[idx],&field->mSize);
   }
 
   memcpy(field->mData, &data[idx], field->mSize);
@@ -375,6 +375,15 @@ int poly_field_print_val(poly_field_t* field, int element, char* buf)
   return idx;
 }
 
+/*    Variable Size value packing
+ *    These functions are used for packing and reading variable sized values
+ *    This allows effecient packing of small values with the flexibility to still use larger values (up to 2^28). anything under 7bits is not affected
+ *    each packed byte represents 7bits of the value, the most signifacant bit is used to indicate if the value is continued on the next bit
+ *    example 0x0321 would be packed to [0xA1, 0x06]
+ *            0X21 & 0X80 = 0XA1
+ *            0x03 << 1 = 0x06 //We shift one bit for each byte to compensate for the bit used as the continuation flag
+ */
+
 inline int poly_var_size_pack(uint32_t val, uint8_t* buf)
 {
   uint8_t  tmp = 0;
@@ -395,24 +404,22 @@ inline int poly_var_size_pack(uint32_t val, uint8_t* buf)
   return idx;
 }
 
-inline uint32_t poly_var_size_read(const uint8_t* buf, int* idx)
+inline int poly_var_size_read(const uint8_t* buf, uint32_t* val)
 {
-  uint32_t ret;
   uint32_t tmp;
-  bool more = true;
+  *val =0;
 
   int i;
   for( i=0; i < 4; i++)
   {
-    tmp = buf[*idx+i] & 0x7F;
-    ret |= tmp << (7*i);
+    tmp = buf[i] & 0x7F;
+    *val |= (tmp << (7*i));
 
-    if(!(buf[*idx+i] & 0x80))
+    if(!(buf[i] & 0x80))
     {
       break;
     }
   }
-  *idx+=i;
 
-  return ret;
+  return i+1;
 }

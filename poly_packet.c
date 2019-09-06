@@ -199,10 +199,13 @@ ParseStatus_e poly_packet_parse_buffer(poly_packet_t* packet, const uint8_t* dat
       return PACKET_PARSING_ERROR;
   }
 
+  int tp;
   //mark all fields as preset/absent
   for(int i=0; i < desc->mFieldCount; i++)
   {
-    currFieldId = poly_var_size_read(data,&idx);
+    tp = poly_var_size_read(&data[idx],&currFieldId);
+    idx += tp;//poly_var_size_read(&data[idx],&currFieldId);
+
 
     if(currFieldId < desc->mFieldCount)
     {
@@ -214,6 +217,11 @@ ParseStatus_e poly_packet_parse_buffer(poly_packet_t* packet, const uint8_t* dat
       }
     }
     else
+    {
+      return PACKET_PARSING_ERROR;
+    }
+
+    if(idx== len)
     {
       break;
     }
@@ -287,9 +295,6 @@ int poly_packet_pack(poly_packet_t* packet, uint8_t* data)
     }
 
   }
-
-  //append a field header that is higher than the max for this packet to indicate end of fields
-  idx+= poly_var_size_pack(i, &data[idx]);
 
   //fill out header
   packet->mHeader.mDataLen = idx - sizeof(poly_packet_hdr_t);
