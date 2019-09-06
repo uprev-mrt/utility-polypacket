@@ -20,7 +20,6 @@ poly_packet_desc_t* poly_packet_desc_init(poly_packet_desc_t* desc, int id,  con
   desc->mMaxFields = maxFields;
   desc->mFieldCount =0;
   desc->mFields = (poly_field_desc_t**) malloc(sizeof(poly_field_desc_t*) * desc->mMaxFields);
-  desc->mRequirementMap = (bool*) malloc(sizeof(bool) * desc->mMaxFields);
   desc->mMaxPacketSize = PACKET_METADATA_SIZE;
 
 
@@ -32,7 +31,6 @@ poly_packet_desc_t* poly_packet_desc_deinit(poly_packet_desc_t* desc)
   if(desc->mMaxFields > 0)
   {
     free(desc->mFields);
-    free(desc->mRequirementMap);
   }
 
   return desc;
@@ -43,7 +41,6 @@ void poly_packet_desc_add_field(poly_packet_desc_t* desc, poly_field_desc_t* fie
   if(desc->mFieldCount < desc->mMaxFields)
   {
     //add field desc to poly_packet_desc
-    desc->mRequirementMap[desc->mFieldCount] = required;
     desc->mFields[desc->mFieldCount] = fieldDesc;
 
     //increment field count
@@ -106,6 +103,19 @@ void poly_packet_clean(poly_packet_t* packet)
   packet->mBuilt = false;
 }
 
+bool poly_packet_has(poly_packet_t* packet, const poly_field_desc_t* desc)
+{
+  for(int i=0; i < packet->mDesc->mFieldCount; i++)
+  {
+    if(packet->mFields[i].mDesc == desc )
+    {
+      return packet->mFields[i].mPresent;
+    }
+  }
+
+  return false;
+}
+
 int poly_packet_get_field(poly_packet_t* packet, const poly_field_desc_t* desc, void* data)
 {
   MRT_MUTEX_LOCK(packet->mMutex);
@@ -158,11 +168,10 @@ ParseStatus_e poly_packet_parse_buffer(poly_packet_t* packet, const uint8_t* dat
 {
   int idx=0;                //cursor in data
   int expectedLen =0;       //length indicated in header
-  int manifestBit =0;        //bit offset for manifest
+  uint32_t currFieldId;
 
   const poly_packet_desc_t* desc = packet->mDesc;
 
-  uint8_t manifestByte;         //current manifest byte
 
   uint16_t checkSumComp =CHECKSUM_SEED; //calculated checksum
 
@@ -193,48 +202,24 @@ ParseStatus_e poly_packet_parse_buffer(poly_packet_t* packet, const uint8_t* dat
   //mark all fields as preset/absent
   for(int i=0; i < desc->mFieldCount; i++)
   {
-    //if fields are required, they are not in the manifest
-    if(desc->mRequirementMap[i])
+    currFieldId = poly_var_size_read(data,&idx);
+
+    if(currFieldId < desc->mFieldCount)
     {
-      packet->mFields[i].mPresent = true;
+      packet->mFields[currFieldId].mPresent = true;
+      idx+= poly_field_parse(&packet->mFields[currFieldId], &data[idx]);
+      if(idx > len)
+      {
+        return PACKET_PARSING_ERROR;
+      }
     }
     else
     {
-      //if manifest bit is 0, we are either just starting, or rolling over
-      //grab next byte as part of manifest
-      if(manifestBit == 0)
-      {
-        manifestByte = data[idx++];
-      }
-
-      //check manifest for optional fields
-      if((manifestByte << manifestBit) & 0x80)
-      {
-        packet->mFields[i].mPresent = true;
-      }
-      else
-      {
-        packet->mFields[i].mPresent = false;
-      }
-
-      //increment and roll over manifest bit
-      manifestBit++;
-      if(manifestBit == 8)
-        manifestBit =0;
-
+      break;
     }
+
   }
 
-  //Parse data from all fields
-  for(int i=0; i < desc->mFieldCount; i++)
-  {
-    idx+= poly_field_parse(&packet->mFields[i], &data[idx]);
-
-    if(idx > len)
-    {
-      return PACKET_PARSING_ERROR;
-    }
-  }
 
   // validate checksum
   for(int i=0; i < packet->mHeader.mDataLen; i++)
@@ -277,49 +262,24 @@ int poly_packet_pack(poly_packet_t* packet, uint8_t* data)
   int idx=0;
   poly_field_t* field;
   packet->mHeader.mCheckSum = CHECKSUM_SEED;
-  int manifestBit =0;        //bit offset for manifest
-  uint8_t* manifestByte;         //current manifest byte
 
   //Skip header for now, this will be written in after we get length and checksum
   idx+=sizeof(poly_packet_hdr_t);
 
-  //create manifest
-  for(int i=0; i < packet->mDesc->mFieldCount; i++)
-  {
-    //if fields are required, they are not in the manifest
-    if(!packet->mDesc->mRequirementMap[i])
-    {
-
-      //if manifest bit is 0, we are either just starting, or rolling over
-      if(manifestBit == 0)
-      {
-        manifestByte = &data[idx++];
-        *manifestByte = 0;
-      }
-
-      if(packet->mFields[i].mPresent)
-      {
-        *manifestByte |= (0x80) >> manifestBit;
-      }
-
-
-            //increment and roll over manifest bit
-            manifestBit++;
-            if(manifestBit == 8)
-              manifestBit =0;
-    }
-  }
-
+  int i=0;
   //copy fields
-  for(int i=0; i < packet->mDesc->mFieldCount; i++)
+  for(i=0; i < packet->mDesc->mFieldCount; i++)
   {
     field = &packet->mFields[i];
     if(field->mPresent)
     {
+      // insert field id
+      idx+= poly_var_size_pack(i, &data[idx]);
+
       //if its a variable length field, put int length first (max 255)
       if(field->mDesc->mVarLen)
       {
-        data[idx++] = field->mSize;
+        idx+= poly_var_size_pack(field->mSize, &data[idx]);
       }
 
       memcpy(&data[idx], field->mData, field->mSize);
@@ -327,6 +287,9 @@ int poly_packet_pack(poly_packet_t* packet, uint8_t* data)
     }
 
   }
+
+  //append a field header that is higher than the max for this packet to indicate end of fields
+  idx+= poly_var_size_pack(i, &data[idx]);
 
   //fill out header
   packet->mHeader.mDataLen = idx - sizeof(poly_packet_hdr_t);

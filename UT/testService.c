@@ -560,7 +560,7 @@ __attribute__((weak)) HandlerStatus_e tp_GetData_handler(tp_packet_t* tp_GetData
   /*    Set required Fields in response  */
   //tp_setSensorA(tp_Data, value );  //Value of Sensor A
   //tp_setSensorB(tp_Data, value );  //Value of Sensor B
-  //tp_setSensorName(tp_Data, value );  //Name of sensor responding to message 
+  //tp_setSensorName(tp_Data, value );  //Name of sensor responding to message
 
 
   /* NOTE : This function should not be modified! If needed,  It should be overridden in the application code */
@@ -578,7 +578,7 @@ __attribute__((weak)) HandlerStatus_e tp_Data_handler(tp_packet_t* tp_Data)
   /*  Get Required Fields in packet */
   //int16_t sensorA;  //Value of Sensor A
   //int sensorB;  //Value of Sensor B
-  //char sensorName[32];  //Name of sensor responding to message 
+  //char sensorName[32];  //Name of sensor responding to message
 
   //sensorA = tp_getSensorA(tp_Data);
   //sensorB = tp_getSensorB(tp_Data);
@@ -586,22 +586,6 @@ __attribute__((weak)) HandlerStatus_e tp_Data_handler(tp_packet_t* tp_Data)
 
 
   /* NOTE : This function should not be modified! If needed,  It should be overridden in the application code */
-
-  return PACKET_NOT_HANDLED;
-}
-
-
-/**
-  *@brief catch-all handler for any packet not handled by its default handler
-  *@param metaPacket ptr to tp_packet_t containing packet
-  *@return handling tp_status
-  */
-__attribute__((weak)) HandlerStatus_e tp_default_handler( tp_packet_t * tp_packet)
-{
-
-  /* NOTE : This function should not be modified, when the callback is needed,
-          tp_default_handler  should be implemented in the user file
-  */
 
   return PACKET_NOT_HANDLED;
 }

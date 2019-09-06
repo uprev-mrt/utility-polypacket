@@ -56,7 +56,6 @@ typedef struct {
   uint8_t mTypeId;              //unique id for packet type
   const char* mName;            //friendly name for packet type
   poly_field_desc_t** mFields;  //Array of field descriptors
-  bool* mRequirementMap;        //map of which fields are required
   int mMaxFields;               //max fields
   int mFieldCount;              //number of field descriptors
   uint8_t mOptionalFieldCount;  //number of fields that are optional (used to calc manifest size)
@@ -120,6 +119,8 @@ void poly_packet_build(poly_packet_t* packet, const poly_packet_desc_t* desc, bo
   *@param packet ptr to packet being cleaned
   */
 void poly_packet_clean(poly_packet_t* packet);
+
+bool poly_packet_has(poly_packet_t* packet, const poly_field_desc_t* desc);
 
 
 /**

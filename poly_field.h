@@ -79,7 +79,7 @@ typedef struct{
 typedef struct{
   uint8_t* mData;       //buffer where field data is stored
   poly_field_desc_t* mDesc;    //pointer to descriptor
-  uint8_t mSize;         //actual size (used for variable len fields)
+  uint32_t mSize;         //actual size (used for variable len fields)
   bool mPresent;          //indicated field is present in packet
   bool mBound;
   bool mAllocated;
@@ -181,6 +181,10 @@ int poly_field_print_json(poly_field_t* field, char* buf);
   *@return return number of characters written
   */
 int poly_field_print_val(poly_field_t* field, int element, char* buf);
+
+inline int poly_var_size_pack(uint32_t, uint8_t* buf);
+
+inline uint32_t poly_var_size_read(const uint8_t* buf, int* idx);
 
 #ifdef __cplusplus
 }

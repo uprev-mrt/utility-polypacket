@@ -193,7 +193,7 @@ int poly_field_parse(poly_field_t* field, const uint8_t* data)
   //if field is variable length, the first byte is the length
   if(field->mDesc->mVarLen)
   {
-    field->mSize = data[idx++];
+    field->mSize = poly_var_size_read(data,&idx);
   }
 
   memcpy(field->mData, &data[idx], field->mSize);
@@ -373,4 +373,46 @@ int poly_field_print_val(poly_field_t* field, int element, char* buf)
   }
 
   return idx;
+}
+
+inline int poly_var_size_pack(uint32_t val, uint8_t* buf)
+{
+  uint8_t  tmp = 0;
+  int idx =0;
+
+  do{
+    tmp = val & 0x7F;
+    val >>= 7;
+    if(val > 0)
+    {
+      tmp |= 0x80;
+    }
+
+    buf[idx++] = tmp;
+
+  } while(val > 0);
+
+  return idx;
+}
+
+inline uint32_t poly_var_size_read(const uint8_t* buf, int* idx)
+{
+  uint32_t ret;
+  uint32_t tmp;
+  bool more = true;
+
+  int i;
+  for( i=0; i < 4; i++)
+  {
+    tmp = buf[*idx+i] & 0x7F;
+    ret |= tmp << (7*i);
+
+    if(!(buf[*idx+i] & 0x80))
+    {
+      break;
+    }
+  }
+  *idx+=i;
+
+  return ret;
 }
