@@ -190,7 +190,7 @@ int poly_field_print_val(poly_field_t* field, int element, char* buf);
   *@param buf where to store the value
   *@return number of bytes required to store value
   */
-inline int poly_var_size_pack(uint32_t val, uint8_t* buf);
+int poly_var_size_pack(uint32_t val, uint8_t* buf);
 
 /**
   *@brief reads a variable sized value from a buffer
@@ -198,7 +198,7 @@ inline int poly_var_size_pack(uint32_t val, uint8_t* buf);
   *@param val uint32_t to store value
   *@return number of bytes in the buffer used for value
   */
-inline int poly_var_size_read(const uint8_t* buf, uint32_t* val);
+int poly_var_size_read(const uint8_t* buf, uint32_t* val);
 
 #ifdef __cplusplus
 }

@@ -384,7 +384,7 @@ int poly_field_print_val(poly_field_t* field, int element, char* buf)
  *            0x03 << 1 = 0x06 //We shift one bit for each byte to compensate for the bit used as the continuation flag
  */
 
-inline int poly_var_size_pack(uint32_t val, uint8_t* buf)
+int poly_var_size_pack(uint32_t val, uint8_t* buf)
 {
   uint8_t  tmp = 0;
   int idx =0;
@@ -404,7 +404,7 @@ inline int poly_var_size_pack(uint32_t val, uint8_t* buf)
   return idx;
 }
 
-inline int poly_var_size_read(const uint8_t* buf, uint32_t* val)
+int poly_var_size_read(const uint8_t* buf, uint32_t* val)
 {
   uint32_t tmp;
   *val =0;
