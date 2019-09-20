@@ -94,6 +94,7 @@ void poly_service_start(poly_service_t* pService, int depth)
     pService->mInterfaces[i].mPacketsOut = 0;
     pService->mInterfaces[i].f_TxBytes = NULL;
     pService->mInterfaces[i].f_TxPacket = NULL;
+    pService->mInterfaces[i].mTxReady = 0;
 
     //set up buffers for incoming data
     cobs_fifo_init(&pService->mInterfaces[i].mBytefifo, depth * pService->mMaxPacketSize );
@@ -235,6 +236,7 @@ ParseStatus_e poly_service_try_parse(poly_service_t* pService, poly_packet_t* pa
     if (poly_service_try_parse_interface(pService, packet, &pService->mInterfaces[i]) == PACKET_VALID)
     {
       retVal=  PACKET_VALID;
+      packet->mInterface = i;
       #if defined(POLY_PACKET_DEBUG_LVL) && POLY_PACKET_DEBUG_LVL >0
         //If debug is enabled, print json of outgoing packets
         #if POLY_PACKET_DEBUG_LVL == 1
@@ -287,7 +289,7 @@ HandlerStatus_e poly_service_despool(poly_service_t* pService)
   for(int i=0; i < pService->mInterfaceCount; i++)
   {
     iface = &pService->mInterfaces[i];
-    if(iface->mOutSpool.mReadyCount > 0)
+    if( iface->mTxReady ) && (iface->mOutSpool.mReadyCount > 0))
     {
       if(poly_spool_pop(&iface->mOutSpool, &outPacket) == SPOOL_OK)
       {
@@ -319,7 +321,6 @@ HandlerStatus_e poly_service_despool(poly_service_t* pService)
           #endif
         #endif
 
-        break;
       }
     }
 

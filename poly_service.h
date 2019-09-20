@@ -56,6 +56,7 @@ typedef struct {
   /*    Diagnostic      */
   int mPacketsIn;     //Total number of incoming packets parsed
   int mPacketsOut;    //Total packets sent on on spool
+  bool mTxReady;
 }poly_interface_t;
 
 /**
