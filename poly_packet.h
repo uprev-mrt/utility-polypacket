@@ -78,14 +78,23 @@ typedef struct {
 typedef struct poly_packet{
   poly_packet_hdr_t mHeader;
   const poly_packet_desc_t* mDesc;      //prt to packet descriptor
-  poly_field_t* mFields;          //array of fields contained in packet
-  uint8_t mInterface;              //id of interface that packet is from/to
-  bool mBuilt;                    //indicates if packet has already been built
-  packet_ack_type_e mAckType;     //indicates what type of ack the packet should use
-  packet_ack_cb f_mAckCallback;   //callback for when packet is acknowledged
-  packet_failed_cb f_mFailedCallback; //callback for when the packet timesout
+  poly_field_t* mFields;                //array of fields contained in packet
+  uint8_t mInterface;                   //id of interface that packet is from/to
+  bool mBuilt;                          //indicates if packet has already been built
+  packet_ack_type_e mAckType;           //indicates what type of ack the packet should use
+  packet_ack_cb f_mAckCallback;         //callback for when packet is acknowledged
+  packet_failed_cb f_mFailedCallback;   //callback for when the packet timesout
   MRT_MUTEX_TYPE mMutex;
 }poly_packet_t;
+
+/**
+  *@brief Meta packet. nesting the packet gives us the ability to use macros in the service for protocol-specific packets as well
+  */
+typedef struct{
+  poly_packet_t mPacket;    //internal packet structure
+  bool mSpooled;            //spooled data doesnt get cleaned, the spool owns it now
+  bool mBuilt;
+} meta_packet_t;
 
 #pragma pack(pop)
 

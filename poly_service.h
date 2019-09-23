@@ -41,7 +41,7 @@ typedef enum HandlerStatus {
 } HandlerStatus_e;
 
 typedef HandlerStatus_e (*poly_tx_bytes_callback)(uint8_t* data , int len);
-typedef HandlerStatus_e (*poly_tx_packet_callback)(poly_packet_t* packet );
+typedef HandlerStatus_e (*poly_tx_packet_callback)(meta_packet_t* packet );
 
 
 

@@ -283,20 +283,20 @@ HandlerStatus_e poly_service_despool(poly_service_t* pService)
 {
   HandlerStatus_e status = PACKET_NOT_HANDLED;
   poly_interface_t* iface;
-  poly_packet_t outPacket;
+  meta_packet_t outPacket;
   int len;
 
   for(int i=0; i < pService->mInterfaceCount; i++)
   {
     iface = &pService->mInterfaces[i];
-    if( iface->mTxReady ) && (iface->mOutSpool.mReadyCount > 0))
+    if(( iface->mTxReady ) && (iface->mOutSpool.mReadyCount > 0))
     {
-      if(poly_spool_pop(&iface->mOutSpool, &outPacket) == SPOOL_OK)
+      if(poly_spool_pop(&iface->mOutSpool, &outPacket.mPacket) == SPOOL_OK)
       {
-        uint8_t encoded[COBS_MAX_LEN(outPacket.mDesc->mMaxPacketSize)];
+        uint8_t encoded[COBS_MAX_LEN(outPacket.mPacket.mDesc->mMaxPacketSize)];
 
         //encode packed frame
-        len = poly_packet_pack_encoded(&outPacket, encoded);
+        len = poly_packet_pack_encoded(&outPacket.mPacket, encoded);
 
         if(iface->f_TxBytes)
           status = iface->f_TxBytes(encoded,len);
@@ -309,14 +309,14 @@ HandlerStatus_e poly_service_despool(poly_service_t* pService)
         #if defined(POLY_PACKET_DEBUG_LVL) && POLY_PACKET_DEBUG_LVL >0
           //If debug is enabled, print json of outgoing packets
           #if POLY_PACKET_DEBUG_LVL == 1
-          poly_packet_print_json(&outPacket, POLY_DEBUG_PRINTBUF, false );
+          poly_packet_print_json(&outPacket.mPacket, POLY_DEBUG_PRINTBUF, false );
           printf("\n\033[1;34mOUT >>> %s\n",POLY_DEBUG_PRINTBUF );
           #elif POLY_PACKET_DEBUG_LVL > 1
-          poly_packet_print_json(&outPacket, POLY_DEBUG_PRINTBUF, true );
+          poly_packet_print_json(&outPacket.mPacket, POLY_DEBUG_PRINTBUF, true );
           printf(" OUT >>> %s\n",POLY_DEBUG_PRINTBUF );
           #endif
           #if POLY_PACKET_DEBUG_LVL > 2
-          poly_packet_print_packed(&outPacket, POLY_DEBUG_PRINTBUF);
+          poly_packet_print_packed(&outPacket.mPacket, POLY_DEBUG_PRINTBUF);
           printf(" OUT >>> %s\n\n", POLY_DEBUG_PRINTBUF );
           #endif
         #endif

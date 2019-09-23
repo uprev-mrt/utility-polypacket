@@ -1,3 +1,0 @@
-/mnt/d/uprev/uprev-mrt/Modules/Utilities/PolyPacket/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/mnt/d/uprev/uprev-mrt/Modules/Utilities/PolyPacket/cmake-build-debug/CMakeFiles/libPolyPacket.dir
-/mnt/d/uprev/uprev-mrt/Modules/Utilities/PolyPacket/cmake-build-debug/CMakeFiles/edit_cache.dir

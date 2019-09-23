@@ -196,7 +196,8 @@ ParseStatus_e poly_packet_parse_buffer(poly_packet_t* packet, const uint8_t* dat
   }
   else if(len > expectedLen)
   {
-      return PACKET_PARSING_ERROR;
+      //allow packets to parse if too much data is given, this is useful for pulling structs out of memory
+      len = expectedLen;
   }
 
 
