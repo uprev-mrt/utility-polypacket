@@ -235,6 +235,13 @@ int poly_packet_print_packed(poly_packet_t* packet, char* buf);
   */
 int poly_packet_update_header(poly_packet_t* packet);
 
+/**
+  *@brief returns the total size of packet once packed
+  *@param packet ptr to packet
+  *@return total length of packet when packed
+  */
+int poly_packet_max_packed_size(poly_packet_t* packet);
+
 
 #ifdef __cplusplus
 }

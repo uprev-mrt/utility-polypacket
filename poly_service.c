@@ -200,10 +200,11 @@ ParseStatus_e poly_service_try_parse_interface(poly_service_t* pService, poly_pa
   uint16_t checksumComp;
   int encodedLen = cobs_fifo_get_next_len(&iface->mBytefifo);  //gets the length of the encoded frame which is always longer than decoded
   int decodedLen;
+	uint8_t* frame;
   if(encodedLen > 0)
   {
 
-    uint8_t frame[encodedLen];
+		frame = malloc(encodedLen);
     decodedLen = cobs_fifo_pop_frame(&iface->mBytefifo,frame,encodedLen);
 
 
@@ -212,14 +213,26 @@ ParseStatus_e poly_service_try_parse_interface(poly_service_t* pService, poly_pa
     {
       memcpy((uint8_t*)&iface->mCurrentHdr, frame, sizeof(poly_packet_hdr_t));
 
-      poly_packet_build(packet, pService->mPacketDescs[iface->mCurrentHdr.mTypeId], true);
+			if(iface->mCurrentHdr.mTypeId < pService->mDescCount)
+			{
+		     poly_packet_build(packet, pService->mPacketDescs[iface->mCurrentHdr.mTypeId], true);
 
-      retVal = poly_packet_parse_buffer(packet, frame, decodedLen );
+		      retVal = poly_packet_parse_buffer(packet, frame, decodedLen );
 
-      //if the parse failed, clean the packet
-      if(retVal != PACKET_VALID)
-        poly_packet_clean(packet);
+		      //if the parse failed, clean the packet
+		      if(retVal != PACKET_VALID)
+          {
+            poly_packet_clean(packet);
+          }
+			}
+      else
+      {
+        retVal = PACKET_PARSING_ERROR;
+      }
+
     }
+		
+		free(frame);
 
   }
 
@@ -233,7 +246,8 @@ ParseStatus_e poly_service_try_parse(poly_service_t* pService, poly_packet_t* pa
   ParseStatus_e retVal = PACKET_NONE;
   for(int i=0; i < pService->mInterfaceCount; i++)
   {
-    if (poly_service_try_parse_interface(pService, packet, &pService->mInterfaces[i]) == PACKET_VALID)
+    retVal = poly_service_try_parse_interface(pService, packet, &pService->mInterfaces[i]);
+    if (retVal == PACKET_VALID)
     {
       retVal=  PACKET_VALID;
       packet->mInterface = i;
@@ -253,6 +267,7 @@ ParseStatus_e poly_service_try_parse(poly_service_t* pService, poly_packet_t* pa
       #endif
       break;
     }
+
   }
 
   return retVal;
@@ -279,12 +294,17 @@ HandlerStatus_e poly_service_spool(poly_service_t* pService, int interface,  pol
   return PACKET_SPOOLED;
 }
 
+volatile int tp;
+volatile bool tc = true;
 HandlerStatus_e poly_service_despool(poly_service_t* pService)
 {
   HandlerStatus_e status = PACKET_NOT_HANDLED;
   poly_interface_t* iface;
   meta_packet_t outPacket;
   int len;
+  int packedLen;
+	uint8_t* encoded;
+
 
   for(int i=0; i < pService->mInterfaceCount; i++)
   {
@@ -293,10 +313,15 @@ HandlerStatus_e poly_service_despool(poly_service_t* pService)
     {
       if(poly_spool_pop(&iface->mOutSpool, &outPacket.mPacket) == SPOOL_OK)
       {
-        uint8_t encoded[COBS_MAX_LEN(outPacket.mPacket.mDesc->mMaxPacketSize)];
+        packedLen = poly_packet_max_packed_size(&outPacket.mPacket);
+				
+				tp = COBS_MAX_LEN(packedLen);
+
+				encoded = malloc(COBS_MAX_LEN(packedLen));
 
         //encode packed frame
-        len = poly_packet_pack_encoded(&outPacket.mPacket, encoded);
+				if(tc)
+					len = poly_packet_pack_encoded(&outPacket.mPacket, encoded);
 
         if(iface->f_TxBytes)
           status = iface->f_TxBytes(encoded,len);
@@ -304,6 +329,8 @@ HandlerStatus_e poly_service_despool(poly_service_t* pService)
           status = iface->f_TxPacket(&outPacket);
         else
           status = PACKET_IGNORED;
+
+				free(encoded);
 
 
         #if defined(POLY_PACKET_DEBUG_LVL) && POLY_PACKET_DEBUG_LVL >0

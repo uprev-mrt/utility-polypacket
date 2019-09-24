@@ -205,8 +205,7 @@ ParseStatus_e poly_packet_parse_buffer(poly_packet_t* packet, const uint8_t* dat
   for(int i=0; i < desc->mFieldCount; i++)
   {
     idx += poly_var_size_read(&data[idx],&currFieldId);
-
-
+    
     if(currFieldId < desc->mFieldCount)
     {
       packet->mFields[currFieldId].mPresent = true;
@@ -312,8 +311,8 @@ int poly_packet_pack(poly_packet_t* packet, uint8_t* data)
 
 int poly_packet_pack_encoded(poly_packet_t* packet, uint8_t* data)
 {
-
-  uint8_t decoded[packet->mDesc->mMaxPacketSize];
+	int decodedSize = poly_packet_max_packed_size(packet);
+  uint8_t decoded[decodedSize];
   int decodedLen = poly_packet_pack(packet, decoded);
 
   return cobs_encode(decoded, decodedLen, data);
@@ -413,4 +412,25 @@ int poly_packet_update_header(poly_packet_t* packet)
   int len = poly_packet_pack(packet, data);
 
   return len;
+}
+
+int poly_packet_max_packed_size(poly_packet_t* packet)
+{
+  int len = sizeof(poly_packet_hdr_t);
+	poly_field_t* field;
+	
+  for(int i=0; i < packet->mDesc->mFieldCount; i++)
+  {
+    field = &packet->mFields[i];
+
+    if(field->mPresent)
+    {
+      len+= field->mSize;
+      len+= 4; //for field header and size
+    }
+
+  }
+
+  return len;
+
 }

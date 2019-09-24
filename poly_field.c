@@ -67,6 +67,7 @@ poly_field_desc_t* poly_field_desc_init(poly_field_desc_t* desc, const char* nam
       desc->mObjSize=sizeof(double);
       break;
     case TYPE_STRING:
+			desc->mVarLen = true;
       desc->mNullTerm = true;
     case TYPE_CHAR:
       desc->mObjSize=sizeof(char);  //strings are treated as arrays of characters
@@ -177,10 +178,19 @@ int poly_field_copy(poly_field_t* dst,poly_field_t* src)
   //if descriptor is the same and the src has data
   if((dst->mDesc == src->mDesc) && (src->mPresent))
   {
-    assert(MEM_EXISTS(dst));
     assert(MEM_EXISTS(src));
-
-    poly_field_set(dst, src->mData);
+		
+		if(dst->mSize != src->mSize)
+		{
+			if(dst->mAllocated)
+			{
+				free(dst->mData);
+			}
+			dst->mSize = src->mSize;
+			dst->mData = malloc(src->mSize);
+		}
+		memcpy(dst->mData, src->mData, src->mSize);
+		dst->mPresent = true;
     return 1;
   }
   return 0;
@@ -189,11 +199,21 @@ int poly_field_copy(poly_field_t* dst,poly_field_t* src)
 int poly_field_parse(poly_field_t* field, const uint8_t* data)
 {
   int idx =0;
+	uint32_t size;
 
   //if field is variable length, the first byte is the length
   if(field->mDesc->mVarLen)
   {
-    idx += poly_var_size_read(&data[idx],&field->mSize);
+    idx += poly_var_size_read(&data[idx],&size);
+		if(size != field->mSize)
+		{
+			 if(field->mAllocated)
+			 {
+				 free(field->mData);
+			 }
+			 field->mData = malloc(size);
+			 field->mSize = size;
+		}
   }
 
   memcpy(field->mData, &data[idx], field->mSize);
