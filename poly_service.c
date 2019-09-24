@@ -94,7 +94,7 @@ void poly_service_start(poly_service_t* pService, int depth)
     pService->mInterfaces[i].mPacketsOut = 0;
     pService->mInterfaces[i].f_TxBytes = NULL;
     pService->mInterfaces[i].f_TxPacket = NULL;
-    pService->mInterfaces[i].mTxReady = 0;
+    pService->mInterfaces[i].mTxReady = true;
 
     //set up buffers for incoming data
     cobs_fifo_init(&pService->mInterfaces[i].mBytefifo, depth * pService->mMaxPacketSize );
