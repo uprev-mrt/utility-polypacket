@@ -82,7 +82,7 @@ typedef struct{
   uint32_t mSize;         //actual size (used for variable len fields)
   bool mPresent;          //indicated field is present in packet
   bool mBound;
-  bool mAllocated;
+  uint32_t mAllocated;		//size of memory allocated for data
 }poly_field_t;
 
 #pragma pack(pop)

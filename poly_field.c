@@ -95,11 +95,11 @@ void poly_field_init(poly_field_t* field, poly_field_desc_t* desc, bool allocate
   {
     field->mData = (uint8_t*) malloc(field->mSize);
     memset(field->mData,0,field->mSize);
-    field->mAllocated = true;
+    field->mAllocated = field->mSize;
   }
   else
   {
-    field->mAllocated = false;
+    field->mAllocated = 0;
   }
 }
 
@@ -134,16 +134,25 @@ void poly_field_bind(poly_field_t* field, uint8_t* data, bool copy)
 void poly_field_set(poly_field_t* field, const uint8_t* data)
 {
   assert(MEM_EXISTS(field));
+	uint32_t newSize;
 
   //if its a null terminated type, we can adjust size
   if(field->mDesc->mNullTerm)
   {
-    field->mSize = strlen((const char*)data);
-
-    if(strlen((const char*)data) > field->mDesc->mLen)
+		newSize = strlen((const char*)data);
+		
+		//null term string needs on extra byte
+    if( (newSize + 1) > field->mAllocated)	
     {
-      field->mSize = field->mDesc->mLen;
+			if(field->mAllocated)
+			{
+				free(field->mData);
+			}
+			field->mData = malloc(newSize + 1);
+			field->mAllocated = newSize +1;
     }
+		
+		field->mSize = newSize;
     field->mData[field->mSize] = 0;
   }
 
@@ -180,15 +189,16 @@ int poly_field_copy(poly_field_t* dst,poly_field_t* src)
   {
     assert(MEM_EXISTS(src));
 		
-		if(dst->mSize != src->mSize)
+		if(dst->mAllocated < src->mSize)
 		{
 			if(dst->mAllocated)
 			{
 				free(dst->mData);
 			}
-			dst->mSize = src->mSize;
 			dst->mData = malloc(src->mSize);
+			dst->mAllocated = src->mSize;
 		}
+		dst->mSize = src->mSize;
 		memcpy(dst->mData, src->mData, src->mSize);
 		dst->mPresent = true;
     return 1;
