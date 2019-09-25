@@ -188,6 +188,13 @@ HandlerStatus_e poly_service_spool(poly_service_t* pService, int interface,  pol
   */
 HandlerStatus_e poly_service_despool(poly_service_t* pService);
 
+/**
+  *@brief tells the service time has passed so it can track packets timeouts on the spool
+  *@param pService ptr to service
+  *@param ms number of milliseconds passed
+  */
+void poly_service_tick(poly_service_t* pService, uint32_t ms);
+
 
 
 

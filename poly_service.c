@@ -231,7 +231,7 @@ ParseStatus_e poly_service_try_parse_interface(poly_service_t* pService, poly_pa
       }
 
     }
-		
+
 		free(frame);
 
   }
@@ -314,7 +314,7 @@ HandlerStatus_e poly_service_despool(poly_service_t* pService)
       if(poly_spool_pop(&iface->mOutSpool, &outPacket.mPacket) == SPOOL_OK)
       {
         packedLen = poly_packet_max_packed_size(&outPacket.mPacket);
-				
+
 				tp = COBS_MAX_LEN(packedLen);
 
 				encoded = malloc(COBS_MAX_LEN(packedLen));
@@ -354,4 +354,12 @@ HandlerStatus_e poly_service_despool(poly_service_t* pService)
   }
 
   return status;
+}
+
+void poly_service_tick(poly_service_t* pService, uint32_t ms)
+{
+  for(int i=0; i < pService->mInterfaceCount; i++)
+  {
+    poly_spool_tick(&pService->mInterfaces[i].mOutSpool, ms);
+  }
 }
