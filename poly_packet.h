@@ -58,8 +58,6 @@ typedef struct {
   poly_field_desc_t** mFields;  //Array of field descriptors
   int mMaxFields;               //max fields
   int mFieldCount;              //number of field descriptors
-  uint8_t mOptionalFieldCount;  //number of fields that are optional (used to calc manifest size)
-  uint8_t mManifestSize;        //size in bytes of manifest
   int mMaxPacketSize;
 }poly_packet_desc_t;
 
@@ -81,20 +79,13 @@ typedef struct poly_packet{
   poly_field_t* mFields;                //array of fields contained in packet
   uint8_t mInterface;                   //id of interface that packet is from/to
   bool mBuilt;                          //indicates if packet has already been built
+  bool mSpooled;                        //spooled data doesnt get cleaned, the spool owns it now
   packet_ack_type_e mAckType;           //indicates what type of ack the packet should use
   packet_ack_cb f_mAckCallback;         //callback for when packet is acknowledged
   packet_failed_cb f_mFailedCallback;   //callback for when the packet timesout
   MRT_MUTEX_TYPE mMutex;
 }poly_packet_t;
 
-/**
-  *@brief Meta packet. nesting the packet gives us the ability to use macros in the service for protocol-specific packets as well
-  */
-typedef struct{
-  poly_packet_t mPacket;    //internal packet structure
-  bool mSpooled;            //spooled data doesnt get cleaned, the spool owns it now
-  bool mBuilt;
-} meta_packet_t;
 
 #pragma pack(pop)
 

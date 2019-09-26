@@ -56,9 +56,6 @@ void poly_packet_desc_add_field(poly_packet_desc_t* desc, poly_field_desc_t* fie
     {
       desc->mMaxPacketSize += fieldDesc->mObjSize;
     }
-
-    //recalculate manifest size
-    desc->mManifestSize = ( desc->mOptionalFieldCount +7)/8;
   }
 }
 
@@ -74,6 +71,8 @@ void poly_packet_build(poly_packet_t* packet, const poly_packet_desc_t* desc, bo
   packet->mAckType = ACK_TYPE_NONE;// until we put in the auto/ack retry timing
   packet->f_mAckCallback = NULL;
   packet->f_mFailedCallback = NULL;
+  packet->mBuilt = false;
+  packet->mSpooled = false;
   MRT_MUTEX_CREATE(packet->mMutex);
 
   packet->mFields = (poly_field_t*) malloc(sizeof(poly_field_t) * desc->mFieldCount);
@@ -87,7 +86,6 @@ void poly_packet_build(poly_packet_t* packet, const poly_packet_desc_t* desc, bo
 
 void poly_packet_clean(poly_packet_t* packet)
 {
-
   //destroy all fields
   for(int i=0; i < packet->mDesc->mFieldCount; i++)
   {
@@ -101,6 +99,7 @@ void poly_packet_clean(poly_packet_t* packet)
   MRT_MUTEX_DELETE(packet->mMutex);
 
   packet->mBuilt = false;
+  packet->mSpooled = false;
 }
 
 bool poly_packet_has(poly_packet_t* packet, const poly_field_desc_t* desc)
@@ -205,7 +204,7 @@ ParseStatus_e poly_packet_parse_buffer(poly_packet_t* packet, const uint8_t* dat
   for(int i=0; i < desc->mFieldCount; i++)
   {
     idx += poly_var_size_read(&data[idx],&currFieldId);
-    
+
     if(currFieldId < desc->mFieldCount)
     {
       packet->mFields[currFieldId].mPresent = true;
@@ -418,7 +417,7 @@ int poly_packet_max_packed_size(poly_packet_t* packet)
 {
   int len = sizeof(poly_packet_hdr_t);
 	poly_field_t* field;
-	
+
   for(int i=0; i < packet->mDesc->mFieldCount; i++)
   {
     field = &packet->mFields[i];
