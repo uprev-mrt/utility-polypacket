@@ -55,6 +55,58 @@ static inline int poly_spool_get_next(poly_spool_t* spool, spool_entry_state_e s
   return idx;
 }
 
+/**
+  *@brief gets next entry in spool with mState == free, if none are free and there is a lower priority, it will remove that to free the spot
+  *@param c - pointer to spool_t
+	*@param priority - priority threshold to remove
+  *@return index of entry, or -1 if none are found
+  */
+static inline int poly_spool_get_next_free(poly_spool_t* spool, uint8_t priority )
+{
+  int idx = ENTRY_NONE;
+  int8_t lowestPriority = priority;	//lowest priority
+  int lowestPriorityIdx = -1;				// index of lowest priority
+
+  for(int i=0; i < spool->mMaxEntries; i++)
+  {
+
+    if(spool->mEntries[i].mPacket.mPriority < lowestPriority)
+    {
+      lowestPriority = spool->mEntries[i].mPacket.mPriority;
+      lowestPriorityIdx = i;
+    }
+
+    if(spool->mEntries[i].mState == ENTRY_STATE_FREE)
+    {
+      idx =i;
+      break;
+    }
+  }
+
+  //If there is no entry available (i.e. spool is full), remove a lower priority entry if one exists
+  if((idx == ENTRY_NONE) && (lowestPriorityIdx > -1))
+	{
+    idx = lowestPriorityIdx;
+
+    //destroy whatever is in the entry
+    poly_packet_clean(&spool->mEntries[idx].mPacket);
+
+    spool->mCount--;
+    switch (spool->mEntries[idx].mState)
+    {
+      case ENTRY_STATE_WAITING:
+        spool->mWaitingCount--;
+        break;
+      case ENTRY_STATE_READY:
+        spool->mReadyCount--;
+        break;
+    }
+	}
+
+  return idx;
+}
+
+
 
 void poly_spool_deinit(poly_spool_t* spool)
 {
@@ -80,7 +132,7 @@ spool_status_e poly_spool_push(poly_spool_t* spool, poly_packet_t* packet )
   spool_status_e status;
 
   //get next free Entry
-  int idx = poly_spool_get_next(spool, ENTRY_STATE_FREE);
+  int idx = poly_spool_get_next_free(spool, packet->mPriority);
   spool_entry_t* entry;
 
   //make sure we arent full

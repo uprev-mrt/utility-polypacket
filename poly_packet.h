@@ -80,6 +80,7 @@ typedef struct poly_packet{
   uint8_t mInterface;                   //id of interface that packet is from/to
   bool mBuilt;                          //indicates if packet has already been built
   bool mSpooled;                        //spooled data doesnt get cleaned, the spool owns it now
+  int8_t mPriority;                    //specifies the priority of the packet. This allows the packet to remove lower priority packets form the spool if it is full
   packet_ack_type_e mAckType;           //indicates what type of ack the packet should use
   packet_ack_cb f_mAckCallback;         //callback for when packet is acknowledged
   packet_failed_cb f_mFailedCallback;   //callback for when the packet timesout

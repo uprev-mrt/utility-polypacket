@@ -73,6 +73,7 @@ void poly_packet_build(poly_packet_t* packet, const poly_packet_desc_t* desc, bo
   packet->f_mFailedCallback = NULL;
   packet->mBuilt = false;
   packet->mSpooled = false;
+  packet->mPriority = 0;
   MRT_MUTEX_CREATE(packet->mMutex);
 
   packet->mFields = (poly_field_t*) malloc(sizeof(poly_field_t) * desc->mFieldCount);
