@@ -50,10 +50,6 @@ void poly_service_register_desc(poly_service_t* pService, poly_packet_desc_t* pD
 {
   assert(pService->mDescCount < pService->mMaxDescs);
 
-  #if defined(POLY_PACKET_DEBUG_LVL) && POLY_PACKET_DEBUG_LVL > 1
-  printf("Packet Descriptor: %s [%d]  fieldCount: %d (%d optional) , manifestSize: %d , mMaxPacketSize: %d\n", pDesc->mName,pService->mDescCount, pDesc->mFieldCount,pDesc->mOptionalFieldCount, pDesc->mManifestSize, pDesc->mMaxPacketSize );
-  #endif
-
   pService->mPacketDescs[pService->mDescCount++] = pDesc;
 }
 
@@ -281,11 +277,6 @@ HandlerStatus_e poly_service_spool(poly_service_t* pService, int interface,  pol
    poly_interface_t* iface = &pService->mInterfaces[interface];
 
 
-   if((iface->f_TxBytes == NULL) && (iface->f_TxPacket == NULL))
-   {
-     return PACKET_NOT_HANDLED; /* no tx callback registered */
-   }
-
    if(poly_spool_push(&iface->mOutSpool, packet) != SPOOL_OK)
    {
      return PACKET_NOT_HANDLED;
@@ -294,66 +285,74 @@ HandlerStatus_e poly_service_spool(poly_service_t* pService, int interface,  pol
   return PACKET_SPOOLED;
 }
 
-volatile int tp;
-volatile bool tc = true;
-HandlerStatus_e poly_service_despool(poly_service_t* pService)
+/**
+  *@brief grabs next available packet from interface
+  *@param interface ptr to interface
+  *@param data ptr to store data
+  */
+bool poly_service_despool_interface(poly_interface_t* iface, poly_packet_t* packet)
 {
-  HandlerStatus_e status = PACKET_NOT_HANDLED;
-  poly_interface_t* iface;
-  poly_packet_t outPacket;
+  bool ret = false;
   int len;
   int packedLen;
-	uint8_t* encoded;
+  uint8_t* encoded;
 
+  if(( iface->mTxReady ) && (iface->mOutSpool.mReadyCount > 0))
+  {
+    if(poly_spool_pop(&iface->mOutSpool, packet) == SPOOL_OK)
+    {
+      ret = true;
+      packedLen = poly_packet_max_packed_size(packet);
+
+      encoded = malloc(COBS_MAX_LEN(packedLen));
+
+      len = poly_packet_pack_encoded(packet, encoded);
+
+      if(iface->f_TxBytes)
+        iface->f_TxBytes(encoded,len);
+      else if(iface->f_TxPacket)
+        iface->f_TxPacket(packet);
+
+      free(encoded);
+
+      #if defined(POLY_PACKET_DEBUG_LVL) && POLY_PACKET_DEBUG_LVL >0
+        //If debug is enabled, print json of outgoing packets
+        #if POLY_PACKET_DEBUG_LVL == 1
+        poly_packet_print_json(packet, POLY_DEBUG_PRINTBUF, false );
+        printf("\n\033[1;34mOUT >>> %s\n",POLY_DEBUG_PRINTBUF );
+        #elif POLY_PACKET_DEBUG_LVL > 1
+        poly_packet_print_json(packet, POLY_DEBUG_PRINTBUF, true );
+        printf(" OUT >>> %s\n",POLY_DEBUG_PRINTBUF );
+        #endif
+        #if POLY_PACKET_DEBUG_LVL > 2
+        poly_packet_print_packed(packet, POLY_DEBUG_PRINTBUF);
+        printf(" OUT >>> %s\n\n", POLY_DEBUG_PRINTBUF );
+        #endif
+      #endif
+
+    }
+  }
+
+  return ret;
+
+}
+
+
+bool poly_service_despool(poly_service_t* pService)
+{
+  bool ret = false;
+
+  poly_packet_t outPacket;
 
   for(int i=0; i < pService->mInterfaceCount; i++)
   {
-    iface = &pService->mInterfaces[i];
-    if(( iface->mTxReady ) && (iface->mOutSpool.mReadyCount > 0))
+    if(poly_service_despool_interface(&pService->mInterfaces[i], &outPacket))
     {
-      if(poly_spool_pop(&iface->mOutSpool, &outPacket) == SPOOL_OK)
-      {
-        packedLen = poly_packet_max_packed_size(&outPacket);
-
-				tp = COBS_MAX_LEN(packedLen);
-
-				encoded = malloc(COBS_MAX_LEN(packedLen));
-
-        //encode packed frame
-				if(tc)
-					len = poly_packet_pack_encoded(&outPacket, encoded);
-
-        if(iface->f_TxBytes)
-          status = iface->f_TxBytes(encoded,len);
-        else if(iface->f_TxPacket)
-          status = iface->f_TxPacket(&outPacket);
-        else
-          status = PACKET_IGNORED;
-
-				free(encoded);
-
-
-        #if defined(POLY_PACKET_DEBUG_LVL) && POLY_PACKET_DEBUG_LVL >0
-          //If debug is enabled, print json of outgoing packets
-          #if POLY_PACKET_DEBUG_LVL == 1
-          poly_packet_print_json(&outPacket, POLY_DEBUG_PRINTBUF, false );
-          printf("\n\033[1;34mOUT >>> %s\n",POLY_DEBUG_PRINTBUF );
-          #elif POLY_PACKET_DEBUG_LVL > 1
-          poly_packet_print_json(&outPacket, POLY_DEBUG_PRINTBUF, true );
-          printf(" OUT >>> %s\n",POLY_DEBUG_PRINTBUF );
-          #endif
-          #if POLY_PACKET_DEBUG_LVL > 2
-          poly_packet_print_packed(&outPacket, POLY_DEBUG_PRINTBUF);
-          printf(" OUT >>> %s\n\n", POLY_DEBUG_PRINTBUF );
-          #endif
-        #endif
-
-      }
+      ret = true;
     }
-
   }
 
-  return status;
+  return ret;
 }
 
 void poly_service_tick(poly_service_t* pService, uint32_t ms)

@@ -62,6 +62,18 @@ void poly_packet_desc_add_field(poly_packet_desc_t* desc, poly_field_desc_t* fie
 
 void poly_packet_build(poly_packet_t* packet, const poly_packet_desc_t* desc, bool allocate )
 {
+  MRT_MUTEX_CREATE(packet->mMutex);
+  if(desc == NULL)
+  {
+    packet->mInterface = 0;
+    packet->mBuilt = false;
+    packet->mSpooled = false;
+    packet->mPriority = 0;
+    packet->mHeader.mTypeId = 0;
+    packet->mHeader.mToken = 0;
+    packet->mHeader.mCheckSum = 0;
+    return;
+  }
 
   packet->mDesc = desc;
   packet->mInterface = 0;
@@ -74,7 +86,6 @@ void poly_packet_build(poly_packet_t* packet, const poly_packet_desc_t* desc, bo
   packet->mBuilt = false;
   packet->mSpooled = false;
   packet->mPriority = 0;
-  MRT_MUTEX_CREATE(packet->mMutex);
 
   packet->mFields = (poly_field_t*) malloc(sizeof(poly_field_t) * desc->mFieldCount);
   packet->mBuilt = true;
@@ -87,8 +98,9 @@ void poly_packet_build(poly_packet_t* packet, const poly_packet_desc_t* desc, bo
 
 void poly_packet_clean(poly_packet_t* packet)
 {
+
   //destroy all fields
-  for(int i=0; i < packet->mDesc->mFieldCount; i++)
+  for (int i = 0; i < packet->mDesc->mFieldCount; i++)
   {
     poly_field_destroy(&packet->mFields[i]);
   }
@@ -98,6 +110,7 @@ void poly_packet_clean(poly_packet_t* packet)
 
   //delete mutex
   MRT_MUTEX_DELETE(packet->mMutex);
+
 
   packet->mBuilt = false;
   packet->mSpooled = false;

@@ -29,6 +29,9 @@ void poly_spool_init(poly_spool_t* spool, int len)
   {
     spool->mEntries[i].mState = ENTRY_STATE_FREE;
     spool->mEntries[i].mTrash = false;
+    spool->mEntries[i].mAttempts = 0;
+    spool->mEntries->mTimeOut = 0;
+    poly_packet_build(&spool->mEntries[i].mPacket, NULL, true);
   }
 
 }
@@ -206,7 +209,7 @@ spool_status_e poly_spool_pop(poly_spool_t* spool, poly_packet_t* packet)
       //copy the packet out
       memcpy((void*)packet, (void*)&entry->mPacket, sizeof(poly_packet_t) );
 
-      //destroy the packet data
+      //Mark the entry for trash collection
       entry->mTrash = true;
 
     }
@@ -251,6 +254,7 @@ bool poly_spool_ack(poly_spool_t* spool, poly_packet_t* response)
       //destroy the packet data
       poly_packet_clean(&spool->mEntries[i].mPacket);
 
+      spool->mEntries[0].mTrash = false;
       spool->mWaitingCount--;
       spool->mCount--;
 
@@ -300,7 +304,7 @@ void poly_spool_tick(poly_spool_t* spool, int ms)
         {
           //destroy the packet data
           poly_packet_clean(&entry->mPacket);
-
+          entry->mTrash = false;
           entry->mState = ENTRY_STATE_FREE;
           spool->mCount--;
           spool->mWaitingCount--;
