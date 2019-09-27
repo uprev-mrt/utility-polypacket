@@ -140,18 +140,18 @@ void poly_field_set(poly_field_t* field, const uint8_t* data)
   if(field->mDesc->mNullTerm)
   {
 		newSize = strlen((const char*)data);
-		
+
 		//null term string needs on extra byte
-    if( (newSize + 1) > field->mAllocated)	
+    if( (newSize + 1) > field->mAllocated)
     {
 			if(field->mAllocated)
 			{
 				free(field->mData);
 			}
-			field->mData = malloc(newSize + 1);
+			field->mData = (uint8_t*)malloc(newSize + 1);
 			field->mAllocated = newSize +1;
     }
-		
+
 		field->mSize = newSize;
     field->mData[field->mSize] = 0;
   }
@@ -188,14 +188,14 @@ int poly_field_copy(poly_field_t* dst,poly_field_t* src)
   if((dst->mDesc == src->mDesc) && (src->mPresent))
   {
     assert(MEM_EXISTS(src));
-		
+
 		if(dst->mAllocated < src->mSize)
 		{
 			if(dst->mAllocated)
 			{
 				free(dst->mData);
 			}
-			dst->mData = malloc(src->mSize);
+			dst->mData = (uint8_t*) malloc(src->mSize);
 			dst->mAllocated = src->mSize;
 		}
 		dst->mSize = src->mSize;
@@ -221,7 +221,7 @@ int poly_field_parse(poly_field_t* field, const uint8_t* data)
 			 {
 				 free(field->mData);
 			 }
-			 field->mData = malloc(size);
+			 field->mData = (uint8_t*) malloc(size);
 			 field->mSize = size;
 		}
   }

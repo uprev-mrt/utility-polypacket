@@ -200,7 +200,7 @@ ParseStatus_e poly_service_try_parse_interface(poly_service_t* pService, poly_pa
   if(encodedLen > 0)
   {
 
-		frame = malloc(encodedLen);
+		frame = (uint8_t*) malloc(encodedLen);
     decodedLen = cobs_fifo_pop_frame(&iface->mBytefifo,frame,encodedLen);
 
 
@@ -304,7 +304,7 @@ bool poly_service_despool_interface(poly_interface_t* iface, poly_packet_t* pack
       ret = true;
       packedLen = poly_packet_max_packed_size(packet);
 
-      encoded = malloc(COBS_MAX_LEN(packedLen));
+      encoded = (uint8_t*) malloc(COBS_MAX_LEN(packedLen));
 
       len = poly_packet_pack_encoded(packet, encoded);
 
