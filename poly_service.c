@@ -50,10 +50,6 @@ void poly_service_register_desc(poly_service_t* pService, poly_packet_desc_t* pD
 {
   assert(pService->mDescCount < pService->mMaxDescs);
 
-  #if defined(POLY_PACKET_DEBUG_LVL) && POLY_PACKET_DEBUG_LVL > 1
-  printf("Packet Descriptor: %s [%d]  fieldCount: %d (%d optional) , manifestSize: %d , mMaxPacketSize: %d\n", pDesc->mName,pService->mDescCount, pDesc->mFieldCount,pDesc->mOptionalFieldCount, pDesc->mManifestSize, pDesc->mMaxPacketSize );
-  #endif
-
   pService->mPacketDescs[pService->mDescCount++] = pDesc;
 }
 
@@ -281,11 +277,6 @@ HandlerStatus_e poly_service_spool(poly_service_t* pService, int interface,  pol
    poly_interface_t* iface = &pService->mInterfaces[interface];
 
 
-   if((iface->f_TxBytes == NULL) && (iface->f_TxPacket == NULL))
-   {
-     return PACKET_NOT_HANDLED; /* no tx callback registered */
-   }
-
    if(poly_spool_push(&iface->mOutSpool, packet) != SPOOL_OK)
    {
      return PACKET_NOT_HANDLED;
@@ -320,21 +311,21 @@ bool poly_service_despool_interface(poly_interface_t* iface, poly_packet_t* pack
       if(iface->f_TxBytes)
         iface->f_TxBytes(encoded,len);
       else if(iface->f_TxPacket)
-        iface->f_TxPacket(&packet);
+        iface->f_TxPacket(packet);
 
       free(encoded);
 
       #if defined(POLY_PACKET_DEBUG_LVL) && POLY_PACKET_DEBUG_LVL >0
         //If debug is enabled, print json of outgoing packets
         #if POLY_PACKET_DEBUG_LVL == 1
-        poly_packet_print_json(&packet, POLY_DEBUG_PRINTBUF, false );
+        poly_packet_print_json(packet, POLY_DEBUG_PRINTBUF, false );
         printf("\n\033[1;34mOUT >>> %s\n",POLY_DEBUG_PRINTBUF );
         #elif POLY_PACKET_DEBUG_LVL > 1
-        poly_packet_print_json(&packet, POLY_DEBUG_PRINTBUF, true );
+        poly_packet_print_json(packet, POLY_DEBUG_PRINTBUF, true );
         printf(" OUT >>> %s\n",POLY_DEBUG_PRINTBUF );
         #endif
         #if POLY_PACKET_DEBUG_LVL > 2
-        poly_packet_print_packed(&packet, POLY_DEBUG_PRINTBUF);
+        poly_packet_print_packed(packet, POLY_DEBUG_PRINTBUF);
         printf(" OUT >>> %s\n\n", POLY_DEBUG_PRINTBUF );
         #endif
       #endif
