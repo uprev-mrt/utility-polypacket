@@ -183,10 +183,17 @@ ParseStatus_e poly_service_try_parse(poly_service_t* pService, poly_packet_t* pa
 HandlerStatus_e poly_service_spool(poly_service_t* pService, int interface,  poly_packet_t* packet);
 
 /**
+  *@brief grabs next available packet from interface
+  *@param interface ptr to interface
+  *@param data ptr to store data
+  */
+bool poly_service_despool_interface(poly_interface_t* iface, poly_packet_t* packet);
+
+/**
   *@brief grabs next available packet from spool and sends it
   *@param pService ptr to service
   */
-HandlerStatus_e poly_service_despool(poly_service_t* pService);
+bool poly_service_despool(poly_service_t* pService);
 
 /**
   *@brief tells the service time has passed so it can track packets timeouts on the spool
