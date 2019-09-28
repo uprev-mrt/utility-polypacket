@@ -160,6 +160,7 @@ spool_status_e poly_spool_push(poly_spool_t* spool, poly_packet_t* packet )
 
     //copy in packet data
     memcpy((void*) &entry->mPacket, (void*)packet, sizeof(poly_packet_t));
+    poly_packet_reset(packet);
 
     //increment counts
     spool->mCount++;

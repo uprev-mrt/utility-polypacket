@@ -116,6 +116,12 @@ void poly_packet_desc_add_field(poly_packet_desc_t* desc, poly_field_desc_t* fie
 void poly_packet_build(poly_packet_t* packet, const poly_packet_desc_t* desc, bool allocate );
 
 /**
+  *@brief resets the packet state but retains data. This allows re-using a packet
+  *@param packet ptr to packet being cleaned
+  */
+void poly_packet_reset(poly_packet_t* packet);
+
+/**
   *@brief cleans up all memory allocated by the packet (but not the packet itself)
   *@param packet ptr to packet being cleaned
   */
@@ -125,13 +131,22 @@ bool poly_packet_has(poly_packet_t* packet, const poly_field_desc_t* desc);
 
 
 /**
+  *@brief gets pointer to data in field
+  *@param packet ptr to packet
+  *@param desc ptr to field descriptor
+  *@param data pointer to store value
+  *@return 1 on success
+  */
+const uint8_t* poly_packet_get_field_ptr(const poly_packet_t* packet, const poly_field_desc_t* desc);
+
+/**
   *@brief copies data from field
   *@param packet ptr to packet
   *@param desc ptr to field descriptor
   *@param data pointer to store value
   *@return 1 on success
   */
-int poly_packet_get_field(poly_packet_t* packet, const poly_field_desc_t* desc, void* data);
+int poly_packet_get_field(const poly_packet_t* packet, const poly_field_desc_t* desc, void* data);
 
 /**
   *@brief copies data to field

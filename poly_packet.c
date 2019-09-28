@@ -95,6 +95,16 @@ void poly_packet_build(poly_packet_t* packet, const poly_packet_desc_t* desc, bo
   }
 }
 
+void poly_packet_reset(poly_packet_t* packet)
+{
+  poly_packet_t tmp;
+  poly_packet_build(&tmp,packet->mDesc, true);
+  poly_packet_copy(&tmp, packet);
+
+  packet->mFields = tmp.mFields;
+  packet->mHeader.mToken = tmp.mHeader.mToken;
+}
+
 
 void poly_packet_clean(poly_packet_t* packet)
 {
@@ -129,9 +139,26 @@ bool poly_packet_has(poly_packet_t* packet, const poly_field_desc_t* desc)
   return false;
 }
 
-int poly_packet_get_field(poly_packet_t* packet, const poly_field_desc_t* desc, void* data)
+const uint8_t* poly_packet_get_field_ptr(const poly_packet_t* packet, const poly_field_desc_t* desc)
 {
-  MRT_MUTEX_LOCK(packet->mMutex);
+  //MRT_MUTEX_LOCK(packet->mMutex);
+
+  uint8_t* ret =NULL;
+  for(int i=0; i < packet->mDesc->mFieldCount; i++ )
+  {
+    if(packet->mDesc->mFields[i] == desc)
+    {
+      ret = packet->mFields[i].mData;
+    }
+  }
+
+  //MRT_MUTEX_UNLOCK(packet->mMutex);
+  return ret;
+}
+
+int poly_packet_get_field(const poly_packet_t* packet, const poly_field_desc_t* desc, void* data)
+{
+ // MRT_MUTEX_LOCK(packet->mMutex);
 
   int ret =0;
   for(int i=0; i < packet->mDesc->mFieldCount; i++ )
@@ -143,11 +170,11 @@ int poly_packet_get_field(poly_packet_t* packet, const poly_field_desc_t* desc, 
     }
   }
 
-  MRT_MUTEX_UNLOCK(packet->mMutex);
+  //MRT_MUTEX_UNLOCK(packet->mMutex);
   return ret;
 }
 
-int poly_packet_set_field(poly_packet_t* packet, const poly_field_desc_t* desc,const void* data)
+int poly_packet_set_field(poly_packet_t* packet, const poly_field_desc_t* desc, const void* data)
 {
   MRT_MUTEX_LOCK(packet->mMutex);
   int ret =0;

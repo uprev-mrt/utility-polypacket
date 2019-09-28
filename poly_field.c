@@ -221,7 +221,8 @@ int poly_field_parse(poly_field_t* field, const uint8_t* data)
 			 {
 				 free(field->mData);
 			 }
-			 field->mData = (uint8_t*) malloc(size);
+			 field->mData = (uint8_t*) malloc(size +1);
+			 field->mData[size] = 0;
 			 field->mSize = size;
 		}
   }
