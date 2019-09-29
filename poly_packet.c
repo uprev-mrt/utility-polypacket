@@ -63,36 +63,35 @@ void poly_packet_desc_add_field(poly_packet_desc_t* desc, poly_field_desc_t* fie
 void poly_packet_build(poly_packet_t* packet, const poly_packet_desc_t* desc, bool allocate )
 {
   MRT_MUTEX_CREATE(packet->mMutex);
-  if(desc == NULL)
-  {
-    packet->mInterface = 0;
-    packet->mBuilt = false;
-    packet->mSpooled = false;
-    packet->mPriority = 0;
-    packet->mHeader.mTypeId = 0;
-    packet->mHeader.mToken = 0;
-    packet->mHeader.mCheckSum = 0;
-    return;
-  }
 
-  packet->mDesc = desc;
   packet->mInterface = 0;
-  packet->mHeader.mTypeId = desc->mTypeId;
-  packet->mHeader.mToken = rand() & 0x7FFF;
   packet->mHeader.mCheckSum = 0;
-  packet->mAckType = ACK_TYPE_NONE;// until we put in the auto/ack retry timing
-  packet->f_mAckCallback = NULL;
-  packet->f_mFailedCallback = NULL;
   packet->mBuilt = false;
   packet->mSpooled = false;
   packet->mPriority = 0;
+  packet->f_mAckCallback = NULL;
+  packet->f_mFailedCallback = NULL;
+  packet->mAckType = ACK_TYPE_NONE;// until we put in the auto/ack retry timing
+  packet->mHeader.mTypeId = 0;
+  packet->mHeader.mToken = 0;
+  packet->mReusable = false;
 
-  packet->mFields = (poly_field_t*) malloc(sizeof(poly_field_t) * desc->mFieldCount);
-  packet->mBuilt = true;
-  for(int i=0; i< desc->mFieldCount; i++)
+  if(desc != NULL)
   {
-    poly_field_init(&packet->mFields[i], desc->mFields[i], allocate);
+    packet->mDesc = desc;
+    packet->mHeader.mTypeId = desc->mTypeId;
+    packet->mHeader.mToken = rand() & 0x7FFF;
+    packet->mAckType = ACK_TYPE_NONE;// until we put in the auto/ack retry timing
+
+
+    packet->mFields = (poly_field_t*) malloc(sizeof(poly_field_t) * desc->mFieldCount);
+    packet->mBuilt = true;
+    for(int i=0; i< desc->mFieldCount; i++)
+    {
+      poly_field_init(&packet->mFields[i], desc->mFields[i], allocate);
+    }
   }
+
 }
 
 void poly_packet_reset(poly_packet_t* packet)
@@ -100,6 +99,7 @@ void poly_packet_reset(poly_packet_t* packet)
   poly_packet_t tmp;
   poly_packet_build(&tmp,packet->mDesc, true);
   poly_packet_copy(&tmp, packet);
+  packet->mReusable = true;
 
   packet->mFields = tmp.mFields;
   packet->mHeader.mToken = tmp.mHeader.mToken;

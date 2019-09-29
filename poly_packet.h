@@ -80,6 +80,7 @@ typedef struct poly_packet{
   uint8_t mInterface;                   //id of interface that packet is from/to
   bool mBuilt;                          //indicates if packet has already been built
   bool mSpooled;                        //spooled data doesnt get cleaned, the spool owns it now
+  bool mReusable;						//indicates if packet is reusable. If this is a member of a class with a destructor set this to true
   int8_t mPriority;                    //specifies the priority of the packet. This allows the packet to remove lower priority packets form the spool if it is full
   packet_ack_type_e mAckType;           //indicates what type of ack the packet should use
   packet_ack_cb f_mAckCallback;         //callback for when packet is acknowledged
@@ -126,6 +127,7 @@ void poly_packet_reset(poly_packet_t* packet);
   *@param packet ptr to packet being cleaned
   */
 void poly_packet_clean(poly_packet_t* packet);
+
 
 bool poly_packet_has(poly_packet_t* packet, const poly_field_desc_t* desc);
 
