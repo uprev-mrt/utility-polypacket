@@ -142,6 +142,8 @@ bool poly_packet_has(poly_packet_t* packet, const poly_field_desc_t* desc)
 const uint8_t* poly_packet_get_field_ptr(const poly_packet_t* packet, const poly_field_desc_t* desc)
 {
   //MRT_MUTEX_LOCK(packet->mMutex);
+  if(!packet->mBuilt)
+    return  NULL;
 
   uint8_t* ret =NULL;
   for(int i=0; i < packet->mDesc->mFieldCount; i++ )
@@ -159,8 +161,11 @@ const uint8_t* poly_packet_get_field_ptr(const poly_packet_t* packet, const poly
 int poly_packet_get_field(const poly_packet_t* packet, const poly_field_desc_t* desc, void* data)
 {
  // MRT_MUTEX_LOCK(packet->mMutex);
+  if(!packet->mBuilt)
+    return  0;
 
   int ret =0;
+
   for(int i=0; i < packet->mDesc->mFieldCount; i++ )
   {
     if(packet->mDesc->mFields[i] == desc)
@@ -176,6 +181,9 @@ int poly_packet_get_field(const poly_packet_t* packet, const poly_field_desc_t* 
 
 int poly_packet_set_field(poly_packet_t* packet, const poly_field_desc_t* desc, const void* data)
 {
+  if(!packet->mBuilt)
+    return  0;
+  
   MRT_MUTEX_LOCK(packet->mMutex);
   int ret =0;
   for(int i=0; i < packet->mDesc->mFieldCount; i++ )
@@ -427,7 +435,7 @@ int poly_packet_print_json(poly_packet_t* packet, char* buf, bool printHeader)
 
 int poly_packet_print_packed(poly_packet_t* packet, char* buf)
 {
-  uint8_t data[packet->mDesc->mMaxPacketSize];
+  uint8_t data[poly_packet_max_packed_size(packet)];
   int strLen = 0;
 
   //pack data
