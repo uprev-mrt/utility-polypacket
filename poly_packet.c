@@ -71,7 +71,7 @@ void poly_packet_build(poly_packet_t* packet, const poly_packet_desc_t* desc, bo
   packet->mPriority = 0;
   packet->f_mAckCallback = NULL;
   packet->f_mFailedCallback = NULL;
-  packet->mAckType = ACK_TYPE_NONE;// until we put in the auto/ack retry timing
+  packet->mAckType = ACK_TYPE_TOKEN;// until we put in the auto/ack retry timing
   packet->mHeader.mTypeId = 0;
   packet->mHeader.mToken = 0;
   packet->mReusable = false;

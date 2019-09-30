@@ -215,11 +215,20 @@ ParseStatus_e poly_service_try_parse_interface(poly_service_t* pService, poly_pa
 
 		      retVal = poly_packet_parse_buffer(packet, frame, decodedLen );
 
-		      //if the parse failed, clean the packet
-		      if(retVal != PACKET_VALID)
+        if(retVal == PACKET_VALID)
+        {
+          //if this is an ack, check the spool
+          if(packet->mHeader.mToken & POLY_ACK_FLAG)
           {
-            poly_packet_clean(packet);
+            poly_spool_ack(&iface->mOutSpool, packet);
           }
+        }
+        else
+        {
+          //if the parse failed, clean the packet
+          poly_packet_clean(packet);
+        }
+
 			}
       else
       {

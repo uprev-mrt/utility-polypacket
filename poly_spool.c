@@ -238,7 +238,7 @@ bool poly_spool_ack(poly_spool_t* spool, poly_packet_t* response)
   int i;
   uint16_t ackToken = response->mHeader.mToken;
   //if the token is 0 or is an ack request, we ignore it
-  if((ackToken == 0) || (ackToken & SPOOL_TOKEN_ACK_REQ))
+  if((ackToken & SPOOL_TOKEN_ACK_REQ) == 0)
   {
     return false;
   }
