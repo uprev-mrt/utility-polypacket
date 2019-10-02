@@ -19,8 +19,8 @@ void poly_spool_init(poly_spool_t* spool, int len)
   spool->mCount = 0;
   spool->mReadyCount =0;
   spool->mWaitingCount =0;
-  spool->mTimeOut = 400; //Doherty Threshold?
-  spool->mMaxRetries = 10;
+  spool->mTimeOut = 2500;
+  spool->mMaxRetries = 5;
   spool->mSuccessfulMessages =0;
   spool->mFailedMessages =0;
 
@@ -189,7 +189,7 @@ spool_status_e poly_spool_pop(poly_spool_t* spool, poly_packet_t* packet)
     entry = &spool->mEntries[idx];
 
 
-    if(entry->mPacket.mAckType == ACK_TYPE_TOKEN)
+    if((entry->mPacket.mAckType == ACK_TYPE_TOKEN) && ((entry->mPacket.mHeader.mToken & SPOOL_TOKEN_ACK_REQ) ==0))
     {
 
       //reset the timeout counter to the spools timeout setting
@@ -242,6 +242,8 @@ bool poly_spool_ack(poly_spool_t* spool, poly_packet_t* response)
   {
     return false;
   }
+  ackToken &=SPOOL_TOKEN_MASK;
+
 
   MRT_MUTEX_LOCK(spool->mMutex);
 
@@ -249,15 +251,12 @@ bool poly_spool_ack(poly_spool_t* spool, poly_packet_t* response)
   for( i=0;i < spool->mMaxEntries; i++)
   {
     //if entry is waiting, and the token matches after masking off the request bit
-    if((spool->mEntries[i].mState == ENTRY_STATE_WAITING) && (ackToken == (spool->mEntries[i].mPacket.mHeader.mToken & SPOOL_TOKEN_MASK )))
+    if((spool->mEntries[i].mState == ENTRY_STATE_WAITING) && (ackToken == spool->mEntries[i].mPacket.mHeader.mToken))
     {
       //match found, free entry
       spool->mEntries[i].mState = ENTRY_STATE_FREE;
 
-      //destroy the packet data
-      poly_packet_clean(&spool->mEntries[i].mPacket);
-
-      spool->mEntries[0].mTrash = false;
+      spool->mEntries[0].mTrash = true;
       spool->mWaitingCount--;
       spool->mCount--;
 
