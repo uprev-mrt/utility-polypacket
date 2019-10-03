@@ -126,7 +126,7 @@ void poly_packet_clean(poly_packet_t* packet)
   packet->mSpooled = false;
 }
 
-bool poly_packet_has(poly_packet_t* packet, const poly_field_desc_t* desc)
+bool poly_packet_has(const poly_packet_t* packet, const poly_field_desc_t* desc)
 {
   for(int i=0; i < packet->mDesc->mFieldCount; i++)
   {

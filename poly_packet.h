@@ -129,7 +129,7 @@ void poly_packet_reset(poly_packet_t* packet);
 void poly_packet_clean(poly_packet_t* packet);
 
 
-bool poly_packet_has(poly_packet_t* packet, const poly_field_desc_t* desc);
+bool poly_packet_has(const poly_packet_t* packet, const poly_field_desc_t* desc);
 
 
 /**

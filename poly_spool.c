@@ -305,8 +305,7 @@ void poly_spool_tick(poly_spool_t* spool, int ms)
         else //if we max out our retries, free the slot and note a failed message
         {
           //destroy the packet data
-          poly_packet_clean(&entry->mPacket);
-          entry->mTrash = false;
+          entry->mTrash = true;
           entry->mState = ENTRY_STATE_FREE;
           spool->mCount--;
           spool->mWaitingCount--;
