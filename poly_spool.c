@@ -189,7 +189,7 @@ spool_status_e poly_spool_pop(poly_spool_t* spool, poly_packet_t* packet)
     entry = &spool->mEntries[idx];
 
 
-    if((entry->mPacket.mAckType == ACK_TYPE_TOKEN) && ((entry->mPacket.mHeader.mToken & SPOOL_TOKEN_ACK_REQ) ==0))
+    if((entry->mPacket.mAckType == ACK_TYPE_TOKEN) && ((entry->mPacket.mHeader.mToken & SPOOL_TOKEN_ACK_REQ) ==0) && (spool->mTimeOut > 0))
     {
 
       //reset the timeout counter to the spools timeout setting

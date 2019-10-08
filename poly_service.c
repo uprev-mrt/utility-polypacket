@@ -136,6 +136,19 @@ void poly_service_feed_json_msg(poly_service_t* pService, int interface,const ch
 
 }
 
+void poly_service_set_retry(poly_service_t* pService, int iface, uint16_t retries, uint32_t timeoutMs)
+{
+	
+
+	if(iface < pService->mInterfaceCount )
+	{
+		pService->mInterfaces[iface].mOutSpool.mMaxRetries = retries;
+		pService->mInterfaces[iface].mOutSpool.mTimeOut = timeoutMs;
+	}
+	
+}
+
+
 ParseStatus_e poly_service_parse_json(poly_service_t* pService, poly_packet_t* packet ,const char* msg, int len)
 {
   //parse json to packet

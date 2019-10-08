@@ -139,6 +139,14 @@ void poly_service_feed(poly_service_t* pService, int interface,const uint8_t* da
   */
 void poly_service_feed_json_msg(poly_service_t* pService, int interface,const char* msg, int len);
 
+/**
+  *@brief sets retry behavior for interface of service
+  *@param iface index of interface to send on
+  *@param retries number of retries
+  *@param timeoutMs MS value for timeout before retry
+  */
+void poly_service_set_retry(poly_service_t* pService, int iface, uint16_t retries, uint32_t timeoutMs);
+
 
 /**
   *@brief parses packet from json
