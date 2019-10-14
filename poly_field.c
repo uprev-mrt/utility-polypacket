@@ -106,7 +106,7 @@ void poly_field_init(poly_field_t* field, poly_field_desc_t* desc, bool allocate
 void poly_field_destroy(poly_field_t* field)
 {
   //if we allocated our own memory, free it
-  if(field->mAllocated)
+  if(field->mAllocated > 0)
   {
     free(field->mData);
   }
