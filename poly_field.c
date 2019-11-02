@@ -371,7 +371,7 @@ int poly_field_print_val(poly_field_t* field, int element, char* buf)
         idx+= MRT_SPRINTF(&buf[idx], "%u", *(uint32_t*)pData);
         break;
       case TYPE_UINT64:
-        idx+= MRT_SPRINTF(&buf[idx], "%lu", *(uint64_t*)pData);
+        idx+= MRT_SPRINTF(&buf[idx], "%llu", *(uint64_t*)pData);
         break;
       case TYPE_INT8:
         idx+= MRT_SPRINTF(&buf[idx], "%i", *(int8_t*)pData);
@@ -384,7 +384,7 @@ int poly_field_print_val(poly_field_t* field, int element, char* buf)
         idx+= MRT_SPRINTF(&buf[idx], "%i", *(int32_t*)pData);
         break;
       case TYPE_INT64:
-        idx+= MRT_SPRINTF(&buf[idx], "%li", *(int64_t*)pData);
+        idx+= MRT_SPRINTF(&buf[idx], "%lli", *(int64_t*)pData);
         break;
       case TYPE_FLOAT:
         idx+= MRT_SPRINTF(&buf[idx], "%f", *(float*)pData);

@@ -103,6 +103,8 @@ static inline int poly_spool_get_next_free(poly_spool_t* spool, uint8_t priority
       case ENTRY_STATE_READY:
         spool->mReadyCount--;
         break;
+      case ENTRY_STATE_FREE: /* This just keeps -Werror=switch from being needed*/
+        break;
     }
 	}
 
