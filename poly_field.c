@@ -412,7 +412,7 @@ int poly_field_print_val(poly_field_t* field, int element, char* buf)
 /*    Variable Size value packing
  *    These functions are used for packing and reading variable sized values
  *    This allows effecient packing of small values with the flexibility to still use larger values (up to 2^28). anything under 7bits is not affected
- *    each packed byte represents 7bits of the value, the most signifacant bit is used to indicate if the value is continued on the next bit
+ *    each packed byte represents 7bits of the value, the most signifacant bit is used to indicate if the value is continued on the next byte
  *    example 0x0321 would be packed to [0xA1, 0x06]
  *            0X21 & 0X80 = 0XA1
  *            0x03 << 1 = 0x06 //We shift one bit for each byte to compensate for the bit used as the continuation flag
