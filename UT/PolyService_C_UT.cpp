@@ -44,10 +44,11 @@ HandlerStatus_e mock_uart_send(uint8_t* data, int len)
   *@param metaPacket ptr to tp_packet_t containing packet
   *@return handling status
   */
-HandlerStatus_e tp_default_handler( tp_packet_t * tp_packet)
+HandlerStatus_e tp_default_handler( tp_packet_t * tp_packet, tp_packet_t* tp_response)
 {
-
-  lastRxDesc = tp_packet->mPacket.mDesc;
+  //poly_packet_print_json(tp_packet, printBuf, false);
+  //printf(printBuf);
+  lastRxDesc = tp_packet->mDesc;
   packet_count++;
   return PACKET_HANDLED;
 }
@@ -64,7 +65,7 @@ void poly_show_buf(uint8_t* buf, int len)
 
 void feed_packet(int interface, tp_packet_t* packet)
 {
-  int len = poly_packet_pack_encoded(&packet->mPacket,encoded);
+  int len = poly_packet_pack_encoded(packet,encoded);
 
   tp_service_feed(interface,encoded,len);
 }
@@ -78,7 +79,7 @@ int getFrameCount(int i)
 
 TEST(PolyPacket, packTest )
 {
-  tp_service_init(1); // initialize with 1 interface
+  tp_service_init(1,16); // initialize with 1 interface
 
   tp_packet_t msg;
   tp_packet_t msgParsed;
@@ -94,19 +95,19 @@ TEST(PolyPacket, packTest )
   tp_setSensorB(&msg, 898989);
   tp_setSensorName(&msg, "test name");
 
-  len = poly_packet_pack(&msg.mPacket, txBuf);
+  len = poly_packet_pack(&msg, txBuf);
 
   ASSERT_EQ(len,27);
 
 
 
-  status = poly_packet_parse_buffer(&msgParsed.mPacket, txBuf, len);
+  status = poly_packet_parse_buffer(&msgParsed, txBuf, len);
   ASSERT_EQ(status,PACKET_VALID);
 
-  present = poly_packet_has(&msgParsed.mPacket, TP_FIELD_SENSORA);
+  present = poly_packet_has(&msgParsed, TP_FIELD_SENSORA);
   ASSERT_EQ(present,true);
 
-  present = poly_packet_has(&msgParsed.mPacket, TP_FIELD_SENSORB);
+  present = poly_packet_has(&msgParsed, TP_FIELD_SENSORB);
   ASSERT_EQ(present,true);
 
   valA = tp_getSensorA(&msgParsed);
@@ -123,7 +124,7 @@ TEST(PolyPacket, packTest )
 
 TEST(PolyService, FeedTest )
 {
-  tp_service_init(1); // initialize with 1 interface
+  tp_service_init(1,16); // initialize with 1 interface
 
   int frames;
   tp_packet_t msg;
@@ -136,13 +137,13 @@ TEST(PolyService, FeedTest )
   frames = getFrameCount(0);
   ASSERT_EQ(frames,1);
 
-  poly_packet_clean(&msg.mPacket);
+  poly_packet_clean(&msg);
   tp_service_teardown();
 }
 
 TEST(PolyService, JsonFeedTest )
 {
-  tp_service_init(1); // initialize with 1 interface
+  tp_service_init(1,16); // initialize with 1 interface
 
   int frames;
   tp_packet_t msg;
@@ -157,7 +158,8 @@ TEST(PolyService, JsonFeedTest )
   frames = getFrameCount(0);
   ASSERT_EQ(frames,1);
 
-  poly_packet_clean(&msg.mPacket);
+  poly_packet_clean(&msg);
+  
   tp_service_teardown();
 }
 
@@ -166,14 +168,15 @@ TEST(PolyService, JsonFeedTest )
   */
 TEST(PolyService, JSON_byte_mix )
 {
-  tp_service_init(1); // initialize with 1 interface
+  tp_service_init(1,16); // initialize with 1 interface
   lastRxDesc = NULL;
   packet_count =0;
   int frames;
   tp_packet_t msg0;
-  tp_packet_t msg1;
+ 
   tp_packet_t msg2;
-
+  
+  
   //build one automatically
   tp_packet_build(&msg0,TP_PACKET_SENDCMD );
   tp_setCmd(&msg0, 0x43);
@@ -183,12 +186,14 @@ TEST(PolyService, JSON_byte_mix )
   //msg1
   const char* strMsg1 = "packet={ \"packetType\":\"Data\", \"sensorA\" : \"0x6ca\", \"sensorB\":898989, \"sensorName\":\"test name\" }";
   tp_service_feed_json(0, strMsg1,strlen(strMsg1));
+  
 
   //msg2
   tp_packet_build(&msg2,TP_PACKET_DATA );
   //tp_setSensorA(&msg2, 1738);
   tp_setSensorB(&msg2, 898989);
   tp_setSensorName(&msg2, "test name2");
+
 
 
 
@@ -218,14 +223,13 @@ TEST(PolyService, JSON_byte_mix )
   ASSERT_EQ(lastRxDesc,TP_PACKET_DATA);
 
   tp_clean(&msg0);
-  tp_clean(&msg1);
   tp_clean(&msg2);
   tp_service_teardown();
 }
 
 TEST(PolyService, ProcessTest )
 {
-  tp_service_init(1); // initialize with 1 interface
+  tp_service_init(1,16); // initialize with 1 interface
   lastRxDesc = NULL;
 
   int frames;
@@ -261,7 +265,7 @@ TEST(PolyService, ProcessTest )
   */
 TEST(PolyService, multipleFrames )
 {
-  tp_service_init(1); // initialize with 1 interface
+  tp_service_init(1,16); // initialize with 1 interface
   lastRxDesc = NULL;
   packet_count =0;
   int frames;
@@ -329,7 +333,7 @@ TEST(PolyService, multipleFrames )
   */
 TEST(PolyService, byteSkip )
 {
-  tp_service_init(1); // initialize with 1 interface
+  tp_service_init(1,16); // initialize with 1 interface
   lastRxDesc = NULL;
   packet_count =0;
   int frames;
@@ -358,7 +362,7 @@ TEST(PolyService, byteSkip )
   feed_packet(0,&msg0);
 
   //feed 2 (skip byte[3])
-  int len = poly_packet_pack_encoded(&msg2.mPacket,encoded);
+  int len = poly_packet_pack_encoded(&msg2,encoded);
   tp_service_feed(0,encoded,3);
   len = len-4;
   tp_service_feed(0,&encoded[4],len);
@@ -401,7 +405,7 @@ TEST(PolyService, byteSkip )
   */
 TEST(PolyService, byteCorrupt )
 {
-  tp_service_init(1); // initialize with 1 interface
+  tp_service_init(1,16); // initialize with 1 interface
   lastRxDesc = NULL;
   packet_count =0;
   int frames;
@@ -430,7 +434,7 @@ TEST(PolyService, byteCorrupt )
   feed_packet(0,&msg0);
 
   //feed 2 (skip byte[3])
-  int len = poly_packet_pack_encoded(&msg2.mPacket,encoded);
+  int len = poly_packet_pack_encoded(&msg2,encoded);
   encoded[len -3] = 0xFF;  //throw gargabe into encoded data
   tp_service_feed(0,encoded,len);
 
@@ -472,7 +476,7 @@ TEST(PolyService, byteCorrupt )
   */
 TEST(PolyService, addZero )
 {
-  tp_service_init(1); // initialize with 1 interface
+  tp_service_init(1,16); // initialize with 1 interface
   lastRxDesc = NULL;
   packet_count =0;
   int frames;
@@ -501,7 +505,7 @@ TEST(PolyService, addZero )
   feed_packet(0,&msg0);
 
   //feed 2 (skip byte[3])
-  int len = poly_packet_pack_encoded(&msg2.mPacket,encoded);
+  int len = poly_packet_pack_encoded(&msg2,encoded);
   encoded[len -3] = 0x00;  //throw gargabe into encoded data
   tp_service_feed(0,encoded,len);
 

@@ -1,0 +1,63 @@
+---
+name: test
+prefix: tp  #this defines the prefix used for functions and types in the code. This allows multiple protocols to be used in a project
+desc: This is a sample protocol used for unit testing the Poly Packet module
+
+###########################################################################################################
+#                                   FIELDS                                                                #
+###########################################################################################################
+
+fields:
+
+  - sensorA: { type: int16 ,desc: Value of Sensor A}  #Simple Fields can be defined as inline dictionares to save space
+
+  - sensorB:
+      type: int
+      desc: Value of Sensor B
+
+  - sensorName:
+      type: string*32
+      desc: Name of sensor
+
+  - cmd:
+      type: enum
+      format: hex
+      desc: command byte for controlling node
+      vals:
+        - led_ON: { desc: turns on led}
+        - led_OFF: { desc: turns off led}
+        - reset: { desc: resets device }
+
+###########################################################################################################
+#                                   Packets                                                               #
+###########################################################################################################
+packets:
+  - SendCmd:
+      desc: Message to send command to node
+      fields:
+        - cmd
+
+
+  - GetData:
+      desc: Message tp get data from node
+      response: Data          #A response packet can be specified
+
+
+  - Data:
+      desc: contains data from a sensor
+      fields:
+        - sensorA
+        - sensorB
+        - sensorName : {desc: Name of sensor sending data }   #Field descriptions can be overriden for different packets
+###########################################################################################################
+#                                   Structs                                                                #
+###########################################################################################################
+
+structs:
+
+  - Node:
+      desc: struct for modeling node
+      fields:
+        - sensorA
+        - sensorB
+        - sensorName

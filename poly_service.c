@@ -188,7 +188,7 @@ ParseStatus_e poly_service_parse_json(poly_service_t* pService, poly_packet_t* p
       #if defined(POLY_PACKET_DEBUG_LVL) && POLY_PACKET_DEBUG_LVL >0
         //If debug is enabled, print json of outgoing packets
         #if POLY_PACKET_DEBUG_LVL == 4
-        poly_packet_print_json(&packet, POLY_DEBUG_PRINTBUF, true );
+        poly_packet_print_json(packet, POLY_DEBUG_PRINTBUF, true );
         printf("  JSON PARSED:  %s\n\n",POLY_DEBUG_PRINTBUF );
         #endif
       #endif
