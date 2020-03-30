@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>test ICD</title>
+</head>
+<body>
+<div class="content">
+<h1>test ICD</h1>
+<ul>
+  <li> Generated with <a href="https://github.com/up-rev/PolyPacket/wiki">PolyPacket</a> on 03/27/20</li>
+  <li> CRC: BE5C1C7E</li>
+  <li> Transport Encoding: (COBS) <a href="https://en.wikipedia.org/wiki/Consistent_Overhead_Byte_Stuffing">Consistent Overhead ByteStuffing</a></li>
+</ul>
+<hr/>
+<h2>Description: </h2>
+<p>This is a sample protocol used for unit testing the Poly Packet module</p>
+
+<br/>
+<hr class="section">
+<h2 class="right"> Index </h2>
+<hr>
+
+
+<a href="#packet_ping"> Packets:</a>
+
+
+<ul>
+  <li><a href="#packet_ping">[00]  Ping </a></li>
+  <li><a href="#packet_ack">[01]  Ack </a></li>
+  <li><a href="#packet_sendcmd">[03]  SendCmd </a></li>
+  <li><a href="#packet_getdata">[04]  GetData </a></li>
+  <li><a href="#packet_data">[05]  Data </a></li>
+</ul>
+
+<a href="#packet_node"> Structs:</a>
+
+<ul>
+  <li><a href="#packet_node">[02]  Node </a></li>
+</ul>
+
+
+
+
+<hr class="section">
+
+<h2 class="right"> Packets</h2>
+<hr class="thick">
+<div class="packet" id="packet_ping">
+<h3>Ping </h3>
+<hr/>
+<ul>
+  <li class="note">Packet ID: <b>[00]</b></li>
+  <li class="note"> Requests: <a href="#packet_ack">Ack</a></li>
+</ul>
+
+<p class="desc">Ping to request an <a href="#packet_ack">Ack</a>. Used for testing and ICD verification</p>
+<br/>
+<br/>
+<b>Fields:</b>
+<table class="fields">
+  <tr>
+    <th> Field</th>
+    <th> Type</th>
+    <th> Description</th>
+  </tr>
+  <tr>
+    <td width="">icd</td>
+    <td width="">  uint32_t    </td>
+    <td>32bit Hash of protocol description. This is used to verify endpoints are using the same protocol</td>
+  </tr>
+</table>
+<br/>
+<hr class="thick">
+</div>
+
+<div class="packet" id="packet_ack">
+<h3>Ack </h3>
+<hr>
+<ul>
+  <li class="note">  Packet ID: <b>[01]</b></li>
+  <li class="note">Responds To: <a href="#packet_ping">Ping</a></li>
+</ul>
+
+<span class="note"> This Packet type does not contain any data fields </span><br/>
+<br/>
+<hr class="thick">
+</div>
+
+
+<div id="packet_sendcmd" class="packet">
+<h3>SendCmd </h3>
+<hr/>
+<ul>
+  <li class="note">  Packet ID: <b>[03]</b></li>
+</ul>
+
+<p class="desc">Message to send command to node</p>
+<br/>
+<br/>
+<b>Fields:</b>
+<table class="fields">
+  <tr>
+    <th> Field</th>
+    <th> Type</th>
+    <th> Description</th>
+  </tr>
+  <tr>
+    <td width="">cmd</td>
+    <td width="">  uint8_t    </td>
+    <td>command byte for controlling node      <br/>
+      <ul>
+      <li class="val">0x00 : <b>LED_ON</b> - turns on led</li>
+      <li class="val">0x01 : <b>LED_OFF</b> - turns off led</li>
+      <li class="val">0x02 : <b>RESET</b> - resets device</li>
+      </ul>
+    </td>
+  </tr>
+</table>
+
+<br/>
+<hr class="thick">
+</div>
+<div id="packet_getdata" class="packet">
+<h3>GetData </h3>
+<hr/>
+<ul>
+  <li class="note">  Packet ID: <b>[04]</b></li>
+  <li class="note">   Requests: <a href="#packet_data">Data</a></li>
+</ul>
+
+<p class="desc">Message tp get data from node</p>
+<br/>
+<span class="note"> This Packet type does not contain any data fields </span><br/>
+<br/>
+<hr class="thick">
+</div>
+<div id="packet_data" class="packet">
+<h3>Data </h3>
+<hr/>
+<ul>
+  <li class="note">  Packet ID: <b>[05]</b></li>
+  <li class="note">Responds To:   <a href="#packet_getdata">GetData</a>  </li>
+</ul>
+
+<p class="desc">contains data from a sensor</p>
+<br/>
+<br/>
+<b>Fields:</b>
+<table class="fields">
+  <tr>
+    <th> Field</th>
+    <th> Type</th>
+    <th> Description</th>
+  </tr>
+  <tr>
+    <td width="">sensorA</td>
+    <td width="">  int16_t    </td>
+    <td>Value of Sensor A    </td>
+  </tr>
+  <tr>
+    <td width="">sensorB</td>
+    <td width="">  int    </td>
+    <td>Value of Sensor B    </td>
+  </tr>
+  <tr>
+    <td width="">sensorName</td>
+    <td width="">  char        [32]    </td>
+    <td>Name of sensor sending data    </td>
+  </tr>
+</table>
+
+<br/>
+<hr class="thick">
+</div>
+
+
+<hr class="section">
+<h2 class="right"> Structs</h2>
+<hr class="thick">
+
+<div id="packet_node" class="packet">
+<h3>Node </h3>
+<hr/>
+<ul>
+  <li class="note">  Packet ID: <b>[02]</b></li>
+</ul>
+
+<p class="desc">struct for modeling node</p>
+<br/>
+<br/>
+<b>Fields:</b>
+<table class="fields">
+  <tr>
+    <th> Field</th>
+    <th> Type</th>
+    <th> Description</th>
+  </tr>
+  <tr>
+    <td width="">sensorA</td>
+    <td width="">  int16_t    </td>
+    <td>Value of Sensor A    </td>
+  </tr>
+  <tr>
+    <td width="">sensorB</td>
+    <td width="">  int    </td>
+    <td>Value of Sensor B    </td>
+  </tr>
+  <tr>
+    <td width="">sensorName</td>
+    <td width="">  char        [32]    </td>
+    <td>Name of sensor    </td>
+  </tr>
+</table>
+
+<br/>
+<hr class="thick">
+</div>
+
+</div>
+</body>
+<style>
+table.fixed { table-layout:auto; }
+table.fixed td { overflow:visible; }
+
+table.fields{
+  table-layout:auto;
+}
+
+body {
+  padding:0;
+}
+
+.content{
+  padding-top: 0;
+  padding-left: 1%;
+  padding-right: 1%;
+  background-color: #fff;
+}
+
+@media print {
+  .packet {
+    page-break-inside: avoid;
+    padding-top: 4px;
+  }
+  .content{
+    width: 100%;
+  }
+  body{
+    background-color: #fff;
+  }
+}
+
+@media screen {
+  .content{
+    width: 50%;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 0;
+    padding-top: 4px;
+    box-shadow: 5px 10px #AAA;
+  }
+
+  body{
+    background-color: #ccc;
+    padding: 0;
+  }
+}
+
+html *{
+  font-size: 1em ;
+   color: #000 ;
+  font-family: Arial ;
+}
+
+hr.section {
+  border-style: solid;
+  border-width: 2px;
+  opacity: 1;
+}
+
+
+hr.thick {
+  border-style: solid;
+  border-width: 1px;
+  border-color: #94b2d3;
+  opacity: 1;
+}
+
+hr {
+  opacity: 0.5;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+td {
+  border: 1px solid #000000;
+  text-align: left;
+  padding: 8px;
+  vertical-align: top;
+}
+
+.desc{
+  font-size: 1.2em;
+}
+
+th {
+  border: 1px solid #000000;
+  text-align: left;
+  padding: 8px;
+  background-color: #94b2d3;
+}
+
+li.val{
+  opacity: 0.6;
+}
+
+h1{
+  font-size: 2.5em;
+}
+
+h2 
+{
+  font-size: 1.8em;
+}
+
+h2.right{
+  text-align: center;
+  font-size: 1.8em;
+}
+
+h3
+{
+  font-size: 1.8em;
+  color: #003366;
+}
+
+h4 
+{
+  font-size: 1.1em;
+  color: #003366;
+}
+
+
+.note{
+  font-style: italic;
+  opacity: 0.6;
+}
+
+a{
+  text-decoration:none;
+}
+
+a:link {
+  color: blue;
+}
+
+/* visited link */
+a:visited {
+  color: blue;
+}
+
+table.fixed tr td:last-child{
+    width:1%;
+    white-space:nowrap;
+}
+</style>
+</html>
