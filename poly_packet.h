@@ -6,17 +6,19 @@
   */
 
 #pragma once
+
+/*Code-Block-Includes-----------------------------------------------------------------------*/
+
 #include "poly_field.h"
 #include "Utilities/COBS/cobs.h"
-#ifdef __cplusplus
 
-#if defined(POLY_PACKET_DEBUG_LVL)
-extern char POLY_DEBUG_PRINTBUF[512];
-#endif
+/*Code-Block-Variables----------------------------------------------------------------------*/
 
-extern "C"
-{
-#endif
+/*Code-Block-Macros-------------------------------------------------------------------------*/
+#define PACKET_METADATA_SIZE (sizeof(poly_packet_hdr_t))
+#define POLY_ACK_FLAG 0x8000
+
+/*Code-Block-Typedefs-----------------------------------------------------------------------*/
 
 //Ensure we pack structs
 #pragma pack(push)
@@ -45,8 +47,6 @@ typedef enum{
 } packet_ack_type_e;
 
 
-#define PACKET_METADATA_SIZE (sizeof(poly_packet_hdr_t))
-#define POLY_ACK_FLAG 0x8000
 
 //[ 1 byte payloadId] [ 2 byte payload len ]  [2 byte token] [ mManifestSize bytes manifest] [n byte variable data ] [2 byte checksum]
 /**
@@ -90,6 +90,19 @@ typedef struct poly_packet{
 
 
 #pragma pack(pop)
+
+/*Code-Block-Functions----------------------------------------------------------------------*/
+
+
+#ifdef __cplusplus
+
+extern "C"
+{
+#endif
+
+#if defined(POLY_PACKET_DEBUG_LVL)
+extern char POLY_DEBUG_PRINTBUF[512];
+#endif
 
 /**
   *@brief initializes a packet descriptor
@@ -255,3 +268,4 @@ int poly_packet_max_packed_size(poly_packet_t* packet);
 #ifdef __cplusplus
 }
 #endif
+/*Code-Block-End----------------------------------------------------------------------------*/

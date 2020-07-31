@@ -5,14 +5,14 @@
   *@date 02/19/"2019
   */
 
+/*Code-Block-Includes-----------------------------------------------------------------------*/
 
 
 #include "poly_service.h"
 #include <assert.h>
 
-#if defined(POLY_PACKET_DEBUG_LVL)
-extern char POLY_DEBUG_PRINTBUF[512];
-#endif
+/*Code-Block-Functions----------------------------------------------------------------------*/
+
 
 void poly_service_init( poly_service_t* service, int maxDescs, int interfaceCount)
 {
@@ -384,3 +384,6 @@ void poly_service_tick(poly_service_t* pService, uint32_t ms)
     poly_spool_tick(&pService->mInterfaces[i].mOutSpool, ms);
   }
 }
+
+/*Code-Block-End----------------------------------------------------------------------------*/
+

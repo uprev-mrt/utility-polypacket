@@ -5,9 +5,15 @@
   *@date 02/19/2019
   */
 
+/*Code-Block-Includes-----------------------------------------------------------------------*/
+
+
 #include "poly_field.h"
 
 #include <assert.h>
+
+/*Code-Block-Macros-------------------------------------------------------------------------*/
+
 
 #define MEM_EXISTS( field) ((field->mAllocated) || (field->mBound))
 
@@ -16,6 +22,11 @@
 
 #define PARSE_I(x,s,b)  x = strtol(s, NULL, b);  \
                           poly_field_set(field, (uint8_t*) &x)
+
+/*Code-Block-Typedefs-----------------------------------------------------------------------*/
+/*Code-Block-Variables----------------------------------------------------------------------*/
+/*Code-Block-Functions----------------------------------------------------------------------*/
+
 
 poly_field_desc_t* poly_field_desc_init(poly_field_desc_t* desc, const char* name, eFieldType type, uint32_t len, eFieldFormat format)
 {
@@ -457,3 +468,5 @@ int poly_var_size_read(const uint8_t* buf, uint32_t* val)
 
   return i+1;
 }
+
+/*Code-Block-End----------------------------------------------------------------------------*/

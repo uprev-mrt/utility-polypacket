@@ -7,6 +7,8 @@
 
 #pragma once
 
+/*Code-Block-Includes-----------------------------------------------------------------------*/
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -19,11 +21,7 @@
 
 
 
-#ifdef __cplusplus
-
-extern "C"
-{
-#endif
+/*Code-Block-Typedefs-----------------------------------------------------------------------*/
 
 
 typedef enum ServiceParseState {
@@ -42,8 +40,6 @@ typedef enum HandlerStatus {
 
 typedef HandlerStatus_e (*poly_tx_bytes_callback)(uint8_t* data , int len);
 typedef HandlerStatus_e (*poly_tx_packet_callback)(poly_packet_t* packet );
-
-
 
 typedef struct {
   /*    Incoming      */
@@ -72,6 +68,15 @@ typedef struct {
   bool mAutoAck;
   bool mStarted;
 }poly_service_t;
+
+/*Code-Block-Functions----------------------------------------------------------------------*/
+
+
+#ifdef __cplusplus
+
+extern "C"
+{
+#endif
 
 /**
   *@brief create new service
@@ -216,3 +221,5 @@ void poly_service_tick(poly_service_t* pService, uint32_t ms);
 #ifdef __cplusplus
 }
 #endif
+
+/*Code-Block-End----------------------------------------------------------------------------*/

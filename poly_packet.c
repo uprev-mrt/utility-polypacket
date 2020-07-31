@@ -5,12 +5,18 @@
   *@date 02/19/"2019
   */
 
+/*Code-Block-Includes-----------------------------------------------------------------------*/
 #include "poly_packet.h"
 #include <assert.h>
+
+/*Code-Block-Variables----------------------------------------------------------------------*/
 
 #if defined(POLY_PACKET_DEBUG_LVL)
 char POLY_DEBUG_PRINTBUF[512];
 #endif
+
+/*Code-Block-Functions----------------------------------------------------------------------*/
+
 
 poly_packet_desc_t* poly_packet_desc_init(poly_packet_desc_t* desc, int id,  const char* name, int maxFields)
 {
@@ -482,3 +488,6 @@ int poly_packet_max_packed_size(poly_packet_t* packet)
   return len;
 
 }
+
+/*Code-Block-End----------------------------------------------------------------------------*/
+

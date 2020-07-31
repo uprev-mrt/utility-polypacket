@@ -7,17 +7,23 @@
 
 #pragma once
 
+/*Code-Block-Includes-----------------------------------------------------------------------*/
 
 #include <stdint.h>
 #include <stdbool.h>
 #include "poly_packet.h"
 
-typedef void (*spool_ack_cb)(poly_packet_t* response);
+/*Code-Block-Macros-------------------------------------------------------------------------*/
 
 #define ENTRY_NONE -1
 
 #define SPOOL_TOKEN_MASK 0x7FFF
 #define SPOOL_TOKEN_ACK_REQ 0x8000
+
+/*Code-Block-Typedefs-----------------------------------------------------------------------*/
+
+typedef void (*spool_ack_cb)(poly_packet_t* response);
+
 
 //State of entries in the spool
 typedef enum{
@@ -57,6 +63,9 @@ typedef struct{
     int mSuccessfulMessages;        //successful messages
     int mFailedMessages;            //failed
   }poly_spool_t;
+
+/*Code-Block-Functions----------------------------------------------------------------------*/
+
 
 /**
   *@brief initialize a spool
@@ -104,3 +113,5 @@ bool poly_spool_ack(poly_spool_t* spool, poly_packet_t* response);
   *@param ms time in milliseconds since the last update
   */
 void poly_spool_tick(poly_spool_t* spool, int ms);
+
+/*Code-Block-End----------------------------------------------------------------------------*/

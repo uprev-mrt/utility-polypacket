@@ -5,8 +5,13 @@
   *@date 03/22/2019
   */
 
+/*Code-Block-Includes-----------------------------------------------------------------------*/
+
 #include "poly_spool.h"
 #include <assert.h>
+
+/*Code-Block-Functions----------------------------------------------------------------------*/
+
 
 void poly_spool_init(poly_spool_t* spool, int len)
 {
@@ -318,3 +323,6 @@ void poly_spool_tick(poly_spool_t* spool, int ms)
   }
   MRT_MUTEX_UNLOCK(spool->mMutex);
 }
+
+/*Code-Block-End----------------------------------------------------------------------------*/
+
