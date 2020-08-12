@@ -185,7 +185,7 @@ int poly_packet_get_field(const poly_packet_t* packet, const poly_field_desc_t* 
   return ret;
 }
 
-int poly_packet_set_field(poly_packet_t* packet, const poly_field_desc_t* desc, const void* data)
+int poly_packet_set_field(poly_packet_t* packet, const poly_field_desc_t* desc, const void* data, uint32_t len)
 {
   if(!packet->mBuilt)
     return  0;
@@ -196,7 +196,7 @@ int poly_packet_set_field(poly_packet_t* packet, const poly_field_desc_t* desc, 
   {
     if(packet->mDesc->mFields[i] == desc)
     {
-      poly_field_set(&packet->mFields[i], (const uint8_t*)data);
+      poly_field_set(&packet->mFields[i], (const uint8_t*)data, len);
       ret = 1;
     }
   }

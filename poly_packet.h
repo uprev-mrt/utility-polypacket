@@ -168,9 +168,10 @@ int poly_packet_get_field(const poly_packet_t* packet, const poly_field_desc_t* 
   *@param packet ptr to packet
   *@param desc ptr to field descriptor
   *@param data pointer to store value
+  *@param len len of data being set
   *@return 1 on success
   */
-int poly_packet_set_field(poly_packet_t* packet, const poly_field_desc_t* desc,const void* data);
+int poly_packet_set_field(poly_packet_t* packet, const poly_field_desc_t* desc, const void* data, uint32_t len);
 
 /**
   *@brief gets the ID from a raw data buffer

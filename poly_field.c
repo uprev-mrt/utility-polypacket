@@ -18,10 +18,10 @@
 #define MEM_EXISTS( field) ((field->mAllocated) || (field->mBound))
 
 #define PARSE_U(x,s,b)  x = strtoul(s, NULL, b);  \
-                          poly_field_set(field, (uint8_t*) &x)
+                          poly_field_set(field, (uint8_t*) &x, 1)
 
 #define PARSE_I(x,s,b)  x = strtol(s, NULL, b);  \
-                          poly_field_set(field, (uint8_t*) &x)
+                          poly_field_set(field, (uint8_t*) &x, 1)
 
 /*Code-Block-Typedefs-----------------------------------------------------------------------*/
 /*Code-Block-Variables----------------------------------------------------------------------*/
@@ -142,25 +142,31 @@ void poly_field_bind(poly_field_t* field, uint8_t* data, bool copy)
   field->mBound = true;
 }
 
-void poly_field_set(poly_field_t* field, const uint8_t* data)
+void poly_field_set(poly_field_t* field, const uint8_t* data, uint32_t len)
 {
   assert(MEM_EXISTS(field));
 	uint32_t newSize;
 
   //if its a null terminated type, we can adjust size
-  if(field->mDesc->mNullTerm)
+  if(field->mDesc->mVarLen)
   {
-		newSize = strlen((const char*)data);
 
-		//null term string needs on extra byte
-    if( (newSize + 1) > field->mAllocated)
+		newSize = len * field->mDesc->mObjSize;
+
+    if(field->mDesc->mNullTerm)
+    {
+      newSize++; //null term string needs on extra byte
+    }
+
+
+    if( newSize  > field->mAllocated)
     {
 			if(field->mAllocated)
 			{
 				free(field->mData);
 			}
-			field->mData = (uint8_t*)malloc(newSize + 1);
-			field->mAllocated = newSize +1;
+			field->mData = (uint8_t*)malloc(newSize );
+			field->mAllocated = newSize;
     }
 
 		field->mSize = newSize;
@@ -272,7 +278,7 @@ int poly_field_parse_str(poly_field_t* field, const char* str)
   //copy string
   if((field->mDesc->mNullTerm) || (field->mDesc->mDataType == TYPE_CHAR))
   {
-    poly_field_set(field, (uint8_t*)str);
+    poly_field_set(field, (uint8_t*)str, strlen(str));
     return 0 ;
   }
 
@@ -306,11 +312,11 @@ int poly_field_parse_str(poly_field_t* field, const char* str)
       break;
     case TYPE_FLOAT:
       ftmp = atof(str);
-      poly_field_set(field, (uint8_t*) &ftmp);
+      poly_field_set(field, (uint8_t*) &ftmp, 1);
       break;
     case TYPE_DOUBLE:
       dtmp = atof(str);
-      poly_field_set(field, (uint8_t*) &ftmp);
+      poly_field_set(field, (uint8_t*) &ftmp, 1);
       break;
     case TYPE_STRING:
     case TYPE_CHAR:
