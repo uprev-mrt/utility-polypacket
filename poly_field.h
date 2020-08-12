@@ -130,8 +130,9 @@ void poly_field_bind(poly_field_t* field, uint8_t* data, bool copy);
   *@brief sets data in field
   *@param field ptr to field
   *@param data ptr to data
+  *@param len len of data
   */
-void poly_field_set(poly_field_t* field, const uint8_t* data);
+void poly_field_set(poly_field_t* field, const uint8_t* data, uint32_t len);
 
 /**
   *@brief copies data from field and returns pointer (for use with arrays)
