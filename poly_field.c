@@ -147,18 +147,10 @@ void poly_field_set(poly_field_t* field, const uint8_t* data, uint32_t len)
   assert(MEM_EXISTS(field));
 	uint32_t newSize;
 
-  //if its a null terminated type, we can adjust size
   if(field->mDesc->mVarLen)
   {
 
 		newSize = len * field->mDesc->mObjSize;
-
-    if(field->mDesc->mNullTerm)
-    {
-      newSize++; //null term string needs on extra byte
-    }
-
-
     if( newSize  > field->mAllocated)
     {
 			if(field->mAllocated)
@@ -170,7 +162,6 @@ void poly_field_set(poly_field_t* field, const uint8_t* data, uint32_t len)
     }
 
 		field->mSize = newSize;
-    field->mData[field->mSize] = 0;
   }
 
   field->mPresent =true;

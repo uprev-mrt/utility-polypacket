@@ -6,6 +6,8 @@
   */
 
 #pragma once
+
+/*Code-Block-Includes-----------------------------------------------------------------------*/
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -14,6 +16,7 @@
 #include "Platforms/Common/mrt_platform.h"
 #include "Utilities/JSON/json.h"
 
+/*Code-Block-Macros-------------------------------------------------------------------------*/
 
 #ifndef MRT_SPRINTF
 #define MRT_SPRINTF(f_, ...) sprintf((f_), __VA_ARGS__)
@@ -21,8 +24,9 @@
 
 //Seed the checksum so even in packets with no data (acks) still have a partial check
 #define CHECKSUM_SEED 1738
-
 #define FIELD_LEN(x) ((x)->mLen)
+
+/*Code-Block-Typedefs-----------------------------------------------------------------------*/
 
 #pragma pack(push)
 #pragma pack(1)
@@ -86,6 +90,8 @@ typedef struct{
 }poly_field_t;
 
 #pragma pack(pop)
+
+/*Code-Block-Functions----------------------------------------------------------------------*/
 
 #ifdef __cplusplus
 extern "C"
@@ -204,3 +210,5 @@ int poly_var_size_read(const uint8_t* buf, uint32_t* val);
 #ifdef __cplusplus
 }
 #endif
+
+/*Code-Block-End----------------------------------------------------------------------------*/

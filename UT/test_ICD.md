@@ -7,7 +7,7 @@
 <div class="content">
 <h1>test ICD</h1>
 <ul>
-  <li> Generated with <a href="https://github.com/up-rev/PolyPacket/wiki">PolyPacket</a> on 03/27/20</li>
+  <li> Generated with <a href="https://github.com/up-rev/PolyPacket/wiki">PolyPacket</a> on 08/14/20</li>
   <li> CRC: BE5C1C7E</li>
   <li> Transport Encoding: (COBS) <a href="https://en.wikipedia.org/wiki/Consistent_Overhead_Byte_Stuffing">Consistent Overhead ByteStuffing</a></li>
 </ul>

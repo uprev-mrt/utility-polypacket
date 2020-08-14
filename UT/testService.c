@@ -2,7 +2,7 @@
   *@file testService.c
   *@brief generated code for test packet service
   *@author make_protocol.py
-  *@date 02/28/20
+  *@date 08/14/20
   */
 
 /***********************************************************
@@ -382,7 +382,7 @@ HandlerStatus_e tp_send(int iface, tp_packet_t* packet)
   */
 void tp_setIcd(tp_packet_t* packet, uint32_t val)
 {
-  poly_packet_set_field(packet, TP_FIELD_ICD, &val);
+  poly_packet_set_field(packet, TP_FIELD_ICD, &val, 1);
 }
 
 /**
@@ -392,7 +392,7 @@ void tp_setIcd(tp_packet_t* packet, uint32_t val)
   */
 void tp_setSensorA(tp_packet_t* packet, int16_t val)
 {
-  poly_packet_set_field(packet, TP_FIELD_SENSORA, &val);
+  poly_packet_set_field(packet, TP_FIELD_SENSORA, &val, 1);
 }
 
 /**
@@ -402,7 +402,7 @@ void tp_setSensorA(tp_packet_t* packet, int16_t val)
   */
 void tp_setSensorB(tp_packet_t* packet, int val)
 {
-  poly_packet_set_field(packet, TP_FIELD_SENSORB, &val);
+  poly_packet_set_field(packet, TP_FIELD_SENSORB, &val, 1);
 }
 
 /**
@@ -412,7 +412,7 @@ void tp_setSensorB(tp_packet_t* packet, int val)
   */
 void tp_setSensorName(tp_packet_t* packet, const char* val)
 {
-  poly_packet_set_field(packet, TP_FIELD_SENSORNAME, val);
+  poly_packet_set_field(packet, TP_FIELD_SENSORNAME, val, strlen(val));
 }
 
 /**
@@ -422,7 +422,7 @@ void tp_setSensorName(tp_packet_t* packet, const char* val)
   */
 void tp_setCmd(tp_packet_t* packet, uint8_t val)
 {
-  poly_packet_set_field(packet, TP_FIELD_CMD, &val);
+  poly_packet_set_field(packet, TP_FIELD_CMD, &val, 1);
 }
 
 
@@ -438,7 +438,7 @@ void tp_setCmd(tp_packet_t* packet, uint8_t val)
 uint32_t tp_getIcd(tp_packet_t* packet)
 {
   uint32_t val;
-  poly_packet_get_field(packet, TP_FIELD_ICD, &val);
+  poly_packet_get_field(packet, TP_FIELD_ICD, &val );
   return val;
 }
 
@@ -450,7 +450,7 @@ uint32_t tp_getIcd(tp_packet_t* packet)
 int16_t tp_getSensorA(tp_packet_t* packet)
 {
   int16_t val;
-  poly_packet_get_field(packet, TP_FIELD_SENSORA, &val);
+  poly_packet_get_field(packet, TP_FIELD_SENSORA, &val );
   return val;
 }
 
@@ -462,7 +462,7 @@ int16_t tp_getSensorA(tp_packet_t* packet)
 int tp_getSensorB(tp_packet_t* packet)
 {
   int val;
-  poly_packet_get_field(packet, TP_FIELD_SENSORB, &val);
+  poly_packet_get_field(packet, TP_FIELD_SENSORB, &val );
   return val;
 }
 
@@ -471,9 +471,9 @@ int tp_getSensorB(tp_packet_t* packet)
   *@param packet ptr to tp_packet
   *@return char* of data in field
   */
-void tp_getSensorName(tp_packet_t* packet, char* val)
+uint32_t tp_getSensorName(tp_packet_t* packet, char* val)
 {
-  poly_packet_get_field(packet, TP_FIELD_SENSORNAME, val);
+  return poly_packet_get_field(packet, TP_FIELD_SENSORNAME, val);
 }
 
 /**
@@ -484,7 +484,7 @@ void tp_getSensorName(tp_packet_t* packet, char* val)
 uint8_t tp_getCmd(tp_packet_t* packet)
 {
   uint8_t val;
-  poly_packet_get_field(packet, TP_FIELD_CMD, &val);
+  poly_packet_get_field(packet, TP_FIELD_CMD, &val );
   return val;
 }
 
@@ -506,11 +506,6 @@ HandlerStatus_e tp_sendPing(int iface)
   return tp_status;
 }
 
-/**
-  *@brief sends SendCmd packet
-  *@param iface indec of interface to send packet to
-  *@return tp_status send attempt
-  */
 HandlerStatus_e tp_sendSendCmd(int iface)
 {
   HandlerStatus_e tp_status;
@@ -524,11 +519,6 @@ HandlerStatus_e tp_sendSendCmd(int iface)
   tp_clean(&packet); //This will only free the underlying packet if the spooling was unsuccessful
   return tp_status;
 }
-/**
-  *@brief sends GetData packet
-  *@param iface indec of interface to send packet to
-  *@return tp_status send attempt
-  */
 HandlerStatus_e tp_sendGetData(int iface)
 {
   HandlerStatus_e tp_status;
@@ -542,11 +532,6 @@ HandlerStatus_e tp_sendGetData(int iface)
   tp_clean(&packet); //This will only free the underlying packet if the spooling was unsuccessful
   return tp_status;
 }
-/**
-  *@brief sends Data packet
-  *@param iface indec of interface to send packet to
-  *@return tp_status send attempt
-  */
 HandlerStatus_e tp_sendData(int iface)
 {
   HandlerStatus_e tp_status;
@@ -644,4 +629,6 @@ __attribute__((weak)) HandlerStatus_e tp_Data_handler(tp_packet_t* tp_Data)
 
   return PACKET_NOT_HANDLED;
 }
+
+
 

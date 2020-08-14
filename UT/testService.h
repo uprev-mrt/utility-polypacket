@@ -2,7 +2,7 @@
   *@file testService.h
   *@brief generated code for test packet service
   *@author make_protocol.py
-  *@date 02/28/20
+  *@date 08/14/20
   *@hash BE5C1C7E
   */
 
@@ -27,9 +27,9 @@ extern "C" {
 *******************************************************************************/
 /* Enums for cmd field */
 typedef enum{
-  TP_CMD_LED_ON,              /* turns on led */
-  TP_CMD_LED_OFF,              /* turns off led */
-  TP_CMD_RESET,              /* resets device */
+  TP_CMD_LED_ON = 0,              /* turns on led */
+  TP_CMD_LED_OFF = 1,              /* turns off led */
+  TP_CMD_RESET = 2,              /* resets device */
   TP_CMD_MAX_LIMIT
 } tp_cmd_e;
 
@@ -252,7 +252,7 @@ void tp_setCmd(tp_packet_t* packet, uint8_t val);
 uint32_t tp_getIcd(tp_packet_t* packet);
 int16_t tp_getSensorA(tp_packet_t* packet);
 int tp_getSensorB(tp_packet_t* packet);
-void tp_getSensorName(tp_packet_t* packet, char* val);
+uint32_t tp_getSensorName(tp_packet_t* packet, char* val);
 uint8_t tp_getCmd(tp_packet_t* packet);
 
 /*******************************************************************************
@@ -269,8 +269,23 @@ uint8_t tp_getCmd(tp_packet_t* packet);
   */
 HandlerStatus_e tp_sendPing(int iface);
 
+/**
+  *@brief sends SendCmd packet
+  *@param iface indec of interface to send packet to
+  *@return tp_status send attempt
+  */
 HandlerStatus_e tp_sendSendCmd(int iface);
+/**
+  *@brief sends GetData packet
+  *@param iface indec of interface to send packet to
+  *@return tp_status send attempt
+  */
 HandlerStatus_e tp_sendGetData(int iface);
+/**
+  *@brief sends Data packet
+  *@param iface indec of interface to send packet to
+  *@return tp_status send attempt
+  */
 HandlerStatus_e tp_sendData(int iface);
 
 /*******************************************************************************
