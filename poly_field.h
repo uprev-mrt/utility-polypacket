@@ -13,7 +13,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+
+#ifdef MRT_PLATFORM
 #include "Platforms/Common/mrt_platform.h"
+#endif
+
 #include "Utilities/JSON/json.h"
 
 /*Code-Block-Macros-------------------------------------------------------------------------*/
