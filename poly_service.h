@@ -135,14 +135,6 @@ void poly_service_start(poly_service_t* pService, int fifoDepth);
 void poly_service_feed(poly_service_t* pService, int interface,const uint8_t* data, int len);
 
 
-/**
-  *@brief 'Feeds' the service a complete json message
-  *@param pService ptr to poly service
-  *@param interface index of interface to feed
-  *@param data ptr to chars being added
-  *@param len number of chars being fed to service
-  */
-void poly_service_feed_json_msg(poly_service_t* pService, int interface,const char* msg, int len);
 
 /**
   *@brief sets retry behavior for interface of service
@@ -152,6 +144,15 @@ void poly_service_feed_json_msg(poly_service_t* pService, int interface,const ch
   */
 void poly_service_set_retry(poly_service_t* pService, int iface, uint16_t retries, uint32_t timeoutMs);
 
+#ifndef POLYPACKET_NO_JSON
+/**
+  *@brief 'Feeds' the service a complete json message
+  *@param pService ptr to poly service
+  *@param interface index of interface to feed
+  *@param data ptr to chars being added
+  *@param len number of chars being fed to service
+  */
+void poly_service_feed_json_msg(poly_service_t* pService, int interface,const char* msg, int len);
 
 /**
   *@brief parses packet from json
@@ -163,7 +164,7 @@ void poly_service_set_retry(poly_service_t* pService, int iface, uint16_t retrie
   *@return PACKET_PARSING_ERROR if len is longer than it should be (likely missed a delimiter)
   */
 ParseStatus_e poly_service_parse_json(poly_service_t* pService, poly_packet_t* packet ,const char* msg, int len);
-
+#endif //POLYPACKET_NO_JSON
 
 /**
   *@brief parses packet from interface
