@@ -115,6 +115,20 @@ void poly_service_feed(poly_service_t* pService, int interface, const uint8_t* d
   cobs_fifo_push_buf(&iface->mBytefifo, data, len);
 }
 
+
+void poly_service_set_retry(poly_service_t* pService, int iface, uint16_t retries, uint32_t timeoutMs)
+{
+	
+
+	if(iface < pService->mInterfaceCount )
+	{
+		pService->mInterfaces[iface].mOutSpool.mMaxRetries = retries;
+		pService->mInterfaces[iface].mOutSpool.mTimeOut = timeoutMs;
+	}
+	
+}
+
+#ifndef POLYPACKET_NO_JSON
 void poly_service_feed_json_msg(poly_service_t* pService, int interface,const char* msg, int len)
 {
   //parse json to packet
@@ -134,18 +148,6 @@ void poly_service_feed_json_msg(poly_service_t* pService, int interface,const ch
   //destroy packet
   poly_packet_clean(&packet);
 
-}
-
-void poly_service_set_retry(poly_service_t* pService, int iface, uint16_t retries, uint32_t timeoutMs)
-{
-	
-
-	if(iface < pService->mInterfaceCount )
-	{
-		pService->mInterfaces[iface].mOutSpool.mMaxRetries = retries;
-		pService->mInterfaces[iface].mOutSpool.mTimeOut = timeoutMs;
-	}
-	
 }
 
 
@@ -200,6 +202,8 @@ ParseStatus_e poly_service_parse_json(poly_service_t* pService, poly_packet_t* p
 
   return PACKET_PARSING_ERROR;
 }
+
+#endif //POLYPACKET_NO_JSON
 
 
 
@@ -269,7 +273,7 @@ ParseStatus_e poly_service_try_parse(poly_service_t* pService, poly_packet_t* pa
     {
       retVal=  PACKET_VALID;
       packet->mInterface = i;
-      #if defined(POLY_PACKET_DEBUG_LVL) && POLY_PACKET_DEBUG_LVL >0
+      #if defined(POLY_PACKET_DEBUG_LVL) && POLY_PACKET_DEBUG_LVL >0 && !defined( POLYPACKET_NO_JSON)
         //If debug is enabled, print json of outgoing packets
         #if POLY_PACKET_DEBUG_LVL == 1
         poly_packet_print_json(packet, POLY_DEBUG_PRINTBUF, false );
@@ -337,7 +341,7 @@ bool poly_service_despool_interface(poly_interface_t* iface, poly_packet_t* pack
 
       free(encoded);
 
-      #if defined(POLY_PACKET_DEBUG_LVL) && POLY_PACKET_DEBUG_LVL >0
+      #if defined(POLY_PACKET_DEBUG_LVL) && POLY_PACKET_DEBUG_LVL >0 && !defined( POLYPACKET_NO_JSON)
         //If debug is enabled, print json of outgoing packets
         #if POLY_PACKET_DEBUG_LVL == 1
         poly_packet_print_json(packet, POLY_DEBUG_PRINTBUF, false );

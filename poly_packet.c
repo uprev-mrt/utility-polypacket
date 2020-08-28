@@ -296,27 +296,6 @@ ParseStatus_e poly_packet_parse_buffer(poly_packet_t* packet, const uint8_t* dat
   return PACKET_VALID;
 }
 
-ParseStatus_e poly_packet_parse_json_obj(poly_packet_t* packet, json_obj_t* json)
-{
-  //iterate through text and parse key/value pairs
-  for(int i=0 ; i < json->mAttributeCount; i++)
-  {
-
-    for(int a=0; a < packet->mDesc->mFieldCount; a++)
-    {
-      if((!packet->mFields[a].mPresent) && (strcmp(packet->mFields[a].mDesc->mName, json->mAttributes[i].mKey) == 0))
-      {
-        poly_field_parse_str(&packet->mFields[a],json->mAttributes[i].mVal);
-        break;
-      }
-    }
-
-  }
-
-  return PACKET_VALID;
-
-}
-
 
 int poly_packet_pack(poly_packet_t* packet, uint8_t* data)
 {
@@ -388,6 +367,63 @@ int poly_packet_copy(poly_packet_t* dst, poly_packet_t* src)
   return count;
 }
 
+
+int poly_packet_update_header(poly_packet_t* packet)
+{
+
+  uint8_t data[packet->mDesc->mMaxPacketSize];
+
+  //easiest way to get the meta data is to pack the message
+  //Its not very effecient but this should be a rare use-case, mainly for debugging
+  int len = poly_packet_pack(packet, data);
+
+  return len;
+}
+
+int poly_packet_max_packed_size(poly_packet_t* packet)
+{
+  int len = sizeof(poly_packet_hdr_t);
+	poly_field_t* field;
+
+  for(int i=0; i < packet->mDesc->mFieldCount; i++)
+  {
+    field = &packet->mFields[i];
+
+    if(field->mPresent)
+    {
+      len+= field->mSize;
+      len+= 4; //for field header and size
+    }
+
+  }
+
+  return len;
+
+}
+
+#ifndef POLYPACKET_NO_JSON
+ParseStatus_e poly_packet_parse_json_obj(poly_packet_t* packet, json_obj_t* json)
+{
+  //iterate through text and parse key/value pairs
+  for(int i=0 ; i < json->mAttributeCount; i++)
+  {
+
+    for(int a=0; a < packet->mDesc->mFieldCount; a++)
+    {
+      if((!packet->mFields[a].mPresent) && (strcmp(packet->mFields[a].mDesc->mName, json->mAttributes[i].mKey) == 0))
+      {
+        poly_field_parse_str(&packet->mFields[a],json->mAttributes[i].mVal);
+        break;
+      }
+    }
+
+  }
+
+  return PACKET_VALID;
+
+}
+
+
 int poly_packet_print_json(poly_packet_t* packet, char* buf, bool printHeader)
 {
   int idx =0;
@@ -455,39 +491,7 @@ int poly_packet_print_packed(poly_packet_t* packet, char* buf)
 
   return strLen;
 }
-
-int poly_packet_update_header(poly_packet_t* packet)
-{
-
-  uint8_t data[packet->mDesc->mMaxPacketSize];
-
-  //easiest way to get the meta data is to pack the message
-  //Its not very effecient but this should be a rare use-case, mainly for debugging
-  int len = poly_packet_pack(packet, data);
-
-  return len;
-}
-
-int poly_packet_max_packed_size(poly_packet_t* packet)
-{
-  int len = sizeof(poly_packet_hdr_t);
-	poly_field_t* field;
-
-  for(int i=0; i < packet->mDesc->mFieldCount; i++)
-  {
-    field = &packet->mFields[i];
-
-    if(field->mPresent)
-    {
-      len+= field->mSize;
-      len+= 4; //for field header and size
-    }
-
-  }
-
-  return len;
-
-}
+#endif //POLYPACKET_NO_JSON
 
 /*Code-Block-End----------------------------------------------------------------------------*/
 

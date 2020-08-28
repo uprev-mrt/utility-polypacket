@@ -18,7 +18,9 @@
 #include "Platforms/Common/mrt_platform.h"
 #endif
 
+#ifndef POLYPACKET_NO_JSON
 #include "Utilities/JSON/json.h"
+#endif 
 
 /*Code-Block-Macros-------------------------------------------------------------------------*/
 
@@ -168,6 +170,7 @@ int poly_field_copy(poly_field_t* dst,poly_field_t* src);
   */
 int poly_field_parse(poly_field_t* field, const uint8_t* data);
 
+#ifndef POLYPACKET_NO_JSON
 /**
   *@brief Parses string data for a field
   *@param field ptr to field being parsed
@@ -192,6 +195,7 @@ int poly_field_print_json(poly_field_t* field, char* buf);
   *@return return number of characters written
   */
 int poly_field_print_val(poly_field_t* field, int element, char* buf);
+#endif //POLYPACKET_NO_JSON
 
 
 
