@@ -107,12 +107,12 @@ void poly_service_start(poly_service_t* pService, int depth)
 
 void poly_service_feed(poly_service_t* pService, int interface, const uint8_t* data, int len)
 {
-  assert(interface < pService->mInterfaceCount);
-
-  poly_interface_t* iface = &pService->mInterfaces[interface];
-
-
-  cobs_fifo_push_buf(&iface->mBytefifo, data, len);
+  //Make sure the interface is valid and initialized
+  if(interface < pService->mInterfaceCount) 
+  {
+    poly_interface_t* iface = &pService->mInterfaces[interface];
+    cobs_fifo_push_buf(&iface->mBytefifo, data, len);
+  }
 }
 
 
