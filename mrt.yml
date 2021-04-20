@@ -1,0 +1,4 @@
+---
+description: polymorphic messaging framework
+category: utility
+requires: [COBS, JSON]
